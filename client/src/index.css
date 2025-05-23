@@ -1,0 +1,177 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 20 5% 10%; /* #1A1A1A */
+  --foreground: 0 0% 100%; /* #FFFFFF */
+  --muted: 0 0% 18%; /* #2D2D2D */
+  --muted-foreground: 0 0% 69%; /* #B0B0B0 */
+  --popover: 0 0% 18%; /* #2D2D2D */
+  --popover-foreground: 0 0% 100%; /* #FFFFFF */
+  --card: 0 0% 18%; /* #2D2D2D */
+  --card-foreground: 0 0% 100%; /* #FFFFFF */
+  --border: 0 0% 44%; /* #707070 */
+  --input: 0 0% 18%; /* #2D2D2D */
+  --primary: 100 36% 25%; /* #2D5A27 */
+  --primary-foreground: 0 0% 100%; /* #FFFFFF */
+  --secondary: 100 25% 40%; /* #4A7C59 */
+  --secondary-foreground: 0 0% 100%; /* #FFFFFF */
+  --accent: 100 38% 55%; /* #5EBA63 */
+  --accent-foreground: 20 5% 10%; /* #1A1A1A */
+  --destructive: 0 84% 60%; /* #F56565 */
+  --destructive-foreground: 0 0% 100%; /* #FFFFFF */
+  --ring: 100 36% 25%; /* #2D5A27 */
+  --radius: 0.75rem;
+}
+
+.dark {
+  --background: 20 5% 10%; /* #1A1A1A */
+  --foreground: 0 0% 100%; /* #FFFFFF */
+  --muted: 0 0% 18%; /* #2D2D2D */
+  --muted-foreground: 0 0% 69%; /* #B0B0B0 */
+  --popover: 0 0% 18%; /* #2D2D2D */
+  --popover-foreground: 0 0% 100%; /* #FFFFFF */
+  --card: 0 0% 18%; /* #2D2D2D */
+  --card-foreground: 0 0% 100%; /* #FFFFFF */
+  --border: 0 0% 44%; /* #707070 */
+  --input: 0 0% 18%; /* #2D2D2D */
+  --primary: 100 36% 25%; /* #2D5A27 */
+  --primary-foreground: 0 0% 100%; /* #FFFFFF */
+  --secondary: 100 25% 40%; /* #4A7C59 */
+  --secondary-foreground: 0 0% 100%; /* #FFFFFF */
+  --accent: 100 38% 55%; /* #5EBA63 */
+  --accent-foreground: 20 5% 10%; /* #1A1A1A */
+  --destructive: 0 84% 60%; /* #F56565 */
+  --destructive-foreground: 0 0% 100%; /* #FFFFFF */
+  --ring: 100 36% 25%; /* #2D5A27 */
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  .gradient-primary {
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 100%);
+  }
+
+  .gradient-accent {
+    background: linear-gradient(135deg, hsl(var(--accent)) 0%, hsl(var(--secondary)) 100%);
+  }
+
+  .status-badge {
+    @apply text-xs font-medium px-2 py-1 rounded-full;
+  }
+
+  .status-paid {
+    @apply bg-green-500 text-white;
+  }
+
+  .status-pending {
+    @apply bg-yellow-500 text-black;
+  }
+
+  .status-overdue {
+    @apply bg-red-500 text-white;
+  }
+
+  .status-scheduled {
+    @apply bg-yellow-500 text-black;
+  }
+
+  .status-in-progress {
+    @apply bg-accent text-accent-foreground;
+  }
+
+  .status-completed {
+    @apply bg-green-500 text-white;
+  }
+
+  .status-on-job {
+    @apply bg-accent text-accent-foreground;
+  }
+
+  .status-break {
+    @apply bg-muted text-muted-foreground;
+  }
+
+  .status-off-duty {
+    @apply bg-red-500 text-white;
+  }
+}
+
+/* PWA specific styles */
+@media (display-mode: standalone) {
+  body {
+    @apply select-none;
+  }
+}
+
+/* High contrast for outdoor visibility */
+@media (prefers-contrast: high) {
+  :root {
+    --foreground: 0 0% 100%;
+    --background: 0 0% 0%;
+    --muted: 0 0% 25%;
+    --border: 0 0% 60%;
+  }
+}
+
+/* Touch-friendly sizing */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Loading states */
+.skeleton {
+  @apply animate-pulse bg-muted rounded;
+}
+
+/* Form styles */
+.form-section {
+  @apply space-y-4 p-4 bg-card rounded-xl border border-border;
+}
+
+/* Navigation styles */
+.nav-item {
+  @apply flex flex-col items-center justify-center text-muted-foreground hover:text-foreground transition-colors touch-target;
+}
+
+.nav-item.active {
+  @apply text-accent;
+}
+
+/* Card hover effects */
+.interactive-card {
+  @apply transition-all duration-200 hover:bg-muted/50 active:scale-95;
+}
+
+/* Button variations */
+.btn-primary {
+  @apply bg-primary hover:bg-primary/80 text-primary-foreground;
+}
+
+.btn-secondary {
+  @apply bg-secondary hover:bg-secondary/80 text-secondary-foreground;
+}
+
+.btn-accent {
+  @apply bg-accent hover:bg-accent/80 text-accent-foreground;
+}
+
+.btn-ghost {
+  @apply bg-transparent hover:bg-muted text-foreground;
+}
