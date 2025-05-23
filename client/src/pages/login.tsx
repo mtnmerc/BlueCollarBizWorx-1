@@ -58,8 +58,8 @@ export default function Login() {
   const businessMutation = useMutation({
     mutationFn: isRegister ? authApi.registerBusiness : authApi.loginBusiness,
     onSuccess: (data) => {
-      if (isRegister) {
-        // Auto-login admin user after registration
+      if (isRegister || data.user) {
+        // Auto-login admin user after registration or if admin user returned
         queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
         window.location.href = "/";
       } else {

@@ -57,7 +57,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       req.session.businessId = business.id;
-      res.json({ business });
+      
+      // Auto-login as admin user if available
+      const adminUsers = await storage.getUsersByBusiness(business.id);
+      const adminUser = adminUsers.find(user => user.role === 'admin');
+      
+      if (adminUser) {
+        req.session.userId = adminUser.id;
+        req.session.role = adminUser.role;
+        res.json({ business, user: adminUser });
+      } else {
+        res.json({ business });
+      }
     } catch (error) {
       res.status(400).json({ error: error.message });
     }
