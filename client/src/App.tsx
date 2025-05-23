@@ -14,6 +14,7 @@ import Invoices from "@/pages/invoices";
 import Clients from "@/pages/clients";
 import Team from "@/pages/team";
 import TeamNew from "@/pages/team-new";
+import BusinessSetupComplete from "@/pages/business-setup-complete";
 import NotFound from "@/pages/not-found";
 
 function AuthenticatedApp() {
@@ -41,6 +42,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/login" component={Login} />
+      <Route path="/setup" component={BusinessSetupComplete} />
       <Route>
         <AuthGuard fallback={<Login />}>
           <AuthenticatedApp />
