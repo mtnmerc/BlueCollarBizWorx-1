@@ -27,21 +27,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const business = await storage.createBusiness(data);
       
-      // Create admin user
-      const adminUser = await storage.createUser({
-        businessId: business.id,
-        username: "admin",
-        pin: "0000", // Default admin PIN
-        role: "admin",
-        firstName: "Admin",
-        lastName: "User",
-      });
-
       req.session.businessId = business.id;
-      req.session.userId = adminUser.id;
-      req.session.role = "admin";
+      req.session.setupMode = true; // Flag for setup completion
 
-      res.json({ business, user: adminUser });
+      res.json({ business, needsSetup: true });
     } catch (error) {
       res.status(400).json({ error: error.message });
     }
@@ -58,17 +47,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       req.session.businessId = business.id;
       
-      // Auto-login as admin user if available
-      const adminUsers = await storage.getUsersByBusiness(business.id);
-      const adminUser = adminUsers.find(user => user.role === 'admin');
-      
-      if (adminUser) {
-        req.session.userId = adminUser.id;
-        req.session.role = adminUser.role;
-        res.json({ business, user: adminUser });
-      } else {
-        res.json({ business });
+      // Check if business has any users (setup completed)
+      const users = await storage.getUsersByBusiness(business.id);
+      if (users.length === 0) {
+        req.session.setupMode = true;
+        return res.json({ business, needsSetup: true });
       }
+
+      // Normal login flow - requires PIN
+      res.json({ business, needsPinLogin: true });
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/auth/setup", async (req, res) => {
+    try {
+      const { firstName, lastName, pin } = req.body;
+      const { businessId, setupMode } = req.session as any;
+      
+      if (!businessId || !setupMode) {
+        return res.status(401).json({ error: "Setup mode required" });
+      }
+
+      // Create admin user
+      const adminUser = await storage.createUser({
+        businessId,
+        username: "admin",
+        pin,
+        role: "admin",
+        firstName,
+        lastName,
+      });
+
+      // Clear setup mode and login
+      delete req.session.setupMode;
+      req.session.userId = adminUser.id;
+      req.session.role = "admin";
+
+      res.json({ user: adminUser });
     } catch (error) {
       res.status(400).json({ error: error.message });
     }

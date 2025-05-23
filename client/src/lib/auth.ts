@@ -41,6 +41,11 @@ export const authApi = {
     return response.json();
   },
 
+  async completeSetup(data: { firstName: string; lastName: string; pin: string }) {
+    const response = await apiRequest("POST", "/api/auth/setup", data);
+    return response.json();
+  },
+
   async loginUser(data: { pin: string }) {
     const response = await apiRequest("POST", "/api/auth/user/login", data);
     return response.json();
