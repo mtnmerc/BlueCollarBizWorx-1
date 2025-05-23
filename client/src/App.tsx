@@ -13,6 +13,7 @@ import Jobs from "@/pages/jobs";
 import Invoices from "@/pages/invoices";
 import Clients from "@/pages/clients";
 import Team from "@/pages/team";
+import TeamNew from "@/pages/team-new";
 import NotFound from "@/pages/not-found";
 
 function AuthenticatedApp() {
@@ -26,6 +27,7 @@ function AuthenticatedApp() {
           <Route path="/invoices" component={Invoices} />
           <Route path="/clients" component={Clients} />
           <Route path="/team" component={Team} />
+          <Route path="/team/new" component={TeamNew} />
           <Route component={NotFound} />
         </Switch>
       </main>
