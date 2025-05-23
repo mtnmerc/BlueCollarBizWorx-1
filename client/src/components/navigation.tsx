@@ -10,17 +10,38 @@ import {
   UserCircle, 
   Plus,
   Settings,
-  Wrench
+  Wrench,
+  LogOut
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { authApi } from "@/lib/auth";
+import { useToast } from "@/hooks/use-toast";
 
 export function TopNavigation() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
   const { data: authData } = useQuery({
     queryKey: ["/api/auth/me"],
     queryFn: () => authApi.getMe(),
   });
+
+  const logoutMutation = useMutation({
+    mutationFn: authApi.logout,
+    onSuccess: () => {
+      queryClient.clear();
+      window.location.href = "/login";
+      toast({
+        title: "Logged out",
+        description: "You have been signed out successfully",
+      });
+    },
+  });
+
+  const handleLogout = () => {
+    logoutMutation.mutate();
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-card border-b border-border">
@@ -35,8 +56,8 @@ export function TopNavigation() {
           <Button variant="ghost" size="sm" className="p-2">
             <Bell className="h-5 w-5 text-muted-foreground" />
           </Button>
-          <Button variant="ghost" size="sm" className="p-2">
-            <UserCircle className="h-5 w-5 text-muted-foreground" />
+          <Button variant="ghost" size="sm" className="p-2" onClick={handleLogout}>
+            <LogOut className="h-5 w-5 text-muted-foreground" />
           </Button>
         </div>
       </div>

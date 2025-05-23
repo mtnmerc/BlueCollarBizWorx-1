@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   Plus, 
   Clock, 
@@ -15,9 +15,13 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 import { authApi } from "@/lib/auth";
 
 export default function Team() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
   const { data: authData } = useQuery({
     queryKey: ["/api/auth/me"],
     queryFn: () => authApi.getMe(),
@@ -30,6 +34,22 @@ export default function Team() {
   const { data: timeStatus, isLoading: loadingTime } = useQuery({
     queryKey: ["/api/time/status"],
   });
+
+  const logoutMutation = useMutation({
+    mutationFn: authApi.logout,
+    onSuccess: () => {
+      queryClient.clear();
+      window.location.href = "/login";
+      toast({
+        title: "Logged out",
+        description: "You have been signed out successfully",
+      });
+    },
+  });
+
+  const handleLogout = () => {
+    logoutMutation.mutate();
+  };
 
   const isAdmin = authData?.user?.role === "admin";
 
@@ -277,7 +297,7 @@ export default function Team() {
                 </CardContent>
               </Card>
 
-              <Card className="interactive-card">
+              <Card className="interactive-card" onClick={handleLogout}>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
@@ -289,9 +309,6 @@ export default function Team() {
                         <p className="text-sm text-muted-foreground">Sign out of your account</p>
                       </div>
                     </div>
-                    <Button variant="ghost" size="sm">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
                   </div>
                 </CardContent>
               </Card>
