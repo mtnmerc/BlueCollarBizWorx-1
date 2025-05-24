@@ -17,6 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { authApi } from "@/lib/auth";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function Team() {
   const { toast } = useToast();
@@ -49,6 +50,50 @@ export default function Team() {
 
   const handleLogout = () => {
     logoutMutation.mutate();
+  };
+
+  const clockInMutation = useMutation({
+    mutationFn: () => fetch("/api/time/clock-in", { method: "POST" }).then(res => res.json()),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/time/status"] });
+      toast({
+        title: "Clocked In",
+        description: "You have successfully clocked in",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Clock In Failed",
+        description: error.message || "Failed to clock in",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const clockOutMutation = useMutation({
+    mutationFn: () => fetch("/api/time/clock-out", { method: "POST" }).then(res => res.json()),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/time/status"] });
+      toast({
+        title: "Clocked Out",
+        description: "You have successfully clocked out",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Clock Out Failed",
+        description: error.message || "Failed to clock out",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleClockIn = () => {
+    clockInMutation.mutate();
+  };
+
+  const handleClockOut = () => {
+    clockOutMutation.mutate();
   };
 
   const isAdmin = authData?.user?.role === "admin";
@@ -210,8 +255,12 @@ export default function Team() {
                       <p className="text-sm text-muted-foreground">
                         Started at {new Date(timeStatus.activeEntry.clockIn).toLocaleTimeString()}
                       </p>
-                      <Button className="btn-accent w-full">
-                        Clock Out
+                      <Button 
+                        className="btn-accent w-full"
+                        onClick={handleClockOut}
+                        disabled={clockOutMutation.isPending}
+                      >
+                        {clockOutMutation.isPending ? "Clocking Out..." : "Clock Out"}
                       </Button>
                     </div>
                   ) : (
@@ -219,8 +268,12 @@ export default function Team() {
                       <Badge className="status-badge status-off-duty">
                         Not Clocked In
                       </Badge>
-                      <Button className="btn-primary w-full">
-                        Clock In
+                      <Button 
+                        className="btn-primary w-full"
+                        onClick={handleClockIn}
+                        disabled={clockInMutation.isPending}
+                      >
+                        {clockInMutation.isPending ? "Clocking In..." : "Clock In"}
                       </Button>
                     </div>
                   )}
