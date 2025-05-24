@@ -134,8 +134,8 @@ export default function InvoiceNew() {
         rate: item.rate,
         amount: item.total
       })),
-      subtotal: totalAmount,
-      total: totalAmount,
+      subtotal: totalAmount.toString(),
+      total: totalAmount.toString(),
       dueDate: values.dueDate,
       status: "draft",
     });

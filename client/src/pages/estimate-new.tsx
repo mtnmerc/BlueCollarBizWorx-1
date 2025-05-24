@@ -134,8 +134,8 @@ export default function EstimateNew() {
         rate: item.rate,
         amount: item.total
       })),
-      subtotal: totalAmount,
-      total: totalAmount,
+      subtotal: totalAmount.toString(),
+      total: totalAmount.toString(),
       validUntil: values.validUntil,
       status: "draft",
     });
