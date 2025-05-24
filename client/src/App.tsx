@@ -17,6 +17,8 @@ import TeamNew from "@/pages/team-new";
 import BusinessSetupComplete from "@/pages/business-setup-complete";
 import InvoiceNew from "@/pages/invoice-new";
 import ClientNew from "@/pages/client-new";
+import ClientDetail from "@/pages/client-detail";
+import ClientEdit from "@/pages/client-edit";
 import JobNew from "@/pages/job-new";
 import EstimateNew from "@/pages/estimate-new";
 import TimeClock from "@/pages/time-clock";
@@ -36,6 +38,8 @@ function AuthenticatedApp() {
           <Route path="/estimates/new" component={EstimateNew} />
           <Route path="/clients" component={Clients} />
           <Route path="/clients/new" component={ClientNew} />
+          <Route path="/clients/:id" component={ClientDetail} />
+          <Route path="/clients/:id/edit" component={ClientEdit} />
           <Route path="/team" component={Team} />
           <Route path="/team/new" component={TeamNew} />
           <Route path="/time-clock" component={TimeClock} />
