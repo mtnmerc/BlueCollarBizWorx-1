@@ -56,6 +56,7 @@ export default function Team() {
     mutationFn: () => fetch("/api/time/clock-in", { method: "POST" }).then(res => res.json()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/time/status"] });
+      queryClient.refetchQueries({ queryKey: ["/api/time/status"] });
       toast({
         title: "Clocked In",
         description: "You have successfully clocked in",
@@ -74,6 +75,7 @@ export default function Team() {
     mutationFn: () => fetch("/api/time/clock-out", { method: "POST" }).then(res => res.json()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/time/status"] });
+      queryClient.refetchQueries({ queryKey: ["/api/time/status"] });
       toast({
         title: "Clocked Out",
         description: "You have successfully clocked out",
