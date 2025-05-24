@@ -96,7 +96,7 @@ export default function InvoiceNew() {
   };
 
   const createInvoiceMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("/api/invoices", "POST", data),
+    mutationFn: (data: any) => apiRequest("POST", "/api/invoices", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
       toast({

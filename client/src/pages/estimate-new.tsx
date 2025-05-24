@@ -96,7 +96,7 @@ export default function EstimateNew() {
   };
 
   const createEstimateMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("/api/estimates", "POST", data),
+    mutationFn: (data: any) => apiRequest("POST", "/api/estimates", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/estimates"] });
       toast({
