@@ -136,7 +136,7 @@ export default function EstimateNew() {
       })),
       subtotal: totalAmount.toString(),
       total: totalAmount.toString(),
-      validUntil: values.validUntil,
+      validUntil: new Date(values.validUntil).toISOString(),
       status: "draft",
     });
   };
