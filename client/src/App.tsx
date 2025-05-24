@@ -15,6 +15,10 @@ import Clients from "@/pages/clients";
 import Team from "@/pages/team";
 import TeamNew from "@/pages/team-new";
 import BusinessSetupComplete from "@/pages/business-setup-complete";
+import InvoiceNew from "@/pages/invoice-new";
+import ClientNew from "@/pages/client-new";
+import JobNew from "@/pages/job-new";
+import EstimateNew from "@/pages/estimate-new";
 import NotFound from "@/pages/not-found";
 
 function AuthenticatedApp() {
@@ -25,8 +29,12 @@ function AuthenticatedApp() {
         <Switch>
           <Route path="/" component={Dashboard} />
           <Route path="/jobs" component={Jobs} />
+          <Route path="/jobs/new" component={JobNew} />
           <Route path="/invoices" component={Invoices} />
+          <Route path="/invoices/new" component={InvoiceNew} />
+          <Route path="/estimates/new" component={EstimateNew} />
           <Route path="/clients" component={Clients} />
+          <Route path="/clients/new" component={ClientNew} />
           <Route path="/team" component={Team} />
           <Route path="/team/new" component={TeamNew} />
           <Route component={NotFound} />
