@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertBusinessSchema, insertUserSchema, insertClientSchema, insertJobSchema, insertInvoiceSchema, insertEstimateSchema, insertTimeEntrySchema } from "@shared/schema";
+import { insertBusinessSchema, insertUserSchema, insertClientSchema, insertServiceSchema, insertJobSchema, insertInvoiceSchema, insertEstimateSchema, insertTimeEntrySchema } from "@shared/schema";
 import { z } from "zod";
 
 // Authentication middleware
@@ -202,6 +202,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const data = insertClientSchema.partial().parse(req.body);
       const updatedClient = await storage.updateClient(parseInt(req.params.id), data);
       res.json(updatedClient);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Services
+  app.get("/api/services", authenticateSession, async (req, res) => {
+    try {
+      const services = await storage.getServicesByBusiness(req.session.businessId);
+      res.json(services);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/services", authenticateSession, async (req, res) => {
+    try {
+      const data = insertServiceSchema.parse({
+        ...req.body,
+        businessId: req.session.businessId,
+      });
+      const service = await storage.createService(data);
+      res.json(service);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/services/:id", authenticateSession, async (req, res) => {
+    try {
+      const service = await storage.getServiceById(parseInt(req.params.id));
+      if (!service || service.businessId !== req.session.businessId) {
+        return res.status(404).json({ error: "Service not found" });
+      }
+      res.json(service);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.put("/api/services/:id", authenticateSession, async (req, res) => {
+    try {
+      const service = await storage.getServiceById(parseInt(req.params.id));
+      if (!service || service.businessId !== req.session.businessId) {
+        return res.status(404).json({ error: "Service not found" });
+      }
+      
+      const data = insertServiceSchema.partial().parse(req.body);
+      const updatedService = await storage.updateService(parseInt(req.params.id), data);
+      res.json(updatedService);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/services/:id", authenticateSession, async (req, res) => {
+    try {
+      const service = await storage.getServiceById(parseInt(req.params.id));
+      if (!service || service.businessId !== req.session.businessId) {
+        return res.status(404).json({ error: "Service not found" });
+      }
+      
+      await storage.deleteService(parseInt(req.params.id));
+      res.json({ success: true });
     } catch (error) {
       res.status(400).json({ error: error.message });
     }

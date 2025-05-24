@@ -33,7 +33,9 @@ export interface IStorage {
   // Service methods
   createService(service: InsertService): Promise<Service>;
   getServicesByBusiness(businessId: number): Promise<Service[]>;
+  getServiceById(id: number): Promise<Service | undefined>;
   updateService(id: number, service: Partial<InsertService>): Promise<Service>;
+  deleteService(id: number): Promise<void>;
 
   // Job methods
   createJob(job: InsertJob): Promise<Job>;
@@ -158,6 +160,11 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(services.businessId, businessId), eq(services.isActive, true)));
   }
 
+  async getServiceById(id: number): Promise<Service | undefined> {
+    const [service] = await db.select().from(services).where(eq(services.id, id));
+    return service || undefined;
+  }
+
   async updateService(id: number, service: Partial<InsertService>): Promise<Service> {
     const [updatedService] = await db
       .update(services)
@@ -165,6 +172,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(services.id, id))
       .returning();
     return updatedService;
+  }
+
+  async deleteService(id: number): Promise<void> {
+    await db.delete(services).where(eq(services.id, id));
   }
 
   // Job methods
