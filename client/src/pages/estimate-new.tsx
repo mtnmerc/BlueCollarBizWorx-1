@@ -233,60 +233,54 @@ export default function EstimateNew() {
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        {/* Column Headers */}
-                        <div className="grid grid-cols-12 gap-2 px-3 py-2 bg-muted/30 rounded-md text-sm font-medium text-muted-foreground">
-                          <div className="col-span-4">Service</div>
-                          <div className="col-span-2 text-center">Qty</div>
-                          <div className="col-span-2 text-center">Rate</div>
-                          <div className="col-span-2 text-center">Unit</div>
+                        {/* Column Headers - Mobile Optimized */}
+                        <div className="grid grid-cols-6 gap-1 px-2 py-2 bg-muted/30 rounded-md text-xs font-medium text-muted-foreground">
+                          <div className="col-span-2">Service</div>
+                          <div className="col-span-1 text-center">Qty</div>
+                          <div className="col-span-1 text-center">Rate</div>
                           <div className="col-span-1 text-center">Total</div>
                           <div className="col-span-1"></div>
                         </div>
                         
-                        {/* Service Line Items */}
+                        {/* Service Line Items - Mobile Optimized */}
                         {serviceLineItems.map((item, index) => (
-                          <div key={index} className="grid grid-cols-12 gap-2 items-center p-3 border rounded-lg bg-card">
-                            <div className="col-span-4">
+                          <div key={index} className="grid grid-cols-6 gap-1 items-center p-2 border rounded-lg bg-card">
+                            <div className="col-span-2">
                               <Select
                                 value={item.serviceId}
                                 onValueChange={(value) => updateServiceLine(index, 'serviceId', value)}
                               >
-                                <SelectTrigger className="h-9">
-                                  <SelectValue placeholder="Select service" />
+                                <SelectTrigger className="h-8 text-xs">
+                                  <SelectValue placeholder="Select..." />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {Array.isArray(services) && services.map((service: any) => (
                                     <SelectItem key={service.id} value={service.id.toString()}>
-                                      {service.name} - ${service.rate}/{service.unit}
+                                      {service.name}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
                               </Select>
                             </div>
-                            <div className="col-span-2">
+                            <div className="col-span-1">
                               <Input
                                 type="number"
                                 min="0"
                                 step="0.1"
                                 value={item.quantity}
                                 onChange={(e) => updateServiceLine(index, 'quantity', parseFloat(e.target.value) || 0)}
-                                className="h-9 text-center"
+                                className="h-8 text-center text-xs p-1"
                                 placeholder="1"
                               />
                             </div>
-                            <div className="col-span-2">
-                              <div className="h-9 px-3 py-2 text-sm bg-muted rounded text-center">
-                                ${item.rate.toFixed(2)}
-                              </div>
-                            </div>
-                            <div className="col-span-2">
-                              <div className="h-9 px-3 py-2 text-sm bg-muted rounded text-center">
-                                {item.unit}
+                            <div className="col-span-1">
+                              <div className="h-8 px-1 py-2 text-xs bg-muted rounded text-center">
+                                ${item.rate.toFixed(0)}
                               </div>
                             </div>
                             <div className="col-span-1">
-                              <div className="h-9 px-2 py-2 text-sm bg-primary/10 rounded text-center font-medium text-primary">
-                                ${item.total.toFixed(2)}
+                              <div className="h-8 px-1 py-2 text-xs bg-primary/10 rounded text-center font-medium text-primary">
+                                ${item.total.toFixed(0)}
                               </div>
                             </div>
                             <div className="col-span-1 flex justify-center">
@@ -295,9 +289,9 @@ export default function EstimateNew() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => removeServiceLine(index)}
-                                className="h-9 w-9 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <Trash2 className="h-3 w-3" />
                               </Button>
                             </div>
                           </div>
