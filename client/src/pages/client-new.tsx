@@ -34,7 +34,11 @@ export default function ClientNew() {
   });
 
   const createClientMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("/api/clients", "POST", data),
+    mutationFn: (data: any) => fetch("/api/clients", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }).then(res => res.json()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
       toast({
