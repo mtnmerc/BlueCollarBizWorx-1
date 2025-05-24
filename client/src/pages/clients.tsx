@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Search, Phone, Mail, MapPin, Eye, Edit } from "lucide-react";
+import { Plus, Search, Phone, Mail, MapPin, Eye, Edit, ExternalLink } from "lucide-react";
+import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -100,19 +101,34 @@ export default function Clients() {
                       {client.address && (
                         <div className="flex items-center text-sm text-muted-foreground mb-3">
                           <MapPin className="h-4 w-4 mr-2" />
-                          <span>{client.address}</span>
+                          <Button
+                            variant="link"
+                            className="h-auto p-0 text-sm text-muted-foreground hover:text-primary"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const encodedAddress = encodeURIComponent(client.address);
+                              window.open(`https://www.google.com/maps/search/?api=1&query=${encodedAddress}`, '_blank');
+                            }}
+                          >
+                            {client.address}
+                            <ExternalLink className="h-3 w-3 ml-1" />
+                          </Button>
                         </div>
                       )}
 
                       <div className="flex space-x-2">
-                        <Button variant="outline" size="sm" className="flex-1">
-                          <Eye className="h-4 w-4 mr-1" />
-                          View History
-                        </Button>
-                        <Button variant="outline" size="sm" className="flex-1">
-                          <Edit className="h-4 w-4 mr-1" />
-                          Edit
-                        </Button>
+                        <Link href={`/clients/${client.id}`} className="flex-1">
+                          <Button variant="outline" size="sm" className="w-full">
+                            <Eye className="h-4 w-4 mr-1" />
+                            View History
+                          </Button>
+                        </Link>
+                        <Link href={`/clients/${client.id}/edit`} className="flex-1">
+                          <Button variant="outline" size="sm" className="w-full">
+                            <Edit className="h-4 w-4 mr-1" />
+                            Edit
+                          </Button>
+                        </Link>
                       </div>
                     </div>
                   </div>
