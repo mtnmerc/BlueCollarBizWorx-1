@@ -192,6 +192,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/clients/:id", authenticateSession, async (req, res) => {
+    try {
+      const client = await storage.getClientById(parseInt(req.params.id));
+      if (!client || client.businessId !== req.session.businessId) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+      
+      const data = insertClientSchema.partial().parse(req.body);
+      const updatedClient = await storage.updateClient(parseInt(req.params.id), data);
+      res.json(updatedClient);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
   // Jobs
   app.get("/api/jobs", authenticateSession, async (req, res) => {
     try {
