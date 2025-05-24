@@ -72,14 +72,14 @@ export default function ServiceNew() {
   };
 
   const unitOptions = [
-    { value: "hour", label: "Hour (Services)", category: "Services" },
-    { value: "item", label: "Item (Products)", category: "Products" },
-    { value: "sq_ft", label: "Square Foot", category: "Materials" },
-    { value: "yard", label: "Yard", category: "Materials" },
-    { value: "pound", label: "Pound", category: "Materials" },
-    { value: "gallon", label: "Gallon", category: "Materials" },
-    { value: "linear_ft", label: "Linear Foot", category: "Materials" },
-    { value: "each", label: "Each", category: "General" },
+    { value: "hour", label: "Hour (Services)" },
+    { value: "item", label: "Item (Products)" },
+    { value: "sq_ft", label: "Square Foot" },
+    { value: "yard", label: "Yard" },
+    { value: "pound", label: "Pound" },
+    { value: "gallon", label: "Gallon" },
+    { value: "linear_ft", label: "Linear Foot" },
+    { value: "each", label: "Each" },
   ];
 
   return (
