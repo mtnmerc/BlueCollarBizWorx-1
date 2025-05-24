@@ -128,10 +128,16 @@ export default function EstimateNew() {
       clientId: parseInt(values.clientId),
       title: values.title,
       description: values.description,
-      amount: totalAmount,
+      lineItems: serviceLineItems.map(item => ({
+        description: item.serviceName,
+        quantity: item.quantity,
+        rate: item.rate,
+        amount: item.total
+      })),
+      subtotal: totalAmount,
+      total: totalAmount,
       validUntil: values.validUntil,
-      status: "pending",
-      serviceLineItems: serviceLineItems,
+      status: "draft",
     });
   };
 
