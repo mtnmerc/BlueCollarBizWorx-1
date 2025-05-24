@@ -131,12 +131,12 @@ export default function InvoiceNew() {
       lineItems: serviceLineItems.map(item => ({
         description: item.serviceName,
         quantity: item.quantity,
-        rate: item.rate,
-        amount: item.total
+        rate: item.rate.toString(),
+        amount: item.total.toString()
       })),
       subtotal: totalAmount.toString(),
       total: totalAmount.toString(),
-      dueDate: values.dueDate,
+      dueDate: new Date(values.dueDate),
       status: "draft",
     });
   };

@@ -131,12 +131,12 @@ export default function EstimateNew() {
       lineItems: serviceLineItems.map(item => ({
         description: item.serviceName,
         quantity: item.quantity,
-        rate: item.rate,
-        amount: item.total
+        rate: item.rate.toString(),
+        amount: item.total.toString()
       })),
       subtotal: totalAmount.toString(),
       total: totalAmount.toString(),
-      validUntil: values.validUntil,
+      validUntil: new Date(values.validUntil),
       status: "draft",
     });
   };
