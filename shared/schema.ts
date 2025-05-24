@@ -255,14 +255,20 @@ export const insertEstimateSchema = createInsertSchema(estimates).omit({
   id: true,
   createdAt: true,
 }).extend({
-  validUntil: z.string().optional().transform((val) => val ? new Date(val) : undefined)
+  validUntil: z.union([z.string(), z.date()]).optional().transform((val) => {
+    if (!val) return undefined;
+    return typeof val === 'string' ? new Date(val) : val;
+  })
 });
 
 export const insertInvoiceSchema = createInsertSchema(invoices).omit({
   id: true,
   createdAt: true,
 }).extend({
-  dueDate: z.string().optional().transform((val) => val ? new Date(val) : undefined)
+  dueDate: z.union([z.string(), z.date()]).optional().transform((val) => {
+    if (!val) return undefined;
+    return typeof val === 'string' ? new Date(val) : val;
+  })
 });
 
 export const insertTimeEntrySchema = createInsertSchema(timeEntries).omit({
