@@ -136,7 +136,7 @@ export default function InvoiceNew() {
       })),
       subtotal: totalAmount.toString(),
       total: totalAmount.toString(),
-      dueDate: new Date(values.dueDate),
+      dueDate: values.dueDate,
       status: "draft",
     });
   };
