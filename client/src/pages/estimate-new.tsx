@@ -232,74 +232,77 @@ export default function EstimateNew() {
                         <p>No services added yet. Click "Add Service" to start building your estimate.</p>
                       </div>
                     ) : (
-                      serviceLineItems.map((item, index) => (
-                        <div key={index} className="grid grid-cols-12 gap-2 items-end p-3 border rounded-lg">
-                          <div className="col-span-4">
-                            <label className="text-sm font-medium">Service</label>
-                            <Select
-                              value={item.serviceId}
-                              onValueChange={(value) => updateServiceLine(index, 'serviceId', value)}
-                            >
-                              <SelectTrigger className="h-8">
-                                <SelectValue placeholder="Select service" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {Array.isArray(services) && services.map((service: any) => (
-                                  <SelectItem key={service.id} value={service.id.toString()}>
-                                    {service.name} - ${service.rate}/{service.unit}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="col-span-2">
-                            <label className="text-sm font-medium">Qty</label>
-                            <Input
-                              type="number"
-                              min="0"
-                              step="0.1"
-                              value={item.quantity}
-                              onChange={(e) => updateServiceLine(index, 'quantity', parseFloat(e.target.value) || 0)}
-                              className="h-8"
-                            />
-                          </div>
-                          <div className="col-span-2">
-                            <label className="text-sm font-medium">Rate</label>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              value={item.rate}
-                              onChange={(e) => updateServiceLine(index, 'rate', parseFloat(e.target.value) || 0)}
-                              className="h-8"
-                            />
-                          </div>
-                          <div className="col-span-2">
-                            <label className="text-sm font-medium">Unit</label>
-                            <Input
-                              value={item.unit}
-                              readOnly
-                              className="h-8 bg-muted"
-                            />
-                          </div>
-                          <div className="col-span-1">
-                            <label className="text-sm font-medium">Total</label>
-                            <div className="h-8 px-3 py-1 text-sm bg-muted rounded text-right">
-                              ${item.total.toFixed(2)}
+                      <div className="space-y-3">
+                        {/* Column Headers */}
+                        <div className="grid grid-cols-12 gap-2 px-3 py-2 bg-muted/30 rounded-md text-sm font-medium text-muted-foreground">
+                          <div className="col-span-4">Service</div>
+                          <div className="col-span-2 text-center">Qty</div>
+                          <div className="col-span-2 text-center">Rate</div>
+                          <div className="col-span-2 text-center">Unit</div>
+                          <div className="col-span-1 text-center">Total</div>
+                          <div className="col-span-1"></div>
+                        </div>
+                        
+                        {/* Service Line Items */}
+                        {serviceLineItems.map((item, index) => (
+                          <div key={index} className="grid grid-cols-12 gap-2 items-center p-3 border rounded-lg bg-card">
+                            <div className="col-span-4">
+                              <Select
+                                value={item.serviceId}
+                                onValueChange={(value) => updateServiceLine(index, 'serviceId', value)}
+                              >
+                                <SelectTrigger className="h-9">
+                                  <SelectValue placeholder="Select service" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {Array.isArray(services) && services.map((service: any) => (
+                                    <SelectItem key={service.id} value={service.id.toString()}>
+                                      {service.name} - ${service.rate}/{service.unit}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="col-span-2">
+                              <Input
+                                type="number"
+                                min="0"
+                                step="0.1"
+                                value={item.quantity}
+                                onChange={(e) => updateServiceLine(index, 'quantity', parseFloat(e.target.value) || 0)}
+                                className="h-9 text-center"
+                                placeholder="1"
+                              />
+                            </div>
+                            <div className="col-span-2">
+                              <div className="h-9 px-3 py-2 text-sm bg-muted rounded text-center">
+                                ${item.rate.toFixed(2)}
+                              </div>
+                            </div>
+                            <div className="col-span-2">
+                              <div className="h-9 px-3 py-2 text-sm bg-muted rounded text-center">
+                                {item.unit}
+                              </div>
+                            </div>
+                            <div className="col-span-1">
+                              <div className="h-9 px-2 py-2 text-sm bg-primary/10 rounded text-center font-medium text-primary">
+                                ${item.total.toFixed(2)}
+                              </div>
+                            </div>
+                            <div className="col-span-1 flex justify-center">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeServiceLine(index)}
+                                className="h-9 w-9 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             </div>
                           </div>
-                          <div className="col-span-1">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeServiceLine(index)}
-                              className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))
+                        ))}
+                      </div>
                     )}
                     
                     {serviceLineItems.length > 0 && (
