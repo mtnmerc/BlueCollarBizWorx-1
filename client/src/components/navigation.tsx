@@ -11,7 +11,8 @@ import {
   Plus,
   Settings,
   Wrench,
-  LogOut
+  LogOut,
+  Package
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -73,7 +74,7 @@ export function BottomNavigation() {
     { path: "/jobs", icon: Calendar, label: "Jobs" },
     { path: "/invoices", icon: FileText, label: "Invoices" },
     { path: "/clients", icon: Users, label: "Clients" },
-    { path: "/team", icon: MoreHorizontal, label: "More" },
+    { path: "/services", icon: Package, label: "Services" },
   ];
 
   return (

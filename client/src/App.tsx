@@ -43,6 +43,9 @@ function AuthenticatedApp() {
           <Route path="/clients/new" component={ClientNew} />
           <Route path="/clients/:id" component={ClientDetail} />
           <Route path="/clients/:id/edit" component={ClientEdit} />
+          <Route path="/services" component={Services} />
+          <Route path="/services/new" component={ServiceNew} />
+          <Route path="/services/:id/edit" component={ServiceEdit} />
           <Route path="/team" component={Team} />
           <Route path="/team/new" component={TeamNew} />
           <Route path="/time-clock" component={TimeClock} />
