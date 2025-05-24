@@ -16,7 +16,7 @@ import { Link } from "wouter";
 const serviceSchema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
-  rate: z.string().min(1, "Rate is required").refine((val) => !isNaN(Number(val)) && Number(val) >= 0, "Rate must be a valid number"),
+  rate: z.number().min(0, "Rate must be greater than or equal to 0"),
   unit: z.string().min(1, "Unit is required"),
   isActive: z.boolean().default(true),
 });
@@ -30,7 +30,7 @@ export default function ServiceNew() {
     defaultValues: {
       name: "",
       description: "",
-      rate: "",
+      rate: 0,
       unit: "hour",
       isActive: true,
     },
@@ -40,10 +40,7 @@ export default function ServiceNew() {
     mutationFn: (data: any) => fetch("/api/services", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...data,
-        rate: parseFloat(data.rate),
-      }),
+      body: JSON.stringify(data),
     }).then(res => {
       if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`);
@@ -151,7 +148,8 @@ export default function ServiceNew() {
                             step="0.01" 
                             min="0"
                             placeholder="0.00" 
-                            {...field} 
+                            value={field.value || ""}
+                            onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : 0)}
                           />
                         </FormControl>
                         <FormMessage />
