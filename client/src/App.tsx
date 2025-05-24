@@ -24,6 +24,7 @@ import ServiceNew from "@/pages/service-new";
 import ServiceEdit from "@/pages/service-edit";
 import JobNew from "@/pages/job-new";
 import EstimateNew from "@/pages/estimate-new";
+import Estimates from "@/pages/estimates";
 import TimeClock from "@/pages/time-clock";
 import NotFound from "@/pages/not-found";
 
@@ -38,6 +39,7 @@ function AuthenticatedApp() {
           <Route path="/jobs/new" component={JobNew} />
           <Route path="/invoices" component={Invoices} />
           <Route path="/invoices/new" component={InvoiceNew} />
+          <Route path="/estimates" component={Estimates} />
           <Route path="/estimates/new" component={EstimateNew} />
           <Route path="/clients" component={Clients} />
           <Route path="/clients/new" component={ClientNew} />

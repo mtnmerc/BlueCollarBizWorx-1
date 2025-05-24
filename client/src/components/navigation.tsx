@@ -72,6 +72,7 @@ export function BottomNavigation() {
   const navItems = [
     { path: "/", icon: Home, label: "Dashboard" },
     { path: "/jobs", icon: Calendar, label: "Jobs" },
+    { path: "/estimates", icon: FileText, label: "Estimates" },
     { path: "/invoices", icon: FileText, label: "Invoices" },
     { path: "/clients", icon: Users, label: "Clients" },
     { path: "/services", icon: Package, label: "Services" },
@@ -80,7 +81,7 @@ export function BottomNavigation() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border">
-      <div className="grid grid-cols-6 h-16">
+      <div className="grid grid-cols-7 h-16">
         {navItems.map((item) => (
           <Link key={item.path} href={item.path}>
             <div
