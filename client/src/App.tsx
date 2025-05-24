@@ -19,6 +19,7 @@ import InvoiceNew from "@/pages/invoice-new";
 import ClientNew from "@/pages/client-new";
 import JobNew from "@/pages/job-new";
 import EstimateNew from "@/pages/estimate-new";
+import TimeClock from "@/pages/time-clock";
 import NotFound from "@/pages/not-found";
 
 function AuthenticatedApp() {
@@ -37,6 +38,7 @@ function AuthenticatedApp() {
           <Route path="/clients/new" component={ClientNew} />
           <Route path="/team" component={Team} />
           <Route path="/team/new" component={TeamNew} />
+          <Route path="/time-clock" component={TimeClock} />
           <Route component={NotFound} />
         </Switch>
       </main>

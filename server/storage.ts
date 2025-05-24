@@ -10,7 +10,7 @@ import {
   type TimeEntry, type InsertTimeEntry
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
+import { eq, and, desc, gte, lte, sql, isNull } from "drizzle-orm";
 
 export interface IStorage {
   // Business methods
@@ -322,7 +322,7 @@ export class DatabaseStorage implements IStorage {
     const [timeEntry] = await db
       .select()
       .from(timeEntries)
-      .where(and(eq(timeEntries.userId, userId), eq(timeEntries.clockOut, null)))
+      .where(and(eq(timeEntries.userId, userId), isNull(timeEntries.clockOut)))
       .orderBy(desc(timeEntries.clockIn));
     return timeEntry || undefined;
   }
