@@ -219,13 +219,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/services", authenticateSession, async (req, res) => {
     try {
-      const data = insertServiceSchema.parse({
+      console.log("Service creation request body:", JSON.stringify(req.body, null, 2));
+      
+      const requestData = {
         ...req.body,
         businessId: req.session.businessId,
-      });
+      };
+      
+      console.log("Data being validated:", JSON.stringify(requestData, null, 2));
+      
+      const data = insertServiceSchema.parse(requestData);
       const service = await storage.createService(data);
       res.json(service);
     } catch (error) {
+      console.log("Service creation validation error:", error.message);
+      if (error.issues) {
+        console.log("Validation issues:", JSON.stringify(error.issues, null, 2));
+      }
       res.status(400).json({ error: error.message });
     }
   });

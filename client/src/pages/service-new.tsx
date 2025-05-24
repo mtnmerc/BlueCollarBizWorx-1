@@ -16,7 +16,7 @@ import { Link } from "wouter";
 const serviceSchema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
-  rate: z.number().min(0, "Rate must be greater than or equal to 0"),
+  rate: z.string().min(1, "Rate is required").refine((val) => !isNaN(Number(val)) && Number(val) >= 0, "Rate must be a valid number"),
   unit: z.string().min(1, "Unit is required"),
   isActive: z.boolean().default(true),
 });
@@ -30,7 +30,7 @@ export default function ServiceNew() {
     defaultValues: {
       name: "",
       description: "",
-      rate: 0,
+      rate: "",
       unit: "hour",
       isActive: true,
     },
@@ -148,8 +148,7 @@ export default function ServiceNew() {
                             step="0.01" 
                             min="0"
                             placeholder="0.00" 
-                            value={field.value || ""}
-                            onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : 0)}
+                            {...field}
                           />
                         </FormControl>
                         <FormMessage />
