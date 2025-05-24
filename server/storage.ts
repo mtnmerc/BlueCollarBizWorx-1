@@ -322,7 +322,7 @@ export class DatabaseStorage implements IStorage {
     const [timeEntry] = await db
       .select()
       .from(timeEntries)
-      .where(and(eq(timeEntries.userId, userId), isNull(timeEntries.clockOut)))
+      .where(and(eq(timeEntries.userId, userId), sql`${timeEntries.clockOut} IS NULL`))
       .orderBy(desc(timeEntries.clockIn));
     return timeEntry || undefined;
   }
