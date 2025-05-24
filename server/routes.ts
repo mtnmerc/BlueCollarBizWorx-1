@@ -398,20 +398,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/estimates", authenticateSession, async (req, res) => {
     try {
+      console.log("Estimate creation request body:", JSON.stringify(req.body, null, 2));
+      
       // Generate estimate number
       const now = new Date();
       const dateStr = now.toISOString().slice(2, 10).replace(/-/g, '');
       const estimateNumber = `EST-${dateStr}A`; // TODO: Handle multiple estimates per day
 
-      const data = insertEstimateSchema.parse({
+      const requestData = {
         ...req.body,
         businessId: req.session.businessId,
         estimateNumber,
-      });
+      };
+      
+      console.log("Data being validated:", JSON.stringify(requestData, null, 2));
+
+      const data = insertEstimateSchema.parse(requestData);
       
       const estimate = await storage.createEstimate(data);
       res.json(estimate);
     } catch (error) {
+      console.log("Estimate creation validation error:", error.message);
+      if (error.issues) {
+        console.log("Validation issues:", JSON.stringify(error.issues, null, 2));
+      }
       res.status(400).json({ error: error.message });
     }
   });
