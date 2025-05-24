@@ -254,11 +254,15 @@ export const insertJobSchema = createInsertSchema(jobs).omit({
 export const insertEstimateSchema = createInsertSchema(estimates).omit({
   id: true,
   createdAt: true,
+}).extend({
+  validUntil: z.string().optional().transform((val) => val ? new Date(val) : undefined)
 });
 
 export const insertInvoiceSchema = createInsertSchema(invoices).omit({
   id: true,
   createdAt: true,
+}).extend({
+  dueDate: z.string().optional().transform((val) => val ? new Date(val) : undefined)
 });
 
 export const insertTimeEntrySchema = createInsertSchema(timeEntries).omit({

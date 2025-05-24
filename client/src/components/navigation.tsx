@@ -74,7 +74,7 @@ export function BottomNavigation() {
     { path: "/jobs", icon: Calendar, label: "Jobs" },
     { path: "/invoices", icon: FileText, label: "Invoices" },
     { path: "/clients", icon: Users, label: "Clients" },
-    { path: "/services", icon: Package, label: "Services" },
+    { path: "/team", icon: Users, label: "Team" },
   ];
 
   return (
