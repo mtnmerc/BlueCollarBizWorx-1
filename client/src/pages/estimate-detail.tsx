@@ -31,7 +31,10 @@ export default function EstimateDetail() {
     );
   }
 
-  if (!estimate) {
+  // Debug: log the estimate data
+  console.log("Estimate data:", estimate);
+
+  if (!estimate || Object.keys(estimate).length === 0) {
     return (
       <div className="pt-16 pb-20 px-4">
         <Card className="text-center py-12">
