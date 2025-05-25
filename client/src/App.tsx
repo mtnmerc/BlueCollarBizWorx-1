@@ -43,6 +43,8 @@ function AuthenticatedApp() {
           <Route path="/invoices/new" component={InvoiceNew} />
           <Route path="/estimates" component={Estimates} />
           <Route path="/estimates/new" component={EstimateNew} />
+          <Route path="/estimates/:id" component={EstimateDetail} />
+          <Route path="/invoices/:id" component={InvoiceDetail} />
           <Route path="/clients" component={Clients} />
           <Route path="/clients/new" component={ClientNew} />
           <Route path="/clients/:id" component={ClientDetail} />
