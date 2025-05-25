@@ -25,6 +25,8 @@ import ServiceEdit from "@/pages/service-edit";
 import JobNew from "@/pages/job-new";
 import EstimateNew from "@/pages/estimate-new";
 import Estimates from "@/pages/estimates";
+import EstimateDetail from "@/pages/estimate-detail";
+import InvoiceDetail from "@/pages/invoice-detail";
 import TimeClock from "@/pages/time-clock";
 import NotFound from "@/pages/not-found";
 

@@ -107,12 +107,16 @@ export default function Estimates() {
                 </div>
 
                 <div className="flex space-x-2">
-                  <Button variant="outline" size="sm">
-                    View Details
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    Edit
-                  </Button>
+                  <Link href={`/estimates/${estimate.id}`}>
+                    <Button variant="outline" size="sm">
+                      View Details
+                    </Button>
+                  </Link>
+                  <Link href={`/estimates/${estimate.id}/edit`}>
+                    <Button variant="outline" size="sm">
+                      Edit
+                    </Button>
+                  </Link>
                   {estimate.status === "approved" && (
                     <Button size="sm" className="bg-primary hover:bg-primary/90">
                       Convert to Invoice

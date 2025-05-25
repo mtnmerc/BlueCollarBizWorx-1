@@ -19,6 +19,8 @@ const estimateSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().min(1, "Description is required"),
   validUntil: z.string().min(1, "Valid until date is required"),
+  depositType: z.enum(["none", "fixed", "percentage"]).default("none"),
+  depositValue: z.string().optional(),
 });
 
 interface ServiceLineItem {
@@ -43,6 +45,8 @@ export default function EstimateNew() {
       title: "",
       description: "",
       validUntil: "",
+      depositType: "none",
+      depositValue: "",
     },
   });
 
@@ -124,6 +128,15 @@ export default function EstimateNew() {
       return;
     }
 
+    // Calculate deposit amount
+    let depositAmount = 0;
+    if (values.depositType === "fixed" && values.depositValue) {
+      depositAmount = parseFloat(values.depositValue);
+    } else if (values.depositType === "percentage" && values.depositValue) {
+      const percentage = parseFloat(values.depositValue);
+      depositAmount = (totalAmount * percentage) / 100;
+    }
+
     createEstimateMutation.mutate({
       clientId: parseInt(values.clientId),
       title: values.title,
@@ -136,6 +149,7 @@ export default function EstimateNew() {
       })),
       subtotal: totalAmount.toString(),
       total: totalAmount.toString(),
+      depositAmount: depositAmount > 0 ? depositAmount.toString() : undefined,
       validUntil: new Date(values.validUntil).toISOString(),
       status: "draft",
     });
