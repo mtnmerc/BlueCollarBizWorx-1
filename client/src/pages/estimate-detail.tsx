@@ -12,8 +12,12 @@ export default function EstimateDetail() {
   const estimateId = params?.id;
 
   const { data: estimate, isLoading } = useQuery({
-    queryKey: ["/api/estimates", estimateId],
+    queryKey: [`/api/estimates/${estimateId}`],
     enabled: !!estimateId,
+  });
+
+  const { data: clients } = useQuery({
+    queryKey: ["/api/clients"],
   });
 
   if (isLoading) {
@@ -111,7 +115,9 @@ export default function EstimateDetail() {
               <div className="flex items-center text-sm">
                 <User className="h-4 w-4 text-primary mr-2" />
                 <span className="text-muted-foreground">Client:</span>
-                <span className="ml-1 font-medium">Client #{estimate.clientId}</span>
+                <span className="ml-1 font-medium">
+                  {clients?.find(c => c.id === estimate.clientId)?.name || `Client #${estimate.clientId}`}
+                </span>
               </div>
               {estimate.validUntil && (
                 <div className="flex items-center text-sm">

@@ -426,6 +426,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/estimates/:id", authenticateSession, async (req, res) => {
+    try {
+      const estimate = await storage.getEstimateById(parseInt(req.params.id));
+      if (!estimate || estimate.businessId !== req.session.businessId) {
+        return res.status(404).json({ error: "Estimate not found" });
+      }
+      res.json(estimate);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/estimates/:id", authenticateSession, async (req, res) => {
+    try {
+      const estimate = await storage.getEstimateById(parseInt(req.params.id));
+      if (!estimate || estimate.businessId !== req.session.businessId) {
+        return res.status(404).json({ error: "Estimate not found" });
+      }
+      
+      const updatedEstimate = await storage.updateEstimate(parseInt(req.params.id), req.body);
+      res.json(updatedEstimate);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
   // Time tracking
   app.post("/api/time/clock-in", authenticateSession, async (req, res) => {
     try {
