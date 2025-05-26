@@ -227,6 +227,45 @@ export default function PublicEstimate() {
       const margin = 20;
       let yPosition = margin;
       
+      // Add business logo if available
+      if (business?.logo) {
+        try {
+          // Convert logo to base64 and add to PDF
+          const logoImg = new Image();
+          logoImg.crossOrigin = "anonymous";
+          
+          await new Promise((resolve, reject) => {
+            logoImg.onload = () => {
+              try {
+                // Create canvas to convert image to base64
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = logoImg.width;
+                canvas.height = logoImg.height;
+                ctx?.drawImage(logoImg, 0, 0);
+                
+                const logoData = canvas.toDataURL('image/png');
+                
+                // Add logo to PDF (30x30 size)
+                pdf.addImage(logoData, 'PNG', margin, yPosition, 30, 30);
+                yPosition += 35;
+                resolve(true);
+              } catch (error) {
+                console.warn("Could not add logo to PDF:", error);
+                resolve(false);
+              }
+            };
+            logoImg.onerror = () => {
+              console.warn("Could not load logo for PDF");
+              resolve(false);
+            };
+            logoImg.src = business.logo;
+          });
+        } catch (error) {
+          console.warn("Logo processing failed:", error);
+        }
+      }
+      
       // Header
       pdf.setFontSize(20);
       pdf.setFont("helvetica", "bold");
