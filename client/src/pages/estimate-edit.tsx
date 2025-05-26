@@ -352,6 +352,203 @@ export default function EstimateEdit() {
                   )}
                 />
 
+                {/* Service Line Items Section */}
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-base font-medium">Services & Line Items</CardTitle>
+                    <Button type="button" variant="outline" size="sm" onClick={addServiceLine}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Service
+                    </Button>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {lineItems.length === 0 ? (
+                      <div className="text-center py-6 text-muted-foreground">
+                        <p>No services added yet. Click "Add Service" to start building your estimate.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {/* Column Headers */}
+                        <div className="grid grid-cols-6 gap-1 px-2 py-2 bg-muted/30 rounded-md text-xs font-medium text-muted-foreground">
+                          <div className="col-span-2">Service</div>
+                          <div className="col-span-1 text-center">Qty</div>
+                          <div className="col-span-1 text-center">Rate</div>
+                          <div className="col-span-1 text-center">Total</div>
+                          <div className="col-span-1"></div>
+                        </div>
+                        
+                        {/* Service Line Items */}
+                        {lineItems.map((item, index) => (
+                          <div key={index} className="grid grid-cols-6 gap-1 items-center p-2 border rounded-lg bg-card">
+                            <div className="col-span-2">
+                              <Select
+                                value={item.serviceId}
+                                onValueChange={(value) => updateServiceLine(index, 'serviceId', value)}
+                              >
+                                <SelectTrigger className="h-8 text-xs">
+                                  <SelectValue placeholder="Select..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {Array.isArray(services) && services.map((service: any) => (
+                                    <SelectItem key={service.id} value={service.id.toString()}>
+                                      {service.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="col-span-1">
+                              <Input
+                                type="number"
+                                min="0"
+                                step="0.1"
+                                value={item.quantity}
+                                onChange={(e) => updateServiceLine(index, 'quantity', parseFloat(e.target.value) || 0)}
+                                className="h-8 text-xs text-center"
+                              />
+                            </div>
+                            <div className="col-span-1">
+                              <Input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={item.rate}
+                                onChange={(e) => updateServiceLine(index, 'rate', parseFloat(e.target.value) || 0)}
+                                className="h-8 text-xs text-center"
+                              />
+                            </div>
+                            <div className="col-span-1 text-xs text-center font-medium">
+                              ${item.total.toFixed(2)}
+                            </div>
+                            <div className="col-span-1 flex justify-center">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeServiceLine(index)}
+                                className="h-8 w-8 p-0 text-destructive hover:text-destructive/80"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Totals Section */}
+                    {lineItems.length > 0 && (
+                      <div className="border-t pt-4 space-y-3">
+                        <div className="flex justify-between text-sm">
+                          <span>Subtotal:</span>
+                          <span>${subtotal.toFixed(2)}</span>
+                        </div>
+                        
+                        {/* Tax Rate */}
+                        <div className="flex justify-between items-center text-sm">
+                          <Label htmlFor="taxRate">Tax Rate (%):</Label>
+                          <Input
+                            id="taxRate"
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.1"
+                            value={taxRate}
+                            onChange={(e) => setTaxRate(parseFloat(e.target.value) || 0)}
+                            className="w-20 h-8 text-xs text-center"
+                          />
+                        </div>
+                        
+                        {taxAmount > 0 && (
+                          <div className="flex justify-between text-sm">
+                            <span>Tax:</span>
+                            <span>${taxAmount.toFixed(2)}</span>
+                          </div>
+                        )}
+
+                        {/* Deposit Section */}
+                        <div className="space-y-3 border-t pt-3">
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              id="depositRequired"
+                              checked={depositRequired}
+                              onChange={(e) => setDepositRequired(e.target.checked)}
+                              className="rounded"
+                            />
+                            <Label htmlFor="depositRequired" className="text-sm">Require Deposit</Label>
+                          </div>
+                          
+                          {depositRequired && (
+                            <div className="space-y-2 pl-6">
+                              <div className="flex items-center space-x-4">
+                                <div className="flex items-center space-x-2">
+                                  <input
+                                    type="radio"
+                                    id="percentage"
+                                    name="depositType"
+                                    checked={depositType === 'percentage'}
+                                    onChange={() => setDepositType('percentage')}
+                                  />
+                                  <Label htmlFor="percentage" className="text-sm">Percentage</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <input
+                                    type="radio"
+                                    id="fixed"
+                                    name="depositType"
+                                    checked={depositType === 'fixed'}
+                                    onChange={() => setDepositType('fixed')}
+                                  />
+                                  <Label htmlFor="fixed" className="text-sm">Fixed Amount</Label>
+                                </div>
+                              </div>
+                              
+                              {depositType === 'percentage' ? (
+                                <div className="flex justify-between items-center text-sm">
+                                  <Label htmlFor="depositPercentage">Deposit Percentage (%):</Label>
+                                  <Input
+                                    id="depositPercentage"
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    value={depositPercentage}
+                                    onChange={(e) => setDepositPercentage(parseFloat(e.target.value) || 0)}
+                                    className="w-20 h-8 text-xs text-center"
+                                  />
+                                </div>
+                              ) : (
+                                <div className="flex justify-between items-center text-sm">
+                                  <Label htmlFor="depositAmount">Deposit Amount ($):</Label>
+                                  <Input
+                                    id="depositAmount"
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={depositAmount}
+                                    onChange={(e) => setDepositAmount(parseFloat(e.target.value) || 0)}
+                                    className="w-24 h-8 text-xs text-center"
+                                  />
+                                </div>
+                              )}
+                              
+                              <div className="flex justify-between text-sm text-primary">
+                                <span>Deposit Required:</span>
+                                <span>${finalDepositAmount.toFixed(2)}</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex justify-between text-base font-medium border-t pt-2">
+                          <span>Total:</span>
+                          <span>${total.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
                 <div className="flex space-x-4 pt-6">
                   <Button 
                     type="submit" 
