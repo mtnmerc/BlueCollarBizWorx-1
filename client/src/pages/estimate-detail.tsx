@@ -28,10 +28,14 @@ export default function EstimateDetail() {
 
   // Generate share token mutation
   const generateShareMutation = useMutation({
-    mutationFn: async () => {
-      return apiRequest(`/api/estimates/${estimateId}/share`, {
+    mutationFn: async (): Promise<{ shareToken: string }> => {
+      const response = await fetch(`/api/estimates/${estimateId}/share`, {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
       });
+      return response.json();
     },
     onSuccess: (data) => {
       setShareToken(data.shareToken);

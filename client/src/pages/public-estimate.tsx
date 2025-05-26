@@ -25,10 +25,14 @@ export default function PublicEstimate() {
 
   const respondMutation = useMutation({
     mutationFn: async ({ status, response }: { status: string; response: string }) => {
-      return apiRequest(`/api/public/estimates/${shareToken}/respond`, {
+      const result = await fetch(`/api/public/estimates/${shareToken}/respond`, {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({ status, response }),
       });
+      return result.json();
     },
     onSuccess: () => {
       toast({
