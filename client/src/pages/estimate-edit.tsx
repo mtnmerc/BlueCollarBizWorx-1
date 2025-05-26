@@ -12,9 +12,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, Plus, Trash2 } from "lucide-react";
 import { Link } from "wouter";
 import { useState, useEffect } from "react";
+
+interface ServiceLineItem {
+  serviceId: string;
+  serviceName: string;
+  quantity: number;
+  rate: number;
+  unit: string;
+  total: number;
+}
 
 const estimateSchema = z.object({
   clientId: z.string().min(1, "Client is required"),
@@ -30,6 +39,13 @@ export default function EstimateEdit() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  const [lineItems, setLineItems] = useState<ServiceLineItem[]>([]);
+  const [taxRate, setTaxRate] = useState<number>(0);
+  const [depositRequired, setDepositRequired] = useState<boolean>(false);
+  const [depositType, setDepositType] = useState<'fixed' | 'percentage'>('percentage');
+  const [depositAmount, setDepositAmount] = useState<number>(0);
+  const [depositPercentage, setDepositPercentage] = useState<number>(25);
 
   const { data: estimate, isLoading: estimateLoading } = useQuery({
     queryKey: [`/api/estimates/${estimateId}`],
@@ -38,6 +54,10 @@ export default function EstimateEdit() {
 
   const { data: clients } = useQuery({
     queryKey: ["/api/clients"],
+  });
+
+  const { data: services } = useQuery({
+    queryKey: ["/api/services"],
   });
 
   const form = useForm<z.infer<typeof estimateSchema>>({
@@ -61,14 +81,32 @@ export default function EstimateEdit() {
         validUntil: estimate.validUntil ? new Date(estimate.validUntil).toISOString().split('T')[0] : "",
         status: estimate.status || "draft",
       });
+      
+      // Restore line items
+      if (estimate.lineItems && Array.isArray(estimate.lineItems)) {
+        const restoredLineItems = estimate.lineItems.map((item: any) => ({
+          serviceId: item.serviceId || "",
+          serviceName: item.description || "",
+          quantity: item.quantity || 1,
+          rate: parseFloat(item.rate) || 0,
+          unit: item.unit || "hr",
+          total: parseFloat(item.amount) || 0,
+        }));
+        setLineItems(restoredLineItems);
+      }
+      
+      // Restore tax and deposit information
+      setTaxRate(parseFloat(estimate.taxRate) || 0);
+      setDepositRequired(estimate.depositRequired || false);
+      setDepositType(estimate.depositType || 'percentage');
+      setDepositAmount(parseFloat(estimate.depositAmount) || 0);
+      setDepositPercentage(parseFloat(estimate.depositPercentage) || 25);
     }
   }, [estimate, form]);
 
   const updateEstimateMutation = useMutation({
-    mutationFn: (data: any) => apiRequest(`/api/estimates/${estimateId}`, {
-      method: "PATCH",
-      body: JSON.stringify(data),
-    }),
+    mutationFn: (data: any) => 
+      apiRequest("PATCH", `/api/estimates/${estimateId}`, data),
     onSuccess: () => {
       toast({
         title: "Success",
@@ -87,13 +125,74 @@ export default function EstimateEdit() {
     },
   });
 
+  // Calculate totals
+  const subtotal = lineItems.reduce((sum, item) => sum + item.total, 0);
+  const taxAmount = subtotal * (taxRate / 100);
+  const finalDepositAmount = depositRequired ? 
+    (depositType === 'percentage' ? subtotal * (depositPercentage / 100) : depositAmount) : 0;
+  const total = subtotal + taxAmount;
+
+  // Service line item functions
+  const addServiceLine = () => {
+    setLineItems([...lineItems, {
+      serviceId: "",
+      serviceName: "",
+      quantity: 1,
+      rate: 0,
+      unit: "hr",
+      total: 0,
+    }]);
+  };
+
+  const updateServiceLine = (index: number, field: string, value: any) => {
+    const updatedItems = [...lineItems];
+    if (field === 'serviceId') {
+      const service = services?.find((s: any) => s.id.toString() === value);
+      if (service) {
+        updatedItems[index].serviceId = value;
+        updatedItems[index].serviceName = service.name;
+        updatedItems[index].rate = parseFloat(service.rate) || 0;
+        updatedItems[index].unit = service.unit || "hr";
+      }
+    } else {
+      updatedItems[index][field] = value;
+    }
+    
+    if (field === 'quantity' || field === 'rate' || field === 'serviceId') {
+      updatedItems[index].total = updatedItems[index].quantity * updatedItems[index].rate;
+    }
+    
+    setLineItems(updatedItems);
+  };
+
+  const removeServiceLine = (index: number) => {
+    setLineItems(lineItems.filter((_, i) => i !== index));
+  };
+
   const onSubmit = (values: z.infer<typeof estimateSchema>) => {
+    const lineItemsData = lineItems.map(item => ({
+      description: item.serviceName,
+      quantity: item.quantity,
+      rate: item.rate.toString(),
+      amount: item.total.toString(),
+      unit: item.unit,
+    }));
+
     updateEstimateMutation.mutate({
       clientId: parseInt(values.clientId),
       title: values.title,
       description: values.description,
       validUntil: new Date(values.validUntil).toISOString(),
       status: values.status,
+      lineItems: lineItemsData,
+      subtotal: subtotal.toFixed(2),
+      taxRate: taxRate.toString(),
+      taxAmount: taxAmount.toFixed(2),
+      total: total.toFixed(2),
+      depositRequired,
+      depositType,
+      depositAmount: finalDepositAmount.toFixed(2),
+      depositPercentage: depositPercentage.toString(),
     });
   };
 
