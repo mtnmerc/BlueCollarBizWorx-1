@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { FileText, Check, X, MessageSquare, Building2, Calendar, RotateCcw, PenTool } from "lucide-react";
+import { FileText, Check, X, MessageSquare, Building2, Calendar, RotateCcw, PenTool, User } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -262,14 +262,34 @@ export default function PublicEstimate() {
               <p className="text-muted-foreground mb-4">{estimate.description}</p>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="font-medium">Client:</span> {client?.name}
+            {/* Client Information */}
+            <div className="bg-muted/30 rounded-lg p-4 mb-4">
+              <h4 className="font-medium mb-3 flex items-center">
+                <User className="h-4 w-4 text-primary mr-2" />
+                Client Information
+              </h4>
+              <div className="space-y-2 text-sm">
+                <div className="font-medium text-foreground">{client?.name}</div>
+                {client?.email && (
+                  <div className="text-muted-foreground">{client.email}</div>
+                )}
+                {client?.phone && (
+                  <div className="text-muted-foreground">{client.phone}</div>
+                )}
+                {client?.address && (
+                  <div className="text-muted-foreground">{client.address}</div>
+                )}
               </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4">
               {estimate.validUntil && (
-                <div>
-                  <span className="font-medium">Valid Until:</span>{" "}
-                  {new Date(estimate.validUntil).toLocaleDateString()}
+                <div className="flex items-center text-sm">
+                  <Calendar className="h-4 w-4 text-primary mr-2" />
+                  <span className="text-muted-foreground">Valid until:</span>
+                  <span className="ml-1">
+                    {new Date(estimate.validUntil).toLocaleDateString()}
+                  </span>
                 </div>
               )}
             </div>

@@ -140,14 +140,34 @@ export default function InvoiceDetail() {
               <p className="text-muted-foreground mb-4">{invoice.description}</p>
             )}
             
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center text-sm">
+            {/* Client Information */}
+            <div className="bg-muted/30 rounded-lg p-4 mb-4">
+              <h4 className="font-medium mb-3 flex items-center">
                 <User className="h-4 w-4 text-primary mr-2" />
-                <span className="text-muted-foreground">Client:</span>
-                <span className="ml-1 font-medium">
-                  {clients?.find((c: any) => c.id === invoice.clientId)?.name || `Client #${invoice.clientId}`}
-                </span>
-              </div>
+                Client Information
+              </h4>
+              {(() => {
+                const client = clients?.find((c: any) => c.id === invoice.clientId);
+                return client ? (
+                  <div className="space-y-2 text-sm">
+                    <div className="font-medium text-foreground">{client.name}</div>
+                    {client.email && (
+                      <div className="text-muted-foreground">{client.email}</div>
+                    )}
+                    {client.phone && (
+                      <div className="text-muted-foreground">{client.phone}</div>
+                    )}
+                    {client.address && (
+                      <div className="text-muted-foreground">{client.address}</div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-muted-foreground">Client #{invoice.clientId}</div>
+                );
+              })()}
+            </div>
+
+            <div className="grid grid-cols-1 gap-4">
               {invoice.dueDate && (
                 <div className="flex items-center text-sm">
                   <Calendar className="h-4 w-4 text-primary mr-2" />
