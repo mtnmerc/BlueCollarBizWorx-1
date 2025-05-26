@@ -58,11 +58,16 @@ export default function Login() {
   const businessMutation = useMutation({
     mutationFn: isRegister ? authApi.registerBusiness : authApi.loginBusiness,
     onSuccess: (data) => {
-      if (isRegister || data.user) {
-        // Auto-login admin user after registration or if admin user returned
+      if (isRegister) {
+        // New business registration - redirect to setup
+        queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+        window.location.href = "/business-setup";
+      } else if (data.user) {
+        // Existing business with admin user already created
         queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
         window.location.href = "/";
       } else {
+        // Existing business but no admin user yet - go to PIN login
         setStep("user");
       }
       toast({
