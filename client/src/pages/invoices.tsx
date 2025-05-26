@@ -16,6 +16,16 @@ export default function Invoices() {
     queryKey: ["/api/invoices"],
   });
 
+  const { data: clients } = useQuery({
+    queryKey: ["/api/clients"],
+  });
+
+  // Helper function to get client name by ID
+  const getClientName = (clientId: number) => {
+    const client = clients?.find((c: any) => c.id === clientId);
+    return client?.name || "Unknown Client";
+  };
+
   const formatCurrency = (amount: string | number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -40,8 +50,9 @@ export default function Invoices() {
   };
 
   const filteredInvoices = invoices?.filter((invoice: any) => {
+    const clientName = getClientName(invoice.clientId);
     const matchesSearch = invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         invoice.client?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+                         clientName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || invoice.status === statusFilter;
     return matchesSearch && matchesStatus;
   }) || [];
@@ -117,7 +128,7 @@ export default function Invoices() {
                     <div>
                       <h3 className="font-semibold text-foreground">{invoice.invoiceNumber}</h3>
                       <p className="text-sm text-muted-foreground">
-                        {invoice.client?.name || "Unknown Client"}
+                        {getClientName(invoice.clientId)}
                       </p>
                     </div>
                     <div className="text-right">
