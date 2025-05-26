@@ -30,6 +30,7 @@ import EstimateEdit from "@/pages/estimate-edit";
 import InvoiceDetail from "@/pages/invoice-detail";
 import InvoiceEdit from "@/pages/invoice-edit";
 import BusinessSettings from "@/pages/business-settings";
+import PublicEstimate from "@/pages/public-estimate";
 import TimeClock from "@/pages/time-clock";
 import NotFound from "@/pages/not-found";
 
@@ -61,6 +62,7 @@ function AuthenticatedApp() {
           <Route path="/team/new" component={TeamNew} />
           <Route path="/business/settings" component={BusinessSettings} />
           <Route path="/time-clock" component={TimeClock} />
+          <Route path="/public/estimate/:shareToken" component={PublicEstimate} />
           <Route component={NotFound} />
         </Switch>
       </main>

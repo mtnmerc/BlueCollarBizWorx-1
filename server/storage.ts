@@ -49,7 +49,9 @@ export interface IStorage {
   createEstimate(estimate: InsertEstimate): Promise<Estimate>;
   getEstimatesByBusiness(businessId: number): Promise<Estimate[]>;
   getEstimateById(id: number): Promise<Estimate | undefined>;
+  getEstimateByShareToken(shareToken: string): Promise<Estimate | undefined>;
   updateEstimate(id: number, estimate: Partial<InsertEstimate>): Promise<Estimate>;
+  generateShareToken(estimateId: number): Promise<string>;
 
   // Invoice methods
   createInvoice(invoice: InsertInvoice): Promise<Invoice>;
@@ -267,6 +269,20 @@ export class DatabaseStorage implements IStorage {
       .where(eq(estimates.id, id))
       .returning();
     return updatedEstimate;
+  }
+
+  async getEstimateByShareToken(shareToken: string): Promise<Estimate | undefined> {
+    const [estimate] = await db.select().from(estimates).where(eq(estimates.shareToken, shareToken));
+    return estimate || undefined;
+  }
+
+  async generateShareToken(estimateId: number): Promise<string> {
+    const shareToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    await db
+      .update(estimates)
+      .set({ shareToken })
+      .where(eq(estimates.id, estimateId));
+    return shareToken;
   }
 
   // Invoice methods

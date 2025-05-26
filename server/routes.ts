@@ -481,6 +481,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Generate share token for estimate
+  app.post("/api/estimates/:id/share", authenticateSession, async (req, res) => {
+    try {
+      const estimateId = parseInt(req.params.id);
+      const estimate = await storage.getEstimateById(estimateId);
+      if (!estimate || estimate.businessId !== req.session.businessId) {
+        return res.status(404).json({ error: "Estimate not found" });
+      }
+      
+      const shareToken = await storage.generateShareToken(estimateId);
+      res.json({ shareToken });
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Public estimate view (no authentication required)
+  app.get("/api/public/estimates/:shareToken", async (req, res) => {
+    try {
+      const { shareToken } = req.params;
+      const estimate = await storage.getEstimateByShareToken(shareToken);
+      
+      if (!estimate) {
+        return res.status(404).json({ error: "Estimate not found" });
+      }
+
+      // Get related business and client data
+      const business = await storage.getBusinessById(estimate.businessId);
+      const client = await storage.getClientById(estimate.clientId);
+
+      res.json({ estimate, business, client });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Client response to estimate (no authentication required)
+  app.post("/api/public/estimates/:shareToken/respond", async (req, res) => {
+    try {
+      const { shareToken } = req.params;
+      const { status, response } = req.body;
+      
+      const estimate = await storage.getEstimateByShareToken(shareToken);
+      if (!estimate) {
+        return res.status(404).json({ error: "Estimate not found" });
+      }
+
+      const updatedEstimate = await storage.updateEstimate(estimate.id, {
+        status,
+        clientResponse: response,
+        clientRespondedAt: new Date(),
+      });
+
+      res.json(updatedEstimate);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
   // Time tracking
   app.post("/api/time/clock-in", authenticateSession, async (req, res) => {
     try {
