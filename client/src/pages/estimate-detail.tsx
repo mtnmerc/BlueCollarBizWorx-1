@@ -35,6 +35,9 @@ export default function EstimateDetail() {
           "Content-Type": "application/json",
         },
       });
+      if (!response.ok) {
+        throw new Error("Failed to generate share token");
+      }
       return response.json();
     },
     onSuccess: (data) => {
