@@ -20,6 +20,10 @@ export default function EstimateDetail() {
     queryKey: ["/api/clients"],
   });
 
+  const { data: authData } = useQuery({
+    queryKey: ["/api/auth/me"],
+  });
+
   if (isLoading) {
     return (
       <div className="pt-16 pb-20 px-4">

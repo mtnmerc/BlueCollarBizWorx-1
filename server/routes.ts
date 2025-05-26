@@ -133,6 +133,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Business settings endpoints
+  app.patch("/api/business/settings", authenticateSession, async (req, res) => {
+    try {
+      const business = await storage.getBusinessById(req.session.businessId);
+      if (!business) {
+        return res.status(404).json({ error: "Business not found" });
+      }
+      
+      const updatedBusiness = await storage.updateBusiness(req.session.businessId, req.body);
+      res.json(updatedBusiness);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/business/logo", authenticateSession, async (req, res) => {
+    try {
+      const business = await storage.getBusinessById(req.session.businessId);
+      if (!business) {
+        return res.status(404).json({ error: "Business not found" });
+      }
+      
+      const updatedBusiness = await storage.updateBusiness(req.session.businessId, { logo: req.body.logo });
+      res.json(updatedBusiness);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
   // Dashboard stats
   app.get("/api/dashboard/stats", authenticateSession, async (req, res) => {
     try {

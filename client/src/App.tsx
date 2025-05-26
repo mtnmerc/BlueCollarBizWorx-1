@@ -29,6 +29,7 @@ import EstimateDetail from "@/pages/estimate-detail";
 import EstimateEdit from "@/pages/estimate-edit";
 import InvoiceDetail from "@/pages/invoice-detail";
 import InvoiceEdit from "@/pages/invoice-edit";
+import BusinessSettings from "@/pages/business-settings";
 import TimeClock from "@/pages/time-clock";
 import NotFound from "@/pages/not-found";
 
@@ -58,6 +59,7 @@ function AuthenticatedApp() {
           <Route path="/services/:id/edit" component={ServiceEdit} />
           <Route path="/team" component={Team} />
           <Route path="/team/new" component={TeamNew} />
+          <Route path="/business/settings" component={BusinessSettings} />
           <Route path="/time-clock" component={TimeClock} />
           <Route component={NotFound} />
         </Switch>
