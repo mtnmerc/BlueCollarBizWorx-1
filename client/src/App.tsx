@@ -28,6 +28,7 @@ import Estimates from "@/pages/estimates";
 import EstimateDetail from "@/pages/estimate-detail";
 import EstimateEdit from "@/pages/estimate-edit";
 import InvoiceDetail from "@/pages/invoice-detail";
+import InvoiceEdit from "@/pages/invoice-edit";
 import TimeClock from "@/pages/time-clock";
 import NotFound from "@/pages/not-found";
 
@@ -47,6 +48,7 @@ function AuthenticatedApp() {
           <Route path="/estimates/:id" component={EstimateDetail} />
           <Route path="/estimates/:id/edit" component={EstimateEdit} />
           <Route path="/invoices/:id" component={InvoiceDetail} />
+          <Route path="/invoices/:id/edit" component={InvoiceEdit} />
           <Route path="/clients" component={Clients} />
           <Route path="/clients/new" component={ClientNew} />
           <Route path="/clients/:id" component={ClientDetail} />
