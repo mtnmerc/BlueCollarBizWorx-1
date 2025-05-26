@@ -424,7 +424,7 @@ Thank you for your business!`;
                   </div>
                   <div className="flex justify-between text-muted-foreground text-sm">
                     <span>Remaining Balance:</span>
-                    <span>${(total - depositAmount).toFixed(2)}</span>
+                    <span>${total.toFixed(2)}</span>
                   </div>
                 </>
               )}
