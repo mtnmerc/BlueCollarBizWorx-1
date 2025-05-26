@@ -1,15 +1,21 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRoute } from "wouter";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Edit, FileText, DollarSign, Calendar, User } from "lucide-react";
+import { ArrowLeft, Edit, FileText, DollarSign, Calendar, User, Mail, Copy } from "lucide-react";
 import { Link } from "wouter";
 
 export default function EstimateDetail() {
   const [match, params] = useRoute("/estimates/:id");
   const estimateId = params?.id;
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [shareToken, setShareToken] = useState<string | null>(null);
 
   const { data: estimate, isLoading } = useQuery({
     queryKey: [`/api/estimates/${estimateId}`],
@@ -19,6 +25,92 @@ export default function EstimateDetail() {
   const { data: clients } = useQuery({
     queryKey: ["/api/clients"],
   });
+
+  // Generate share token mutation
+  const generateShareMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest(`/api/estimates/${estimateId}/share`, {
+        method: "POST",
+      });
+    },
+    onSuccess: (data) => {
+      setShareToken(data.shareToken);
+      toast({
+        title: "Share Link Generated",
+        description: "You can now send this estimate to your client.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to generate share link. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSendEstimate = async () => {
+    let token = shareToken;
+    
+    if (!token) {
+      try {
+        const response = await generateShareMutation.mutateAsync();
+        token = response.shareToken;
+        setShareToken(token);
+      } catch (error) {
+        return;
+      }
+    }
+
+    const client = clients?.find((c: any) => c.id === estimate?.clientId);
+    if (!client?.email) {
+      toast({
+        title: "No Client Email",
+        description: "This client doesn't have an email address on file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const shareUrl = `${window.location.origin}/public/estimate/${token}`;
+    const subject = `Estimate: ${estimate?.title || estimate?.estimateNumber}`;
+    const body = `Hello ${client.name},
+
+Please review the attached estimate for your project.
+
+You can view and respond to this estimate online at:
+${shareUrl}
+
+This estimate is valid until ${estimate?.validUntil ? new Date(estimate.validUntil).toLocaleDateString() : 'further notice'}.
+
+Thank you for your business!
+
+Best regards`;
+
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(client.email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.open(gmailUrl, '_blank');
+  };
+
+  const copyShareLink = async () => {
+    let token = shareToken;
+    
+    if (!token) {
+      try {
+        const response = await generateShareMutation.mutateAsync();
+        token = response.shareToken;
+        setShareToken(token);
+      } catch (error) {
+        return;
+      }
+    }
+
+    const shareUrl = `${window.location.origin}/public/estimate/${token}`;
+    await navigator.clipboard.writeText(shareUrl);
+    toast({
+      title: "Link Copied",
+      description: "Share link has been copied to clipboard.",
+    });
+  };
 
   const { data: authData } = useQuery({
     queryKey: ["/api/auth/me"],
@@ -85,6 +177,24 @@ export default function EstimateDetail() {
           <h1 className="text-2xl font-bold text-foreground">Estimate Details</h1>
         </div>
         <div className="flex space-x-2">
+          <Button 
+            onClick={handleSendEstimate}
+            className="bg-green-600 hover:bg-green-700" 
+            size="sm"
+            disabled={generateShareMutation.isPending}
+          >
+            <Mail className="h-4 w-4 mr-2" />
+            {generateShareMutation.isPending ? "Generating..." : "Send Estimate"}
+          </Button>
+          <Button 
+            onClick={copyShareLink}
+            variant="outline" 
+            size="sm"
+            disabled={generateShareMutation.isPending}
+          >
+            <Copy className="h-4 w-4 mr-2" />
+            Copy Link
+          </Button>
           <Link href={`/estimates/${estimate.id}/edit`}>
             <Button variant="outline" size="sm">
               <Edit className="h-4 w-4 mr-2" />
