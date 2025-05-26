@@ -697,6 +697,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Mark deposit as collected manually (cash/check)
+  app.post("/api/invoices/:id/mark-deposit-collected", authenticateSession, async (req, res) => {
+    try {
+      const invoiceId = parseInt(req.params.id);
+      const businessId = req.session.businessId;
+
+      const invoice = await storage.getInvoiceById(invoiceId);
+      if (!invoice || invoice.businessId !== businessId) {
+        return res.status(404).json({ error: "Invoice not found" });
+      }
+
+      if (!invoice.depositRequired || !invoice.depositAmount) {
+        return res.status(400).json({ error: "No deposit required for this invoice" });
+      }
+
+      if (invoice.depositPaid) {
+        return res.status(400).json({ error: "Deposit already collected" });
+      }
+
+      // Mark deposit as paid
+      await storage.updateInvoice(invoiceId, {
+        depositPaid: true,
+        depositPaidAt: new Date().toISOString(),
+      });
+
+      res.json({ 
+        success: true, 
+        message: "Deposit marked as collected successfully"
+      });
+    } catch (error: any) {
+      console.error("Mark deposit collected error:", error);
+      res.status(500).json({ error: "Failed to mark deposit as collected" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

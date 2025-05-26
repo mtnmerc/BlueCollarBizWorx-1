@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Edit, FileText, DollarSign, Calendar, User, CreditCard } from "lucide-react";
+import { ArrowLeft, Edit, FileText, DollarSign, Calendar, User, CreditCard, CheckCircle } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -45,6 +45,27 @@ export default function InvoiceDetail() {
       toast({
         title: "Error",
         description: error.message || "Failed to create payment link",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const markDepositCollectedMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", `/api/invoices/${invoiceId}/mark-deposit-collected`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Deposit Marked as Collected",
+        description: "The deposit has been successfully recorded as collected.",
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/${invoiceId}`] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to mark deposit as collected",
         variant: "destructive",
       });
     },
@@ -265,7 +286,7 @@ export default function InvoiceDetail() {
                 </div>
 
                 {!invoice.depositPaid && (
-                  <div className="pt-4 border-t">
+                  <div className="pt-4 border-t space-y-3">
                     <Button 
                       onClick={() => collectDepositMutation.mutate()}
                       disabled={collectDepositMutation.isPending}
@@ -276,12 +297,40 @@ export default function InvoiceDetail() {
                       ) : (
                         <>
                           <CreditCard className="h-4 w-4 mr-2" />
-                          Collect Deposit
+                          Create Payment Link
                         </>
                       )}
                     </Button>
-                    <p className="text-xs text-muted-foreground mt-2 text-center">
+                    <p className="text-xs text-muted-foreground text-center">
                       Creates a secure payment link for the client
+                    </p>
+                    
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-background px-2 text-muted-foreground">Or</span>
+                      </div>
+                    </div>
+                    
+                    <Button 
+                      onClick={() => markDepositCollectedMutation.mutate()}
+                      disabled={markDepositCollectedMutation.isPending}
+                      variant="outline"
+                      className="w-full"
+                    >
+                      {markDepositCollectedMutation.isPending ? (
+                        "Marking as Collected..."
+                      ) : (
+                        <>
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Mark as Collected (Cash/Check)
+                        </>
+                      )}
+                    </Button>
+                    <p className="text-xs text-muted-foreground text-center">
+                      For payments received by cash or check
                     </p>
                   </div>
                 )}
