@@ -128,13 +128,21 @@ export default function EstimateNew() {
       return;
     }
 
-    // Calculate deposit amount
+    // Calculate deposit amount and settings
     let depositAmount = 0;
+    let depositRequired = false;
+    let depositType = "fixed";
+    let depositPercentage = null;
+
     if (values.depositType === "fixed" && values.depositValue) {
+      depositRequired = true;
+      depositType = "fixed";
       depositAmount = parseFloat(values.depositValue);
     } else if (values.depositType === "percentage" && values.depositValue) {
-      const percentage = parseFloat(values.depositValue);
-      depositAmount = (totalAmount * percentage) / 100;
+      depositRequired = true;
+      depositType = "percentage";
+      depositPercentage = parseFloat(values.depositValue);
+      depositAmount = (totalAmount * depositPercentage) / 100;
     }
 
     createEstimateMutation.mutate({
@@ -149,7 +157,10 @@ export default function EstimateNew() {
       })),
       subtotal: totalAmount.toString(),
       total: totalAmount.toString(),
+      depositRequired,
+      depositType,
       depositAmount: depositAmount > 0 ? depositAmount.toString() : undefined,
+      depositPercentage: depositPercentage ? depositPercentage.toString() : undefined,
       validUntil: new Date(values.validUntil).toISOString(),
       status: "draft",
     });

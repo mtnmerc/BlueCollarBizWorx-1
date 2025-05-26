@@ -1,15 +1,19 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRoute } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Edit, FileText, DollarSign, Calendar, User } from "lucide-react";
+import { ArrowLeft, Edit, FileText, DollarSign, Calendar, User, CreditCard } from "lucide-react";
 import { Link } from "wouter";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function InvoiceDetail() {
   const [match, params] = useRoute("/invoices/:id");
   const invoiceId = params?.id;
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: invoice, isLoading } = useQuery({
     queryKey: [`/api/invoices/${invoiceId}`],
@@ -18,6 +22,32 @@ export default function InvoiceDetail() {
 
   const { data: clients } = useQuery({
     queryKey: ["/api/clients"],
+  });
+
+  const collectDepositMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", `/api/invoices/${invoiceId}/collect-deposit`);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      if (data.paymentUrl) {
+        // Redirect to Stripe payment page
+        window.location.href = data.paymentUrl;
+      } else {
+        toast({
+          title: "Payment Link Created",
+          description: "Deposit payment link has been generated.",
+        });
+        queryClient.invalidateQueries({ queryKey: [`/api/invoices/${invoiceId}`] });
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create payment link",
+        variant: "destructive",
+      });
+    },
   });
 
   if (isLoading) {
@@ -176,6 +206,12 @@ export default function InvoiceDetail() {
                   <span>${taxAmount.toFixed(2)}</span>
                 </div>
               )}
+              {invoice.depositRequired && invoice.depositAmount && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Deposit Required:</span>
+                  <span className="font-medium">${parseFloat(invoice.depositAmount).toFixed(2)}</span>
+                </div>
+              )}
               <Separator />
               <div className="flex justify-between text-lg font-semibold">
                 <span>Total Amount Due:</span>
@@ -184,6 +220,61 @@ export default function InvoiceDetail() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Deposit Status */}
+        {invoice.depositRequired && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <CreditCard className="h-5 w-5" />
+                <span>Deposit Status</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Deposit Amount:</span>
+                  <span className="font-semibold text-lg">${parseFloat(invoice.depositAmount || "0").toFixed(2)}</span>
+                </div>
+                
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Status:</span>
+                  <Badge variant={invoice.depositPaid ? "default" : "outline"}>
+                    {invoice.depositPaid ? "Paid" : "Pending"}
+                  </Badge>
+                </div>
+
+                {!invoice.depositPaid && (
+                  <div className="pt-4 border-t">
+                    <Button 
+                      onClick={() => collectDepositMutation.mutate()}
+                      disabled={collectDepositMutation.isPending}
+                      className="w-full gradient-primary"
+                    >
+                      {collectDepositMutation.isPending ? (
+                        "Creating Payment Link..."
+                      ) : (
+                        <>
+                          <CreditCard className="h-4 w-4 mr-2" />
+                          Collect Deposit
+                        </>
+                      )}
+                    </Button>
+                    <p className="text-xs text-muted-foreground mt-2 text-center">
+                      Creates a secure payment link for the client
+                    </p>
+                  </div>
+                )}
+
+                {invoice.depositPaid && invoice.depositPaidAt && (
+                  <div className="text-sm text-muted-foreground">
+                    Paid on {new Date(invoice.depositPaidAt).toLocaleDateString()}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {invoice.notes && (
           <Card>

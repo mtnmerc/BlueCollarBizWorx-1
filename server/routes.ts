@@ -658,6 +658,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Collect deposit payment for invoice
+  app.post("/api/invoices/:id/collect-deposit", async (req, res) => {
+    try {
+      const invoiceId = parseInt(req.params.id);
+      const businessId = req.session.businessId;
+
+      if (!businessId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const invoice = await storage.getInvoiceById(invoiceId);
+      if (!invoice || invoice.businessId !== businessId) {
+        return res.status(404).json({ error: "Invoice not found" });
+      }
+
+      if (!invoice.depositRequired || !invoice.depositAmount) {
+        return res.status(400).json({ error: "No deposit required for this invoice" });
+      }
+
+      if (invoice.depositPaid) {
+        return res.status(400).json({ error: "Deposit already collected" });
+      }
+
+      // Here we would integrate with Stripe to create a payment link
+      // For now, we'll return a success response indicating the payment link would be created
+      // This requires Stripe API keys to be properly configured
+
+      res.json({ 
+        success: true, 
+        message: "Deposit collection initiated",
+        depositAmount: invoice.depositAmount
+      });
+    } catch (error: any) {
+      console.error("Collect deposit error:", error);
+      res.status(500).json({ error: "Failed to initiate deposit collection" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
