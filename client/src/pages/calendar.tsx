@@ -257,29 +257,44 @@ export default function Calendar() {
                   <div
                     key={index}
                     className={cn(
-                      "min-h-[120px] p-2 border border-border/50 rounded-md",
+                      "aspect-square p-2 border border-border/50 rounded-md cursor-pointer",
                       !isCurrentMonth && "opacity-40 bg-muted/20",
                       isToday && "ring-2 ring-primary",
-                      "hover:bg-accent/50 transition-colors"
+                      "hover:bg-accent/50 transition-colors relative"
                     )}
+                    onClick={() => {
+                      if (dayJobs.length > 0) {
+                        // TODO: Show day detail modal/page
+                        console.log(`View jobs for ${day.toDateString()}:`, dayJobs);
+                      }
+                    }}
                   >
                     <div className={cn(
-                      "text-sm font-medium mb-2",
+                      "text-sm font-medium mb-1",
                       isToday && "text-primary font-bold"
                     )}>
                       {day.getDate()}
                     </div>
                     
-                    <div className="space-y-1">
-                      {dayJobs.slice(0, 3).map((job: any) => (
-                        <JobCard key={job.id} job={job} />
-                      ))}
-                      {dayJobs.length > 3 && (
-                        <div className="text-xs text-muted-foreground text-center py-1">
-                          +{dayJobs.length - 3} more
-                        </div>
-                      )}
-                    </div>
+                    {/* Job indicators */}
+                    {dayJobs.length > 0 && (
+                      <div className="space-y-1">
+                        {dayJobs.length === 1 ? (
+                          <div className="text-xs px-1 py-0.5 rounded bg-primary/20 text-primary font-medium truncate">
+                            {dayJobs[0].title}
+                          </div>
+                        ) : (
+                          <div className="text-xs px-1 py-0.5 rounded bg-primary text-primary-foreground font-medium text-center">
+                            {dayJobs.length} jobs
+                          </div>
+                        )}
+                        
+                        {/* Priority indicators */}
+                        {dayJobs.some((job: any) => job.priority === 'urgent') && (
+                          <div className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })}
