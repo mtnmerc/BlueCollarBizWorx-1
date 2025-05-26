@@ -59,9 +59,7 @@ export default function EstimateDetail() {
   // Convert to Invoice mutation
   const convertToInvoiceMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest(`/api/estimates/${estimateId}/convert-to-invoice`, {
-        method: "POST"
-      });
+      const response = await apiRequest(`/api/estimates/${estimateId}/convert-to-invoice`, "POST");
       return response;
     },
     onSuccess: (invoice) => {
@@ -302,8 +300,13 @@ Thank you for your business!`;
               </Button>
             </Link>
             {estimate.status === "approved" && (
-              <Button className="bg-primary hover:bg-primary/90" size="sm">
-                Convert to Invoice
+              <Button 
+                className="bg-primary hover:bg-primary/90" 
+                size="sm"
+                onClick={() => convertToInvoiceMutation.mutate()}
+                disabled={convertToInvoiceMutation.isPending}
+              >
+                {convertToInvoiceMutation.isPending ? "Converting..." : "Convert to Invoice"}
               </Button>
             )}
           </div>

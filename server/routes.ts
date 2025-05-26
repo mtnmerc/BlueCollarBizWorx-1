@@ -517,6 +517,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Convert estimate to invoice
+  app.post("/api/estimates/:id/convert-to-invoice", async (req, res) => {
+    try {
+      const estimateId = parseInt(req.params.id);
+      const businessId = req.session.businessId;
+
+      if (!businessId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      // Get the estimate first
+      const estimate = await storage.getEstimateById(estimateId);
+      if (!estimate) {
+        return res.status(404).json({ error: "Estimate not found" });
+      }
+
+      if (estimate.businessId !== businessId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      if (estimate.status !== "approved") {
+        return res.status(400).json({ error: "Only approved estimates can be converted to invoices" });
+      }
+
+      // Create invoice from estimate
+      const invoice = await storage.convertEstimateToInvoice(estimateId);
+      res.json(invoice);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Client response to estimate (no authentication required)
   app.post("/api/public/estimates/:shareToken/respond", async (req, res) => {
     try {

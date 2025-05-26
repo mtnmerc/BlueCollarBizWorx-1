@@ -52,6 +52,7 @@ export interface IStorage {
   getEstimateByShareToken(shareToken: string): Promise<Estimate | undefined>;
   updateEstimate(id: number, estimate: Partial<InsertEstimate>): Promise<Estimate>;
   generateShareToken(estimateId: number): Promise<string>;
+  convertEstimateToInvoice(estimateId: number): Promise<Invoice>;
 
   // Invoice methods
   createInvoice(invoice: InsertInvoice): Promise<Invoice>;
@@ -283,6 +284,47 @@ export class DatabaseStorage implements IStorage {
       .set({ shareToken })
       .where(eq(estimates.id, estimateId));
     return shareToken;
+  }
+
+  async convertEstimateToInvoice(estimateId: number): Promise<Invoice> {
+    // Get the estimate
+    const estimate = await this.getEstimateById(estimateId);
+    if (!estimate) {
+      throw new Error("Estimate not found");
+    }
+
+    // Generate invoice number
+    const invoiceCount = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(invoices)
+      .where(eq(invoices.businessId, estimate.businessId));
+    
+    const count = invoiceCount[0]?.count || 0;
+    const invoiceNumber = `INV-${new Date().toISOString().slice(2, 10).replace(/-/g, '')}${String.fromCharCode(65 + (count % 26))}`;
+
+    // Calculate due date (30 days from now)
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 30);
+
+    // Create invoice from estimate data
+    const invoiceData: InsertInvoice = {
+      businessId: estimate.businessId,
+      clientId: estimate.clientId,
+      invoiceNumber,
+      title: estimate.title,
+      description: estimate.description,
+      lineItems: estimate.lineItems,
+      subtotal: estimate.subtotal,
+      taxRate: estimate.taxRate,
+      taxAmount: estimate.taxAmount,
+      total: estimate.total,
+      status: "draft",
+      dueDate,
+      notes: estimate.notes
+    };
+
+    const invoice = await this.createInvoice(invoiceData);
+    return invoice;
   }
 
   // Invoice methods
