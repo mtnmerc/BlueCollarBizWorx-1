@@ -32,6 +32,7 @@ import InvoiceEdit from "@/pages/invoice-edit";
 import BusinessSettings from "@/pages/business-settings";
 import PublicEstimate from "@/pages/public-estimate";
 import TimeClock from "@/pages/time-clock";
+import Calendar from "@/pages/calendar";
 import NotFound from "@/pages/not-found";
 
 function AuthenticatedApp() {
@@ -43,6 +44,7 @@ function AuthenticatedApp() {
           <Route path="/" component={Dashboard} />
           <Route path="/jobs" component={Jobs} />
           <Route path="/jobs/new" component={JobNew} />
+          <Route path="/calendar" component={Calendar} />
           <Route path="/invoices" component={Invoices} />
           <Route path="/invoices/new" component={InvoiceNew} />
           <Route path="/estimates" component={Estimates} />

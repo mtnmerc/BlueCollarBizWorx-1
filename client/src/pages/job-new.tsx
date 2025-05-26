@@ -90,7 +90,7 @@ export default function JobNew() {
   }, [invoice, fromInvoiceId, form]);
 
   const createJobMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("/api/jobs", "POST", data),
+    mutationFn: (data: any) => apiRequest("POST", "/api/jobs", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
       toast({
