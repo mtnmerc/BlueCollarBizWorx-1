@@ -193,9 +193,17 @@ export class DatabaseStorage implements IStorage {
 
   // Job methods
   async createJob(insertJob: InsertJob): Promise<Job> {
+    // Convert date strings to Date objects if needed
+    const jobData = {
+      ...insertJob,
+      scheduledStart: insertJob.scheduledStart ? new Date(insertJob.scheduledStart) : null,
+      scheduledEnd: insertJob.scheduledEnd ? new Date(insertJob.scheduledEnd) : null,
+      recurringEndDate: insertJob.recurringEndDate ? new Date(insertJob.recurringEndDate) : null,
+    };
+    
     const [job] = await db
       .insert(jobs)
-      .values(insertJob)
+      .values(jobData)
       .returning();
     return job;
   }
