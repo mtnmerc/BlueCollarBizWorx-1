@@ -213,12 +213,140 @@ export default function JobNew() {
 
                 <FormField
                   control={form.control}
-                  name="scheduledDate"
+                  name="assignedUserId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Scheduled Date</FormLabel>
+                      <FormLabel>Assign Team Member</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select team member (optional)" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {(teamMembers as any)?.map((member: any) => (
+                            <SelectItem key={member.id} value={member.id.toString()}>
+                              {member.firstName} {member.lastName} ({member.username})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Job Address</FormLabel>
                       <FormControl>
-                        <Input type="datetime-local" {...field} />
+                        <Input placeholder="123 Main St, City, State" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="scheduledDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Scheduled Date</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="startTime"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Start Time</FormLabel>
+                        <FormControl>
+                          <Input type="time" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="endTime"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>End Time</FormLabel>
+                        <FormControl>
+                          <Input type="time" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="estimatedAmount"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Estimated Amount</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            step="0.01"
+                            placeholder="500.00" 
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="priority"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Priority</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select priority" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="low">Low</SelectItem>
+                            <SelectItem value="normal">Normal</SelectItem>
+                            <SelectItem value="high">High</SelectItem>
+                            <SelectItem value="urgent">Urgent</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="jobType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Job Type (Optional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Maintenance, Installation, Repair" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -227,14 +355,14 @@ export default function JobNew() {
 
                 <FormField
                   control={form.control}
-                  name="estimatedHours"
+                  name="notes"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Estimated Hours</FormLabel>
+                      <FormLabel>Notes (Optional)</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number" 
-                          placeholder="4" 
+                        <Textarea 
+                          placeholder="Additional notes for this job..."
+                          className="min-h-[80px]"
                           {...field} 
                         />
                       </FormControl>
@@ -242,6 +370,73 @@ export default function JobNew() {
                     </FormItem>
                   )}
                 />
+
+                {/* Recurring Job Options */}
+                <div className="border rounded-lg p-4 space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="recurring"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">Recurring Job</FormLabel>
+                          <div className="text-sm text-muted-foreground">
+                            Schedule this job to repeat automatically
+                          </div>
+                        </div>
+                        <FormControl>
+                          <input
+                            type="checkbox"
+                            checked={field.value}
+                            onChange={field.onChange}
+                            className="h-4 w-4"
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  {form.watch("recurring") && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="recurringFrequency"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Frequency</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select frequency" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="weekly">Weekly</SelectItem>
+                                <SelectItem value="monthly">Monthly</SelectItem>
+                                <SelectItem value="quarterly">Quarterly</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="recurringEndDate"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>End Date (Optional)</FormLabel>
+                            <FormControl>
+                              <Input type="date" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  )}
+                </div>
 
                 <div className="flex space-x-3">
                   <Button 
