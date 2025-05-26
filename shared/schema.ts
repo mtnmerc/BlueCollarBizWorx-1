@@ -88,6 +88,9 @@ export const estimates = pgTable("estimates", {
   status: text("status").notNull().default("draft"), // draft, sent, approved, rejected, converted
   validUntil: timestamp("valid_until"),
   clientSignature: text("client_signature"), // base64 image
+  shareToken: text("share_token").unique(), // unique token for public sharing
+  clientResponse: text("client_response"), // client's response message
+  clientRespondedAt: timestamp("client_responded_at"),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
 });
