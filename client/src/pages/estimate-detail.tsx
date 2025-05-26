@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Edit, FileText, DollarSign, Calendar, User, Mail, Copy } from "lucide-react";
+import { ArrowLeft, Edit, FileText, DollarSign, Calendar, User, Mail, Copy, Share, MessageSquare } from "lucide-react";
 import { Link } from "wouter";
 
 export default function EstimateDetail() {
@@ -81,21 +81,76 @@ export default function EstimateDetail() {
 
     const shareUrl = `${window.location.origin}/public/estimate/${token}`;
     const subject = `Estimate: ${estimate?.title || estimate?.estimateNumber}`;
-    const body = `Hello ${client.name},
+    const messageText = `Hello ${client.name},
 
-Please review the attached estimate for your project.
+Please review your estimate for: ${estimate?.title}
 
-You can view and respond to this estimate online at:
-${shareUrl}
+View and respond online: ${shareUrl}
 
-This estimate is valid until ${estimate?.validUntil ? new Date(estimate.validUntil).toLocaleDateString() : 'further notice'}.
+Valid until: ${estimate?.validUntil ? new Date(estimate.validUntil).toLocaleDateString() : 'further notice'}
 
-Thank you for your business!
+Thank you for your business!`;
 
-Best regards`;
+    // Try native share API first (works on mobile)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: subject,
+          text: messageText,
+          url: shareUrl,
+        });
+        toast({
+          title: "Shared Successfully",
+          description: "Estimate shared via your preferred app.",
+        });
+        return;
+      } catch (error) {
+        // User cancelled sharing, continue to fallback
+      }
+    }
 
-    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(client.email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.open(gmailUrl, '_blank');
+    // Fallback to copying link and showing instructions
+    await navigator.clipboard.writeText(shareUrl);
+    toast({
+      title: "Link Copied!",
+      description: "Share link copied. You can now send it via email, text, or any messaging app.",
+      duration: 5000,
+    });
+  };
+
+  const handleSendSMS = async () => {
+    let token = shareToken;
+    
+    if (!token) {
+      try {
+        const response = await generateShareMutation.mutateAsync();
+        token = response.shareToken;
+        setShareToken(token);
+      } catch (error) {
+        return;
+      }
+    }
+
+    const client = clients?.find((c: any) => c.id === estimate?.clientId);
+    if (!client?.phone) {
+      toast({
+        title: "No Client Phone",
+        description: "This client doesn't have a phone number on file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const shareUrl = `${window.location.origin}/public/estimate/${token}`;
+    const messageText = `Hi ${client.name}, please review your estimate for ${estimate?.title}: ${shareUrl}`;
+
+    const smsUrl = `sms:${client.phone}?body=${encodeURIComponent(messageText)}`;
+    window.location.href = smsUrl;
+    
+    toast({
+      title: "SMS App Opened",
+      description: "Your SMS app should open with the estimate link ready to send.",
+    });
   };
 
   const copyShareLink = async () => {
@@ -183,36 +238,48 @@ Best regards`;
           </Link>
           <h1 className="text-2xl font-bold text-foreground">Estimate Details</h1>
         </div>
-        <div className="flex space-x-2">
-          <Button 
-            onClick={handleSendEstimate}
-            className="bg-green-600 hover:bg-green-700" 
-            size="sm"
-            disabled={generateShareMutation.isPending}
-          >
-            <Mail className="h-4 w-4 mr-2" />
-            {generateShareMutation.isPending ? "Generating..." : "Send Estimate"}
-          </Button>
-          <Button 
-            onClick={copyShareLink}
-            variant="outline" 
-            size="sm"
-            disabled={generateShareMutation.isPending}
-          >
-            <Copy className="h-4 w-4 mr-2" />
-            Copy Link
-          </Button>
-          <Link href={`/estimates/${estimate.id}/edit`}>
-            <Button variant="outline" size="sm">
-              <Edit className="h-4 w-4 mr-2" />
-              Edit
+        <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
+          <div className="flex space-x-2">
+            <Button 
+              onClick={handleSendEstimate}
+              className="bg-green-600 hover:bg-green-700" 
+              size="sm"
+              disabled={generateShareMutation.isPending}
+            >
+              <Share className="h-4 w-4 mr-2" />
+              {generateShareMutation.isPending ? "Generating..." : "Share"}
             </Button>
-          </Link>
-          {estimate.status === "approved" && (
-            <Button className="bg-primary hover:bg-primary/90" size="sm">
-              Convert to Invoice
+            <Button 
+              onClick={handleSendSMS}
+              variant="outline" 
+              size="sm"
+              disabled={generateShareMutation.isPending}
+            >
+              <MessageSquare className="h-4 w-4 mr-2" />
+              SMS
             </Button>
-          )}
+            <Button 
+              onClick={copyShareLink}
+              variant="outline" 
+              size="sm"
+              disabled={generateShareMutation.isPending}
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="flex space-x-2">
+            <Link href={`/estimates/${estimate.id}/edit`}>
+              <Button variant="outline" size="sm">
+                <Edit className="h-4 w-4 mr-2" />
+                Edit
+              </Button>
+            </Link>
+            {estimate.status === "approved" && (
+              <Button className="bg-primary hover:bg-primary/90" size="sm">
+                Convert to Invoice
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
