@@ -56,6 +56,33 @@ export default function EstimateDetail() {
     },
   });
 
+  // Convert to Invoice mutation
+  const convertToInvoiceMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest(`/api/estimates/${estimateId}/convert-to-invoice`, {
+        method: "POST"
+      });
+      return response;
+    },
+    onSuccess: (invoice) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/estimates/${estimateId}`] });
+      toast({
+        title: "Success!",
+        description: `Estimate converted to Invoice #${invoice.invoiceNumber}`,
+      });
+      // Navigate to the new invoice
+      window.location.href = `/invoices/${invoice.id}`;
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to convert estimate to invoice",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSendEstimate = async () => {
     let token = shareToken;
     
@@ -389,6 +416,44 @@ Thank you for your business!`;
             </div>
           </CardContent>
         </Card>
+
+        {/* Client Response and Signature */}
+        {(estimate.clientResponse || estimate.clientSignature) && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Client Response</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {estimate.clientResponse && (
+                <div>
+                  <h4 className="font-medium mb-2">Response:</h4>
+                  <p className="text-muted-foreground bg-muted p-3 rounded-lg">
+                    {estimate.clientResponse}
+                  </p>
+                </div>
+              )}
+              
+              {estimate.clientSignature && (
+                <div>
+                  <h4 className="font-medium mb-2">Digital Signature:</h4>
+                  <div className="border rounded-lg p-3 bg-muted max-w-md">
+                    <img 
+                      src={estimate.clientSignature} 
+                      alt="Client Digital Signature" 
+                      className="w-full h-20 object-contain"
+                    />
+                  </div>
+                </div>
+              )}
+              
+              {estimate.clientRespondedAt && (
+                <p className="text-sm text-muted-foreground">
+                  Response received: {new Date(estimate.clientRespondedAt).toLocaleString()}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {estimate.notes && (
           <Card>
