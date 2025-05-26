@@ -429,10 +429,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log("Estimate creation request body:", JSON.stringify(req.body, null, 2));
       
-      // Generate estimate number
+      // Generate unique estimate number
       const now = new Date();
       const dateStr = now.toISOString().slice(2, 10).replace(/-/g, '');
-      const estimateNumber = `EST-${dateStr}A`; // TODO: Handle multiple estimates per day
+      const timeStr = now.getHours().toString().padStart(2, '0') + now.getMinutes().toString().padStart(2, '0');
+      const estimateNumber = `EST-${dateStr}-${timeStr}`;
 
       const requestData = {
         ...req.body,
