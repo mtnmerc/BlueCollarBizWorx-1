@@ -109,14 +109,25 @@ export default function JobNew() {
   });
 
   const onSubmit = (values: z.infer<typeof jobSchema>) => {
-    createJobMutation.mutate({
+    const submitData = {
       clientId: parseInt(values.clientId),
+      assignedUserId: values.assignedUserId ? parseInt(values.assignedUserId) : null,
       title: values.title,
       description: values.description,
-      scheduledDate: values.scheduledDate,
-      estimatedHours: parseInt(values.estimatedHours),
+      address: values.address,
+      scheduledStart: new Date(`${values.scheduledDate}T${values.startTime}`).toISOString(),
+      scheduledEnd: new Date(`${values.scheduledDate}T${values.endTime}`).toISOString(),
+      estimatedAmount: parseFloat(values.estimatedAmount),
+      priority: values.priority,
+      jobType: values.jobType,
+      notes: values.notes,
+      isRecurring: values.recurring || false,
+      recurringFrequency: values.recurring ? values.recurringFrequency : null,
+      recurringEndDate: values.recurringEndDate ? new Date(values.recurringEndDate).toISOString() : null,
       status: "scheduled",
-    });
+    };
+
+    createJobMutation.mutate(submitData);
   };
 
   return (

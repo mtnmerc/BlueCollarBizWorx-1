@@ -65,9 +65,16 @@ export const jobs = pgTable("jobs", {
   scheduledStart: timestamp("scheduled_start"),
   scheduledEnd: timestamp("scheduled_end"),
   status: text("status").notNull().default("scheduled"), // scheduled, in_progress, completed, cancelled
+  priority: text("priority").notNull().default("normal"), // low, normal, high, urgent
+  jobType: text("job_type"), // For job templates/categories
   estimatedAmount: decimal("estimated_amount", { precision: 10, scale: 2 }),
   actualAmount: decimal("actual_amount", { precision: 10, scale: 2 }),
   notes: text("notes"),
+  // Recurring job fields
+  isRecurring: boolean("is_recurring").default(false),
+  recurringFrequency: text("recurring_frequency"), // weekly, monthly, quarterly
+  recurringEndDate: timestamp("recurring_end_date"),
+  parentJobId: integer("parent_job_id").references(() => jobs.id), // For recurring job instances
   createdAt: timestamp("created_at").defaultNow(),
 });
 
