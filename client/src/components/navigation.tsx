@@ -57,6 +57,11 @@ export function TopNavigation() {
           <Button variant="ghost" size="sm" className="p-2">
             <Bell className="h-5 w-5 text-muted-foreground" />
           </Button>
+          <Link href="/business/settings">
+            <Button variant="ghost" size="sm" className="p-2">
+              <Settings className="h-5 w-5 text-muted-foreground" />
+            </Button>
+          </Link>
           <Button variant="ghost" size="sm" className="p-2" onClick={handleLogout}>
             <LogOut className="h-5 w-5 text-muted-foreground" />
           </Button>
