@@ -335,37 +335,23 @@ export default function InvoiceDetail() {
                   </div>
                 )}
 
-                {(invoice as any).depositPaid && (invoice as any).depositPaidAt && (
-                  <div className="space-y-3">
-                    <div className="text-sm text-muted-foreground">
-                      Paid on {new Date((invoice as any).depositPaidAt).toLocaleDateString()}
+                {/* Show Schedule Job button for invoices with deposits or always for testing */}
+                <div className="space-y-3 mt-4">
+                  {(invoice as any).depositPaid && (invoice as any).depositPaidAt && (
+                    <div className="text-sm text-muted-foreground mb-2">
+                      Deposit paid on {new Date((invoice as any).depositPaidAt).toLocaleDateString()}
                     </div>
-                    <Link href={`/jobs/new?fromInvoice=${(invoice as any).id}`}>
-                      <Button className="w-full gradient-primary">
-                        <Calendar className="h-4 w-4 mr-2" />
-                        Schedule Job
-                      </Button>
-                    </Link>
-                    <p className="text-xs text-muted-foreground text-center">
-                      Create a job schedule for this work
-                    </p>
-                  </div>
-                )}
-
-                {/* Always show Schedule Job button for testing - remove this later */}
-                {!(invoice as any).depositPaid && (
-                  <div className="space-y-3 mt-4">
-                    <Link href={`/jobs/new?fromInvoice=${(invoice as any).id}`}>
-                      <Button className="w-full btn-accent">
-                        <Calendar className="h-4 w-4 mr-2" />
-                        Schedule Job (Test)
-                      </Button>
-                    </Link>
-                    <p className="text-xs text-muted-foreground text-center">
-                      Create a job schedule for this work
-                    </p>
-                  </div>
-                )}
+                  )}
+                  <Link href={`/jobs/new?fromInvoice=${(invoice as any).id}`}>
+                    <Button className="w-full gradient-primary">
+                      <Calendar className="h-4 w-4 mr-2" />
+                      Schedule Job
+                    </Button>
+                  </Link>
+                  <p className="text-xs text-muted-foreground text-center">
+                    Create a job schedule for this work
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>

@@ -322,11 +322,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/jobs", authenticateSession, async (req, res) => {
     try {
-      const data = insertJobSchema.parse({
-        ...req.body,
+      const jobData = {
         businessId: req.session.businessId,
-      });
-      const job = await storage.createJob(data);
+        clientId: req.body.clientId,
+        assignedUserId: req.body.assignedUserId || null,
+        title: req.body.title,
+        description: req.body.description,
+        address: req.body.address || null,
+        scheduledStart: req.body.scheduledStart ? new Date(req.body.scheduledStart) : null,
+        scheduledEnd: req.body.scheduledEnd ? new Date(req.body.scheduledEnd) : null,
+        status: req.body.status || "scheduled",
+        priority: req.body.priority || "normal",
+        jobType: req.body.jobType || null,
+        estimatedAmount: req.body.estimatedAmount ? String(req.body.estimatedAmount) : null,
+        notes: req.body.notes || null,
+        isRecurring: req.body.isRecurring || false,
+        recurringFrequency: req.body.recurringFrequency || null,
+        recurringEndDate: req.body.recurringEndDate ? new Date(req.body.recurringEndDate) : null,
+      };
+      
+      const job = await storage.createJob(jobData);
       res.json(job);
     } catch (error) {
       res.status(400).json({ error: error.message });
