@@ -84,7 +84,10 @@ export const estimates = pgTable("estimates", {
   taxRate: decimal("tax_rate", { precision: 5, scale: 2 }).default("0"),
   taxAmount: decimal("tax_amount", { precision: 10, scale: 2 }).default("0"),
   total: decimal("total", { precision: 10, scale: 2 }).notNull(),
+  depositRequired: boolean("deposit_required").default(false),
+  depositType: text("deposit_type").default("fixed"), // fixed, percentage
   depositAmount: decimal("deposit_amount", { precision: 10, scale: 2 }),
+  depositPercentage: decimal("deposit_percentage", { precision: 5, scale: 2 }),
   status: text("status").notNull().default("draft"), // draft, sent, approved, rejected, converted
   validUntil: timestamp("valid_until"),
   clientSignature: text("client_signature"), // base64 image
@@ -110,6 +113,11 @@ export const invoices = pgTable("invoices", {
   taxRate: decimal("tax_rate", { precision: 5, scale: 2 }).default("0"),
   taxAmount: decimal("tax_amount", { precision: 10, scale: 2 }).default("0"),
   total: decimal("total", { precision: 10, scale: 2 }).notNull(),
+  depositRequired: boolean("deposit_required").default(false),
+  depositType: text("deposit_type").default("fixed"), // fixed, percentage
+  depositAmount: decimal("deposit_amount", { precision: 10, scale: 2 }),
+  depositPercentage: decimal("deposit_percentage", { precision: 5, scale: 2 }),
+  depositPaid: decimal("deposit_paid", { precision: 10, scale: 2 }).default("0"),
   amountPaid: decimal("amount_paid", { precision: 10, scale: 2 }).default("0"),
   status: text("status").notNull().default("draft"), // draft, sent, paid, overdue, cancelled
   paymentMethod: text("payment_method"), // cash, check, zelle, paypal, etc.

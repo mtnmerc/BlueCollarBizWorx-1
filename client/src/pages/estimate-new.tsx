@@ -330,6 +330,78 @@ export default function EstimateNew() {
                   </CardContent>
                 </Card>
 
+                {/* Deposit Configuration */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base font-medium">Deposit Options</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="depositType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Deposit Requirement</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select deposit type" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="none">No Deposit Required</SelectItem>
+                              <SelectItem value="fixed">Fixed Amount</SelectItem>
+                              <SelectItem value="percentage">Percentage of Total</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {form.watch("depositType") !== "none" && (
+                      <FormField
+                        control={form.control}
+                        name="depositValue"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>
+                              {form.watch("depositType") === "fixed" ? "Deposit Amount ($)" : "Deposit Percentage (%)"}
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                step={form.watch("depositType") === "fixed" ? "0.01" : "1"}
+                                min="0"
+                                max={form.watch("depositType") === "percentage" ? "100" : undefined}
+                                placeholder={form.watch("depositType") === "fixed" ? "0.00" : "0"}
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+
+                    {form.watch("depositType") !== "none" && form.watch("depositValue") && totalAmount > 0 && (
+                      <div className="p-3 bg-muted/30 rounded-lg">
+                        <div className="text-sm font-medium text-muted-foreground">Calculated Deposit</div>
+                        <div className="text-lg font-bold text-primary">
+                          ${(() => {
+                            const depositValue = parseFloat(form.watch("depositValue") || "0");
+                            if (form.watch("depositType") === "fixed") {
+                              return depositValue.toFixed(2);
+                            } else {
+                              return ((totalAmount * depositValue) / 100).toFixed(2);
+                            }
+                          })()}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
                 <FormField
                   control={form.control}
                   name="validUntil"

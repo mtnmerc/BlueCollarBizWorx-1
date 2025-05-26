@@ -318,6 +318,10 @@ export class DatabaseStorage implements IStorage {
       taxRate: estimate.taxRate,
       taxAmount: estimate.taxAmount,
       total: estimate.total,
+      depositRequired: estimate.depositRequired,
+      depositType: estimate.depositType,
+      depositAmount: estimate.depositAmount,
+      depositPercentage: estimate.depositPercentage,
       status: "draft",
       dueDate
     };
