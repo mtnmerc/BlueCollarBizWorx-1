@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { FileText, Check, X, MessageSquare, Building2, Calendar } from "lucide-react";
+import { FileText, Check, X, MessageSquare, Building2, Calendar, RotateCcw, PenTool } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +16,10 @@ export default function PublicEstimate() {
   const [response, setResponse] = useState("");
   const [showResponseForm, setShowResponseForm] = useState(false);
   const [selectedAction, setSelectedAction] = useState<"approved" | "rejected" | null>(null);
+  const [showSignaturePad, setShowSignaturePad] = useState(false);
+  const [signature, setSignature] = useState<string | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: [`/api/public/estimates/${shareToken}`],
@@ -23,14 +27,93 @@ export default function PublicEstimate() {
     enabled: !!shareToken,
   });
 
+  // Signature canvas setup
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Set canvas size
+    canvas.width = canvas.offsetWidth;
+    canvas.height = 200;
+
+    // Set drawing style
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+  }, [showSignaturePad]);
+
+  // Drawing functions
+  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+    setIsDrawing(true);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = 'touches' in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
+    const y = 'touches' in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
+
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+    }
+  };
+
+  const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    if (!isDrawing) return;
+    e.preventDefault();
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = 'touches' in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
+    const y = 'touches' in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
+
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.lineTo(x, y);
+      ctx.stroke();
+    }
+  };
+
+  const stopDrawing = () => {
+    setIsDrawing(false);
+  };
+
+  const clearSignature = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+    setSignature(null);
+  };
+
+  const saveSignature = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const signatureData = canvas.toDataURL();
+    setSignature(signatureData);
+    setShowSignaturePad(false);
+  };
+
   const respondMutation = useMutation({
-    mutationFn: async ({ status, response }: { status: string; response: string }) => {
+    mutationFn: async ({ status, response, signature }: { status: string; response: string; signature?: string }) => {
       const result = await fetch(`/api/public/estimates/${shareToken}/respond`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ status, response }),
+        body: JSON.stringify({ status, response, signature }),
       });
       return result.json();
     },
@@ -59,7 +142,30 @@ export default function PublicEstimate() {
 
   const submitResponse = () => {
     if (!selectedAction) return;
-    respondMutation.mutate({ status: selectedAction, response });
+    
+    if (selectedAction === "rejected" && !response.trim()) {
+      toast({
+        title: "Response Required",
+        description: "Please provide feedback when rejecting an estimate.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (selectedAction === "approved" && !signature) {
+      toast({
+        title: "Signature Required",
+        description: "Please provide your signature to approve this estimate.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    respondMutation.mutate({
+      status: selectedAction,
+      response: response,
+      signature: signature || undefined,
+    });
   };
 
   if (isLoading) {
@@ -272,6 +378,63 @@ export default function PublicEstimate() {
                 className="mb-4"
                 rows={4}
               />
+
+              {/* Signature Section for Approvals */}
+              {selectedAction === "approved" && (
+                <div className="mb-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-semibold flex items-center">
+                      <PenTool className="h-4 w-4 mr-2" />
+                      Digital Signature
+                    </h4>
+                    {signature && (
+                      <Badge className="bg-green-600">
+                        <Check className="h-3 w-3 mr-1" />
+                        Signed
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  {!signature ? (
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        Your signature is required to approve this estimate.
+                      </p>
+                      <Button
+                        onClick={() => setShowSignaturePad(true)}
+                        variant="outline"
+                        className="w-full"
+                      >
+                        <PenTool className="h-4 w-4 mr-2" />
+                        Add Signature
+                      </Button>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="border rounded-lg p-2 bg-muted">
+                        <img 
+                          src={signature} 
+                          alt="Client Signature" 
+                          className="w-full h-20 object-contain"
+                        />
+                      </div>
+                      <Button
+                        onClick={() => {
+                          setSignature(null);
+                          setShowSignaturePad(true);
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="mt-2"
+                      >
+                        <RotateCcw className="h-3 w-3 mr-1" />
+                        Re-sign
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="flex gap-4">
                 <Button 
                   onClick={submitResponse}
@@ -293,6 +456,56 @@ export default function PublicEstimate() {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* Signature Pad Modal */}
+        {showSignaturePad && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <Card className="w-full max-w-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <PenTool className="h-5 w-5 mr-2" />
+                  Sign to Approve Estimate
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="mb-4">
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Please sign below to approve this estimate. Use your finger or stylus on mobile devices.
+                  </p>
+                  <div className="border-2 border-dashed border-muted-foreground rounded-lg">
+                    <canvas
+                      ref={canvasRef}
+                      className="w-full h-48 cursor-crosshair touch-none"
+                      onMouseDown={startDrawing}
+                      onMouseMove={draw}
+                      onMouseUp={stopDrawing}
+                      onMouseLeave={stopDrawing}
+                      onTouchStart={startDrawing}
+                      onTouchMove={draw}
+                      onTouchEnd={stopDrawing}
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={saveSignature} className="flex-1 bg-green-600 hover:bg-green-700">
+                    <Check className="h-4 w-4 mr-2" />
+                    Save Signature
+                  </Button>
+                  <Button onClick={clearSignature} variant="outline">
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Clear
+                  </Button>
+                  <Button 
+                    onClick={() => setShowSignaturePad(false)} 
+                    variant="outline"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {/* Client Response Display */}
