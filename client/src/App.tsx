@@ -62,7 +62,6 @@ function AuthenticatedApp() {
           <Route path="/team/new" component={TeamNew} />
           <Route path="/business/settings" component={BusinessSettings} />
           <Route path="/time-clock" component={TimeClock} />
-          <Route path="/estimate/:shareToken" component={PublicEstimate} />
           <Route component={NotFound} />
         </Switch>
       </main>
@@ -77,6 +76,7 @@ function Router() {
     <Switch>
       <Route path="/login" component={Login} />
       <Route path="/setup" component={BusinessSetupComplete} />
+      <Route path="/estimate/:shareToken" component={PublicEstimate} />
       <Route>
         <AuthGuard fallback={<Login />}>
           <AuthenticatedApp />
