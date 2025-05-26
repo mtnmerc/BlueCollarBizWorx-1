@@ -79,7 +79,7 @@ export default function EstimateDetail() {
       return;
     }
 
-    const shareUrl = `${window.location.origin}/public/estimate/${token}`;
+    const shareUrl = `${window.location.origin}/estimate/${token}`;
     const subject = `Estimate: ${estimate?.title || estimate?.estimateNumber}`;
     const messageText = `Hello ${client.name},
 
@@ -141,7 +141,7 @@ Thank you for your business!`;
       return;
     }
 
-    const shareUrl = `${window.location.origin}/public/estimate/${token}`;
+    const shareUrl = `${window.location.origin}/estimate/${token}`;
     const messageText = `Hi ${client.name}, please review your estimate for ${estimate?.title}: ${shareUrl}`;
 
     const smsUrl = `sms:${client.phone}?body=${encodeURIComponent(messageText)}`;
@@ -166,7 +166,7 @@ Thank you for your business!`;
       }
     }
 
-    const shareUrl = `${window.location.origin}/public/estimate/${token}`;
+    const shareUrl = `${window.location.origin}/estimate/${token}`;
     await navigator.clipboard.writeText(shareUrl);
     toast({
       title: "Link Copied",

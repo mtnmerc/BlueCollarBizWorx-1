@@ -62,7 +62,7 @@ function AuthenticatedApp() {
           <Route path="/team/new" component={TeamNew} />
           <Route path="/business/settings" component={BusinessSettings} />
           <Route path="/time-clock" component={TimeClock} />
-          <Route path="/public/estimate/:shareToken" component={PublicEstimate} />
+          <Route path="/estimate/:shareToken" component={PublicEstimate} />
           <Route component={NotFound} />
         </Switch>
       </main>
