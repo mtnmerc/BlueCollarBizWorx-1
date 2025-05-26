@@ -91,11 +91,11 @@ export default function Dashboard() {
       href: "/jobs/new",
     },
     {
-      title: "Time Clock",
-      description: "Clock in/out",
-      icon: Clock,
-      color: "bg-orange-500",
-      href: "/time-clock",
+      title: "View Calendar",
+      description: "See scheduled jobs",
+      icon: Calendar,
+      color: "bg-green-600",
+      href: "/calendar",
     },
   ];
 
