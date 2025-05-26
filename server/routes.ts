@@ -521,7 +521,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/public/estimates/:shareToken/respond", async (req, res) => {
     try {
       const { shareToken } = req.params;
-      const { status, response } = req.body;
+      const { status, response, signature } = req.body;
       
       const estimate = await storage.getEstimateByShareToken(shareToken);
       if (!estimate) {
@@ -531,6 +531,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedEstimate = await storage.updateEstimate(estimate.id, {
         status,
         clientResponse: response,
+        clientSignature: signature || null,
         clientRespondedAt: new Date(),
       });
 
