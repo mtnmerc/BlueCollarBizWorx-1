@@ -1,10 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRoute } from "wouter";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Edit, FileText, DollarSign, Calendar, User, CreditCard, CheckCircle } from "lucide-react";
+import { ArrowLeft, Edit, FileText, DollarSign, Calendar, User, CreditCard, CheckCircle, Mail, Copy, Share } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -14,6 +15,7 @@ export default function InvoiceDetail() {
   const invoiceId = params?.id;
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [isEmailSent, setIsEmailSent] = useState(false);
 
   const { data: invoice, isLoading } = useQuery({
     queryKey: [`/api/invoices/${invoiceId}`],
@@ -66,6 +68,35 @@ export default function InvoiceDetail() {
       toast({
         title: "Error",
         description: error.message || "Failed to mark deposit as collected",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const sendEmailMutation = useMutation({
+    mutationFn: async (): Promise<{ success: boolean }> => {
+      const response = await fetch(`/api/invoices/${invoiceId}/send-email`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      if (!response.ok) {
+        throw new Error("Failed to send email");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      setIsEmailSent(true);
+      toast({
+        title: "Invoice Sent!",
+        description: "The invoice has been sent to your client via email.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Email Failed",
+        description: "Failed to send invoice. Please try again.",
         variant: "destructive",
       });
     },
@@ -135,8 +166,25 @@ export default function InvoiceDetail() {
             </Button>
           </Link>
           {invoice.status === "draft" && (
-            <Button className="bg-primary hover:bg-primary/90" size="sm">
-              Send Invoice
+            <Button 
+              className="bg-primary hover:bg-primary/90" 
+              size="sm"
+              onClick={() => sendEmailMutation.mutate()}
+              disabled={sendEmailMutation.isPending || isEmailSent}
+            >
+              <Mail className="h-4 w-4 mr-2" />
+              {sendEmailMutation.isPending ? "Sending..." : isEmailSent ? "Email Sent" : "Send Invoice"}
+            </Button>
+          )}
+          {invoice.status === "sent" && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => sendEmailMutation.mutate()}
+              disabled={sendEmailMutation.isPending}
+            >
+              <Share className="h-4 w-4 mr-2" />
+              {sendEmailMutation.isPending ? "Sending..." : "Resend Invoice"}
             </Button>
           )}
         </div>
