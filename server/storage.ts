@@ -313,7 +313,7 @@ export class DatabaseStorage implements IStorage {
       invoiceNumber,
       title: estimate.title,
       description: estimate.description,
-      lineItems: estimate.lineItems,
+      lineItems: estimate.lineItems as any,
       subtotal: estimate.subtotal,
       taxRate: estimate.taxRate,
       taxAmount: estimate.taxAmount,

@@ -59,7 +59,7 @@ export default function EstimateDetail() {
   // Convert to Invoice mutation
   const convertToInvoiceMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest(`/api/estimates/${estimateId}/convert-to-invoice`, "POST");
+      const response = await apiRequest(`/api/estimates/${estimateId}/convert-to-invoice`, "POST", {});
       return response;
     },
     onSuccess: (invoice) => {
