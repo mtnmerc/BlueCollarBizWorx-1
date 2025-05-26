@@ -122,13 +122,40 @@ export default function BusinessSettings() {
 
     setIsUploading(true);
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const base64 = e.target?.result as string;
-      setLogoPreview(base64);
-      uploadLogoMutation.mutate(base64);
+    // Create a canvas to compress the image
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    
+    img.onload = () => {
+      // Calculate new dimensions (max 800px width/height)
+      const maxSize = 800;
+      let { width, height } = img;
+      
+      if (width > height) {
+        if (width > maxSize) {
+          height = (height * maxSize) / width;
+          width = maxSize;
+        }
+      } else {
+        if (height > maxSize) {
+          width = (width * maxSize) / height;
+          height = maxSize;
+        }
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      
+      // Draw and compress
+      ctx?.drawImage(img, 0, 0, width, height);
+      const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
+      
+      setLogoPreview(compressedBase64);
+      uploadLogoMutation.mutate(compressedBase64);
     };
-    reader.readAsDataURL(file);
+    
+    img.src = URL.createObjectURL(file);
   };
 
   const removeLogo = () => {
