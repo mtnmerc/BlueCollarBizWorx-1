@@ -336,8 +336,19 @@ export default function InvoiceDetail() {
                 )}
 
                 {invoice.depositPaid && invoice.depositPaidAt && (
-                  <div className="text-sm text-muted-foreground">
-                    Paid on {new Date(invoice.depositPaidAt).toLocaleDateString()}
+                  <div className="space-y-3">
+                    <div className="text-sm text-muted-foreground">
+                      Paid on {new Date(invoice.depositPaidAt).toLocaleDateString()}
+                    </div>
+                    <Link href={`/jobs/new?fromInvoice=${invoice.id}`}>
+                      <Button className="w-full gradient-primary">
+                        <Calendar className="h-4 w-4 mr-2" />
+                        Schedule Job
+                      </Button>
+                    </Link>
+                    <p className="text-xs text-muted-foreground text-center">
+                      Create a job schedule for this work
+                    </p>
                   </div>
                 )}
               </div>

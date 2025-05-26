@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,30 +16,78 @@ import { Link } from "wouter";
 
 const jobSchema = z.object({
   clientId: z.string().min(1, "Client is required"),
+  assignedUserId: z.string().optional(),
   title: z.string().min(1, "Job title is required"),
   description: z.string().min(1, "Description is required"),
+  address: z.string().optional(),
   scheduledDate: z.string().min(1, "Scheduled date is required"),
-  estimatedHours: z.string().min(1, "Estimated hours is required"),
+  startTime: z.string().min(1, "Start time is required"),
+  endTime: z.string().min(1, "End time is required"),
+  estimatedAmount: z.string().min(1, "Estimated amount is required"),
+  priority: z.enum(["low", "normal", "high", "urgent"]),
+  jobType: z.string().optional(),
+  recurring: z.boolean().optional(),
+  recurringFrequency: z.enum(["weekly", "monthly", "quarterly"]).optional(),
+  recurringEndDate: z.string().optional(),
+  notes: z.string().optional(),
 });
 
 export default function JobNew() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Get invoice ID from URL params if coming from invoice
+  const urlParams = new URLSearchParams(window.location.search);
+  const fromInvoiceId = urlParams.get("fromInvoice");
+
   const form = useForm<z.infer<typeof jobSchema>>({
     resolver: zodResolver(jobSchema),
     defaultValues: {
       clientId: "",
+      assignedUserId: "",
       title: "",
       description: "",
+      address: "",
       scheduledDate: "",
-      estimatedHours: "",
+      startTime: "09:00",
+      endTime: "17:00",
+      estimatedAmount: "",
+      priority: "normal",
+      jobType: "",
+      recurring: false,
+      recurringFrequency: "weekly",
+      recurringEndDate: "",
+      notes: "",
     },
   });
 
   const { data: clients } = useQuery({
     queryKey: ["/api/clients"],
   });
+
+  const { data: teamMembers } = useQuery({
+    queryKey: ["/api/team"],
+  });
+
+  // Fetch invoice data if creating job from invoice
+  const { data: invoice } = useQuery({
+    queryKey: [`/api/invoices/${fromInvoiceId}`],
+    enabled: !!fromInvoiceId,
+  });
+
+  // Auto-populate form when invoice data loads
+  useEffect(() => {
+    if (invoice && fromInvoiceId) {
+      form.setValue("clientId", (invoice as any).clientId?.toString() || "");
+      form.setValue("title", (invoice as any).title || "");
+      form.setValue("description", (invoice as any).description || "");
+      form.setValue("estimatedAmount", (invoice as any).total?.toString() || "");
+      // Set default date to tomorrow
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      form.setValue("scheduledDate", tomorrow.toISOString().split('T')[0]);
+    }
+  }, [invoice, fromInvoiceId, form]);
 
   const createJobMutation = useMutation({
     mutationFn: (data: any) => apiRequest("/api/jobs", "POST", data),
