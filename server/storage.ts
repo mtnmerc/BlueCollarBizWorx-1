@@ -319,8 +319,7 @@ export class DatabaseStorage implements IStorage {
       taxAmount: estimate.taxAmount,
       total: estimate.total,
       status: "draft",
-      dueDate,
-      notes: estimate.notes
+      dueDate
     };
 
     const invoice = await this.createInvoice(invoiceData);

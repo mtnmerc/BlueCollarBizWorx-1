@@ -59,8 +59,20 @@ export default function EstimateDetail() {
   // Convert to Invoice mutation
   const convertToInvoiceMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest(`/api/estimates/${estimateId}/convert-to-invoice`, "POST", {});
-      return response;
+      const response = await fetch(`/api/estimates/${estimateId}/convert-to-invoice`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "same-origin",
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to convert estimate to invoice");
+      }
+      
+      return response.json();
     },
     onSuccess: (invoice) => {
       queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
