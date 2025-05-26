@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { 
   Calendar as CalendarIcon, 
   ChevronLeft, 
@@ -34,6 +35,8 @@ const STATUS_COLORS = {
 export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'month' | 'week' | 'day'>('month');
+  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+  const [showDayDetail, setShowDayDetail] = useState(false);
 
   const { data: jobs = [], isLoading } = useQuery({
     queryKey: ["/api/jobs"],
@@ -264,8 +267,8 @@ export default function Calendar() {
                     )}
                     onClick={() => {
                       if (dayJobs.length > 0) {
-                        // TODO: Show day detail modal/page
-                        console.log(`View jobs for ${day.toDateString()}:`, dayJobs);
+                        setSelectedDay(day);
+                        setShowDayDetail(true);
                       }
                     }}
                   >
@@ -362,6 +365,100 @@ export default function Calendar() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Day Detail Modal */}
+      <Dialog open={showDayDetail} onOpenChange={setShowDayDetail}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedDay && selectedDay.toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                month: 'long', 
+                day: 'numeric', 
+                year: 'numeric' 
+              })}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {selectedDay && getJobsForDate(selectedDay).map((job: any) => {
+              const client = clients.find((c: any) => c.id === job.clientId);
+              const assignedUser = team.find((t: any) => t.id === job.assignedUserId);
+              const startTime = job.scheduledStart ? new Date(job.scheduledStart).toLocaleTimeString('en-US', { 
+                hour: 'numeric', 
+                minute: '2-digit',
+                hour12: true 
+              }) : '';
+              const endTime = job.scheduledEnd ? new Date(job.scheduledEnd).toLocaleTimeString('en-US', { 
+                hour: 'numeric', 
+                minute: '2-digit',
+                hour12: true 
+              }) : '';
+
+              return (
+                <Card key={job.id} className="border-border/50">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-semibold text-foreground">{job.title}</h3>
+                      <div className="flex gap-1">
+                        <Badge variant="secondary" className={cn("text-xs", PRIORITY_COLORS[job.priority as keyof typeof PRIORITY_COLORS])}>
+                          {job.priority}
+                        </Badge>
+                        <Badge variant="outline" className={cn("text-xs", STATUS_COLORS[job.status as keyof typeof STATUS_COLORS])}>
+                          {job.status}
+                        </Badge>
+                      </div>
+                    </div>
+                    
+                    {job.description && (
+                      <p className="text-sm text-muted-foreground mb-3">{job.description}</p>
+                    )}
+                    
+                    <div className="space-y-2 text-sm">
+                      {(startTime || endTime) && (
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <span>{startTime}{endTime && ` - ${endTime}`}</span>
+                        </div>
+                      )}
+                      
+                      {client && (
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          <span>{client.name}</span>
+                        </div>
+                      )}
+                      
+                      {assignedUser && (
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-4 w-4">
+                            <AvatarFallback className="text-xs">{assignedUser.firstName?.[0] || assignedUser.username[0]}</AvatarFallback>
+                          </Avatar>
+                          <span>{assignedUser.firstName || assignedUser.username}</span>
+                        </div>
+                      )}
+                      
+                      {job.address && (
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4 text-muted-foreground" />
+                          <span>{job.address}</span>
+                        </div>
+                      )}
+                      
+                      {job.estimatedAmount && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground">Estimated:</span>
+                          <span className="font-medium">${job.estimatedAmount}</span>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
