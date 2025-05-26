@@ -1,13 +1,15 @@
 import { useState, useRef, useEffect } from "react";
 import { useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { FileText, Check, X, MessageSquare, Building2, Calendar, RotateCcw, PenTool, User } from "lucide-react";
+import { FileText, Check, X, MessageSquare, Building2, Calendar, RotateCcw, PenTool, User, Download } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 export default function PublicEstimate() {
   const params = useParams();
@@ -215,6 +217,150 @@ export default function PublicEstimate() {
     }).format(num || 0);
   };
 
+  const downloadPDF = async () => {
+    try {
+      // Create a new PDF document
+      const pdf = new jsPDF();
+      
+      // Set up the PDF layout
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const margin = 20;
+      let yPosition = margin;
+      
+      // Header
+      pdf.setFontSize(20);
+      pdf.setFont("helvetica", "bold");
+      pdf.text(business?.name || "Business Name", margin, yPosition);
+      yPosition += 10;
+      
+      pdf.setFontSize(10);
+      pdf.setFont("helvetica", "normal");
+      if (business?.email) {
+        pdf.text(`Email: ${business.email}`, margin, yPosition);
+        yPosition += 6;
+      }
+      if (business?.phone) {
+        pdf.text(`Phone: ${business.phone}`, margin, yPosition);
+        yPosition += 6;
+      }
+      if (business?.address) {
+        pdf.text(`Address: ${business.address}`, margin, yPosition);
+        yPosition += 6;
+      }
+      
+      yPosition += 10;
+      
+      // Estimate header
+      pdf.setFontSize(16);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("ESTIMATE", margin, yPosition);
+      yPosition += 8;
+      
+      pdf.setFontSize(10);
+      pdf.setFont("helvetica", "normal");
+      pdf.text(`Estimate #: ${estimate.estimateNumber}`, margin, yPosition);
+      yPosition += 6;
+      pdf.text(`Date: ${new Date().toLocaleDateString()}`, margin, yPosition);
+      yPosition += 6;
+      if (estimate.validUntil) {
+        pdf.text(`Valid Until: ${new Date(estimate.validUntil).toLocaleDateString()}`, margin, yPosition);
+        yPosition += 6;
+      }
+      
+      yPosition += 10;
+      
+      // Client information
+      pdf.setFontSize(12);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("Client Information:", margin, yPosition);
+      yPosition += 8;
+      
+      pdf.setFontSize(10);
+      pdf.setFont("helvetica", "normal");
+      if (client?.name) {
+        pdf.text(`Name: ${client.name}`, margin, yPosition);
+        yPosition += 6;
+      }
+      if (client?.email) {
+        pdf.text(`Email: ${client.email}`, margin, yPosition);
+        yPosition += 6;
+      }
+      if (client?.phone) {
+        pdf.text(`Phone: ${client.phone}`, margin, yPosition);
+        yPosition += 6;
+      }
+      if (client?.address) {
+        pdf.text(`Address: ${client.address}`, margin, yPosition);
+        yPosition += 6;
+      }
+      
+      yPosition += 10;
+      
+      // Line items header
+      pdf.setFontSize(12);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("Services & Items:", margin, yPosition);
+      yPosition += 8;
+      
+      // Table header
+      pdf.setFontSize(9);
+      pdf.text("Description", margin, yPosition);
+      pdf.text("Qty", pageWidth - 80, yPosition);
+      pdf.text("Rate", pageWidth - 60, yPosition);
+      pdf.text("Amount", pageWidth - 30, yPosition);
+      yPosition += 6;
+      
+      // Draw line under header
+      pdf.line(margin, yPosition, pageWidth - margin, yPosition);
+      yPosition += 4;
+      
+      // Line items
+      pdf.setFont("helvetica", "normal");
+      lineItems.forEach((item: any) => {
+        pdf.text(item.description || "", margin, yPosition);
+        pdf.text(item.quantity?.toString() || "1", pageWidth - 80, yPosition);
+        pdf.text(formatCurrency(item.rate || 0), pageWidth - 60, yPosition);
+        pdf.text(formatCurrency(item.amount || 0), pageWidth - 30, yPosition);
+        yPosition += 6;
+      });
+      
+      yPosition += 10;
+      
+      // Totals
+      pdf.setFont("helvetica", "bold");
+      pdf.text(`Subtotal: ${formatCurrency(estimate.subtotal)}`, pageWidth - 80, yPosition);
+      yPosition += 6;
+      
+      if (parseFloat(estimate.taxAmount) > 0) {
+        pdf.text(`Tax: ${formatCurrency(estimate.taxAmount)}`, pageWidth - 80, yPosition);
+        yPosition += 6;
+      }
+      
+      if (estimate.depositRequired && estimate.depositAmount) {
+        pdf.text(`Deposit Required: ${formatCurrency(estimate.depositAmount)}`, pageWidth - 80, yPosition);
+        yPosition += 6;
+      }
+      
+      pdf.setFontSize(12);
+      pdf.text(`Total: ${formatCurrency(estimate.total)}`, pageWidth - 80, yPosition);
+      
+      // Save the PDF
+      pdf.save(`${estimate.estimateNumber}.pdf`);
+      
+      toast({
+        title: "PDF Downloaded",
+        description: "The estimate has been downloaded as a PDF file.",
+      });
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast({
+        title: "Download Failed",
+        description: "There was an error generating the PDF. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground py-8 px-4">
       <div className="max-w-4xl mx-auto">
@@ -253,9 +399,20 @@ export default function PublicEstimate() {
                   <p className="text-sm text-muted-foreground">{estimate.estimateNumber}</p>
                 </div>
               </div>
-              <Badge className={`${getStatusColor(estimate.status)} text-white`}>
-                {estimate.status?.toUpperCase()}
-              </Badge>
+              <div className="flex items-center space-x-3">
+                <Button 
+                  onClick={downloadPDF}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center space-x-2"
+                >
+                  <Download className="h-4 w-4" />
+                  <span>Download PDF</span>
+                </Button>
+                <Badge className={`${getStatusColor(estimate.status)} text-white`}>
+                  {estimate.status?.toUpperCase()}
+                </Badge>
+              </div>
             </div>
 
             {estimate.description && (
