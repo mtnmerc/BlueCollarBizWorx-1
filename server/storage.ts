@@ -317,6 +317,10 @@ export class DatabaseStorage implements IStorage {
     dueDate.setDate(dueDate.getDate() + 30);
 
     // Create invoice from estimate data
+    // If deposit was paid on estimate, account for it in the invoice
+    const depositPaidAmount = estimate.depositPaid && estimate.depositAmount ? parseFloat(estimate.depositAmount) : 0;
+    const remainingTotal = parseFloat(estimate.total) - depositPaidAmount;
+    
     const invoiceData: InsertInvoice = {
       businessId: estimate.businessId,
       clientId: estimate.clientId,
@@ -327,12 +331,15 @@ export class DatabaseStorage implements IStorage {
       subtotal: estimate.subtotal,
       taxRate: estimate.taxRate,
       taxAmount: estimate.taxAmount,
-      total: estimate.total,
+      total: remainingTotal.toString(),
       depositRequired: estimate.depositRequired,
       depositType: estimate.depositType,
       depositAmount: estimate.depositAmount,
       depositPercentage: estimate.depositPercentage,
-      status: "draft",
+      depositPaid: estimate.depositPaid,
+      depositPaidAt: estimate.depositPaidAt,
+      amountPaid: depositPaidAmount > 0 ? depositPaidAmount.toString() : "0",
+      status: depositPaidAmount > 0 ? "partial" : "draft",
       dueDate
     };
 
