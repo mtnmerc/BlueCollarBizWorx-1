@@ -533,6 +533,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete estimate
+  app.delete("/api/estimates/:id", authenticateSession, async (req, res) => {
+    try {
+      const estimateId = parseInt(req.params.id);
+      const { businessId } = req.session;
+
+      const estimate = await storage.getEstimateById(estimateId);
+      if (!estimate || estimate.businessId !== businessId) {
+        return res.status(404).json({ error: "Estimate not found" });
+      }
+
+      await storage.deleteEstimate(estimateId);
+      res.json({ success: true, message: "Estimate deleted successfully" });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Convert estimate to invoice
   app.post("/api/estimates/:id/convert-to-invoice", async (req, res) => {
     try {
@@ -605,6 +623,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       res.json(updatedInvoice);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Delete invoice
+  app.delete("/api/invoices/:id", authenticateSession, async (req, res) => {
+    try {
+      const invoiceId = parseInt(req.params.id);
+      const { businessId } = req.session;
+
+      const invoice = await storage.getInvoiceById(invoiceId);
+      if (!invoice || invoice.businessId !== businessId) {
+        return res.status(404).json({ error: "Invoice not found" });
+      }
+
+      await storage.deleteInvoice(invoiceId);
+      res.json({ success: true, message: "Invoice deleted successfully" });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

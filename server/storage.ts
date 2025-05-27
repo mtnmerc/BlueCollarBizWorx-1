@@ -51,6 +51,7 @@ export interface IStorage {
   getEstimateById(id: number): Promise<Estimate | undefined>;
   getEstimateByShareToken(shareToken: string): Promise<Estimate | undefined>;
   updateEstimate(id: number, estimate: Partial<InsertEstimate>): Promise<Estimate>;
+  deleteEstimate(id: number): Promise<void>;
   generateShareToken(estimateId: number): Promise<string>;
   convertEstimateToInvoice(estimateId: number): Promise<Invoice>;
 
@@ -60,6 +61,7 @@ export interface IStorage {
   getInvoiceById(id: number): Promise<Invoice | undefined>;
   getInvoiceByShareToken(shareToken: string): Promise<Invoice | undefined>;
   updateInvoice(id: number, invoice: Partial<InsertInvoice>): Promise<Invoice>;
+  deleteInvoice(id: number): Promise<void>;
   generateInvoiceShareToken(invoiceId: number): Promise<string>;
   getRevenueStats(businessId: number, month: number, year: number): Promise<{total: number, count: number}>;
 
@@ -282,6 +284,10 @@ export class DatabaseStorage implements IStorage {
     return updatedEstimate;
   }
 
+  async deleteEstimate(id: number): Promise<void> {
+    await db.delete(estimates).where(eq(estimates.id, id));
+  }
+
   async getEstimateByShareToken(shareToken: string): Promise<Estimate | undefined> {
     const [estimate] = await db.select().from(estimates).where(eq(estimates.shareToken, shareToken));
     return estimate || undefined;
@@ -387,6 +393,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(invoices.id, id))
       .returning();
     return updatedInvoice;
+  }
+
+  async deleteInvoice(id: number): Promise<void> {
+    await db.delete(invoices).where(eq(invoices.id, id));
   }
 
   async generateInvoiceShareToken(invoiceId: number): Promise<string> {

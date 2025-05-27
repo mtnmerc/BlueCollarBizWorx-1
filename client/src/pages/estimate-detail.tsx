@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Edit, FileText, DollarSign, Calendar, User, Mail, Copy, Share, MessageSquare } from "lucide-react";
+import { ArrowLeft, Edit, FileText, DollarSign, Calendar, User, Mail, Copy, Share, MessageSquare, Trash2 } from "lucide-react";
 import { Link } from "wouter";
 
 export default function EstimateDetail() {
