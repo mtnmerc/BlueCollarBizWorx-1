@@ -376,6 +376,15 @@ export class DatabaseStorage implements IStorage {
     return updatedInvoice;
   }
 
+  async generateInvoiceShareToken(invoiceId: number): Promise<string> {
+    const shareToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    await db
+      .update(invoices)
+      .set({ shareToken })
+      .where(eq(invoices.id, invoiceId));
+    return shareToken;
+  }
+
   async getRevenueStats(businessId: number, month: number, year: number): Promise<{total: number, count: number}> {
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0, 23, 59, 59);
