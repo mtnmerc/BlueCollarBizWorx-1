@@ -29,8 +29,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       req.session.businessId = business.id;
       req.session.setupMode = true; // Flag for setup completion
+      req.session.save(); // Ensure session is saved
 
-      res.json({ business, needsSetup: true });
+      res.json({ business, setupMode: true });
     } catch (error) {
       res.status(400).json({ error: error.message });
     }
@@ -123,10 +124,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  app.get("/api/auth/me", authenticateSession, async (req, res) => {
+  app.get("/api/auth/me", async (req, res) => {
     try {
+      // Check if we're in setup mode (business registered but no admin user created yet)
+      if (req.session.setupMode && req.session.businessId) {
+        const business = await storage.getBusinessById(req.session.businessId);
+        if (business) {
+          return res.json({ setupMode: true, business });
+        }
+      }
+
+      // Normal authentication check
+      if (!req.session.userId || !req.session.businessId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
       const user = await storage.getUserById(req.session.userId);
       const business = await storage.getBusinessById(req.session.businessId);
+      
+      if (!user || !business) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
       res.json({ user, business });
     } catch (error) {
       res.status(500).json({ error: error.message });

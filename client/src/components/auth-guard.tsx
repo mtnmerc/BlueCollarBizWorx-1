@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { authApi } from "@/lib/auth";
 import { Loader2 } from "lucide-react";
+import BusinessSetup from "@/pages/business-setup";
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -24,6 +25,11 @@ export function AuthGuard({ children, fallback }: AuthGuardProps) {
         </div>
       </div>
     );
+  }
+
+  // Check if we're in setup mode (business created but admin PIN not set)
+  if (authData?.setupMode && authData?.business) {
+    return <BusinessSetup />;
   }
 
   if (error || !authData?.user || !authData?.business) {
