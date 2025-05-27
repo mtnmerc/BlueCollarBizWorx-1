@@ -209,6 +209,43 @@ export default function PublicInvoice() {
             </Card>
           )}
 
+          {/* Job Photos */}
+          {invoice.photos && Array.isArray(invoice.photos) && invoice.photos.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Job Photos
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {invoice.photos.map((photo: any, index: number) => (
+                    <div key={index} className="relative">
+                      <img
+                        src={photo.data || photo}
+                        alt={photo.caption || `Job photo ${index + 1}`}
+                        className="w-full h-32 object-cover rounded-lg border cursor-pointer"
+                        onClick={() => {
+                          // Open image in new tab for full view
+                          const newWindow = window.open();
+                          if (newWindow) {
+                            newWindow.document.write(`
+                              <img src="${photo.data || photo}" style="max-width: 100%; height: auto;" alt="Job photo ${index + 1}" />
+                            `);
+                          }
+                        }}
+                      />
+                      {photo.caption && (
+                        <p className="text-xs text-muted-foreground mt-1 truncate">{photo.caption}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Actions */}
           <Card>
             <CardContent className="py-6">
