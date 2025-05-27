@@ -565,6 +565,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public invoice endpoint (no auth required)
+  app.get("/api/public/invoice/:shareToken", async (req, res) => {
+    try {
+      const { shareToken } = req.params;
+      const invoice = await storage.getInvoiceByShareToken(shareToken);
+      
+      if (!invoice) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+
+      // Include client information for the public view
+      const client = await storage.getClientById(invoice.clientId);
+      const business = await storage.getBusinessById(invoice.businessId);
+      
+      res.json({
+        ...invoice,
+        clientName: client?.name,
+        clientEmail: client?.email,
+        clientPhone: client?.phone,
+        businessName: business?.name,
+        businessEmail: business?.email,
+        businessPhone: business?.phone,
+        businessAddress: business?.address,
+        businessLogo: business?.logo
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Client response to estimate (no authentication required)
   app.post("/api/public/estimates/:shareToken/respond", async (req, res) => {
     try {
