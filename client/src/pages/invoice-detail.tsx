@@ -5,6 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Edit, FileText, DollarSign, Calendar, User, CreditCard, CheckCircle, Mail, Copy, Share, MessageSquare } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
@@ -17,6 +21,10 @@ export default function InvoiceDetail() {
   const queryClient = useQueryClient();
   const [isEmailSent, setIsEmailSent] = useState(false);
   const [shareToken, setShareToken] = useState<string>("");
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("");
+  const [paymentNotes, setPaymentNotes] = useState("");
 
   const { data: invoice, isLoading } = useQuery({
     queryKey: [`/api/invoices/${invoiceId}`],
@@ -72,6 +80,29 @@ export default function InvoiceDetail() {
         variant: "destructive",
       });
     },
+  });
+
+  const recordPaymentMutation = useMutation({
+    mutationFn: (paymentData: { amount: number; method: string; notes?: string }) => 
+      apiRequest("POST", `/api/invoices/${invoiceId}/payment`, paymentData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/${invoiceId}`] });
+      setPaymentDialogOpen(false);
+      setPaymentAmount("");
+      setPaymentMethod("");
+      setPaymentNotes("");
+      toast({
+        title: "Payment Recorded",
+        description: "Payment has been successfully recorded.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to record payment. Please try again.",
+        variant: "destructive",
+      });
+    }
   });
 
   const generateShareMutation = useMutation({
@@ -219,6 +250,33 @@ Thank you for your business!`;
     toast({
       title: "Link Copied",
       description: "Invoice link copied to clipboard.",
+    });
+  };
+
+  const handleRecordPayment = () => {
+    const amount = parseFloat(paymentAmount);
+    if (!amount || amount <= 0) {
+      toast({
+        title: "Invalid Amount",
+        description: "Please enter a valid payment amount.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!paymentMethod) {
+      toast({
+        title: "Payment Method Required",
+        description: "Please select a payment method.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    recordPaymentMutation.mutate({
+      amount,
+      method: paymentMethod,
+      notes: paymentNotes || undefined,
     });
   };
 
