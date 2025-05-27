@@ -646,6 +646,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Upload photos to invoice
+  app.post("/api/invoices/:id/photos", authenticateSession, async (req, res) => {
+    try {
+      const invoiceId = parseInt(req.params.id);
+      const { businessId } = req.session;
+      const { photos } = req.body;
+
+      const invoice = await storage.getInvoiceById(invoiceId);
+      if (!invoice || invoice.businessId !== businessId) {
+        return res.status(404).json({ error: "Invoice not found" });
+      }
+
+      const currentPhotos = invoice.photos ? JSON.parse(JSON.stringify(invoice.photos)) : [];
+      const newPhotos = [...currentPhotos, ...photos];
+
+      const updatedInvoice = await storage.updateInvoice(invoiceId, {
+        photos: newPhotos
+      });
+
+      res.json(updatedInvoice);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Remove photo from invoice
+  app.delete("/api/invoices/:id/photos/:photoIndex", authenticateSession, async (req, res) => {
+    try {
+      const invoiceId = parseInt(req.params.id);
+      const photoIndex = parseInt(req.params.photoIndex);
+      const { businessId } = req.session;
+
+      const invoice = await storage.getInvoiceById(invoiceId);
+      if (!invoice || invoice.businessId !== businessId) {
+        return res.status(404).json({ error: "Invoice not found" });
+      }
+
+      const currentPhotos = invoice.photos ? JSON.parse(JSON.stringify(invoice.photos)) : [];
+      if (photoIndex < 0 || photoIndex >= currentPhotos.length) {
+        return res.status(400).json({ error: "Invalid photo index" });
+      }
+
+      currentPhotos.splice(photoIndex, 1);
+
+      const updatedInvoice = await storage.updateInvoice(invoiceId, {
+        photos: currentPhotos
+      });
+
+      res.json(updatedInvoice);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Public invoice endpoint (no auth required)
   app.get("/api/public/invoice/:shareToken", async (req, res) => {
     try {

@@ -28,6 +28,78 @@ export default function InvoiceDetail() {
   const [paymentMethod, setPaymentMethod] = useState("");
   const [paymentNotes, setPaymentNotes] = useState("");
 
+  // Photo upload mutation
+  const uploadPhotoMutation = useMutation({
+    mutationFn: (photos: string[]) => 
+      apiRequest("POST", `/api/invoices/${invoiceId}/photos`, { photos }),
+    onSuccess: () => {
+      toast({
+        title: "Photos Uploaded",
+        description: "Job photos have been successfully added.",
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/${invoiceId}`] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Upload Failed",
+        description: error.message || "Failed to upload photos",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Handle photo upload
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    const photoPromises = Array.from(files).map((file) => {
+      return new Promise<string>((resolve, reject) => {
+        if (file.size > 10 * 1024 * 1024) {
+          reject(new Error(`File ${file.name} is too large. Maximum size is 10MB.`));
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error(`Failed to read file ${file.name}`));
+        reader.readAsDataURL(file);
+      });
+    });
+
+    try {
+      const photoData = await Promise.all(photoPromises);
+      uploadPhotoMutation.mutate(photoData);
+    } catch (error: any) {
+      toast({
+        title: "Upload Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+
+    // Reset the input
+    event.target.value = "";
+  };
+
+  // Remove photo
+  const removePhoto = async (index: number) => {
+    try {
+      await apiRequest("DELETE", `/api/invoices/${invoiceId}/photos/${index}`);
+      toast({
+        title: "Photo Removed",
+        description: "Photo has been successfully deleted.",
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/${invoiceId}`] });
+    } catch (error: any) {
+      toast({
+        title: "Delete Failed",
+        description: error.message || "Failed to remove photo",
+        variant: "destructive",
+      });
+    }
+  };
+
   const { data: invoice, isLoading } = useQuery({
     queryKey: [`/api/invoices/${invoiceId}`],
     enabled: !!invoiceId,
@@ -735,6 +807,70 @@ Thank you for your business!`;
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Job Photos Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <FileText className="h-4 w-4 mr-2" />
+              Job Photos
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {/* Photo Upload */}
+              <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+                <input
+                  type="file"
+                  id="photo-upload"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={handlePhotoUpload}
+                />
+                <label htmlFor="photo-upload" className="cursor-pointer">
+                  <div className="space-y-2">
+                    <div className="mx-auto h-12 w-12 text-muted-foreground">
+                      📷
+                    </div>
+                    <div className="text-muted-foreground">
+                      <span className="font-medium text-primary">Click to upload photos</span> or drag and drop
+                    </div>
+                    <p className="text-xs text-muted-foreground">PNG, JPG up to 10MB each</p>
+                  </div>
+                </label>
+              </div>
+
+              {/* Display Photos */}
+              {invoice.photos && Array.isArray(invoice.photos) && invoice.photos.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {invoice.photos.map((photo: any, index: number) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={photo.data || photo}
+                        alt={photo.caption || `Job photo ${index + 1}`}
+                        className="w-full h-32 object-cover rounded-lg border"
+                      />
+                      {photo.caption && (
+                        <p className="text-xs text-muted-foreground mt-1 truncate">{photo.caption}</p>
+                      )}
+                      <button
+                        onClick={() => removePhoto(index)}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {(!invoice.photos || !Array.isArray(invoice.photos) || invoice.photos.length === 0) && (
+                <p className="text-muted-foreground text-center py-4">No photos uploaded yet</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         {invoice.notes && (
           <Card>
