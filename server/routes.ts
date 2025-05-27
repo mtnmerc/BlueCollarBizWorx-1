@@ -580,7 +580,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const paymentAmount = parseFloat(amount);
       const invoiceTotal = parseFloat(invoice.total);
       const currentAmountPaid = parseFloat(invoice.amountPaid || "0");
+      const depositAmount = parseFloat(invoice.depositAmount || "0");
+      const depositPaid = invoice.depositPaid ? depositAmount : 0;
+      
       const newAmountPaid = currentAmountPaid + paymentAmount;
+      const remainingBalance = invoiceTotal - newAmountPaid;
 
       // Determine new status based on payment
       let newStatus = invoice.status;
@@ -592,6 +596,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const updatedInvoice = await storage.updateInvoice(invoiceId, {
         amountPaid: newAmountPaid.toString(),
+        remainingBalance: Math.max(0, remainingBalance).toString(),
         status: newStatus,
         lastPaymentDate: new Date(),
         lastPaymentMethod: method,

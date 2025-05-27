@@ -493,6 +493,19 @@ Thank you for your business!`;
                 <span>Total Amount Due:</span>
                 <span className="text-primary">${total.toFixed(2)}</span>
               </div>
+              {parseFloat((invoice as any).amountPaid || "0") > 0 && (
+                <>
+                  <Separator />
+                  <div className="flex justify-between text-green-600">
+                    <span>Amount Paid:</span>
+                    <span className="font-medium">${parseFloat((invoice as any).amountPaid || "0").toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-lg font-semibold text-orange-600">
+                    <span>Remaining Balance:</span>
+                    <span>${(total - parseFloat((invoice as any).amountPaid || "0")).toFixed(2)}</span>
+                  </div>
+                </>
+              )}
             </div>
           </CardContent>
         </Card>
