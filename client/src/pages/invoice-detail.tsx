@@ -185,18 +185,18 @@ Thank you for your business!`;
     }
 
     const shareUrl = `${window.location.origin}/invoice/${token}`;
-    const smsText = `Hello ${client.name}, please review your invoice: ${shareUrl}`;
+    const messageText = `Hi ${client.name}, please review your invoice for ${invoice?.title}: ${shareUrl}`;
     
     // Update invoice status to sent
     await fetch(`/api/invoices/${invoiceId}/send-email`, { method: "POST" });
     queryClient.invalidateQueries({ queryKey: [`/api/invoices/${invoiceId}`] });
     
-    const smsUrl = `sms:${client.phone}?body=${encodeURIComponent(smsText)}`;
+    const smsUrl = `sms:${client.phone}?body=${encodeURIComponent(messageText)}`;
     window.location.href = smsUrl;
     
     toast({
-      title: "SMS Ready",
-      description: "Message opened in your SMS app.",
+      title: "SMS App Opened",
+      description: "Your SMS app should open with the invoice link ready to send.",
     });
   };
 

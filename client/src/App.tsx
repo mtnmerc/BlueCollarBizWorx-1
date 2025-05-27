@@ -31,6 +31,7 @@ import InvoiceDetail from "@/pages/invoice-detail";
 import InvoiceEdit from "@/pages/invoice-edit";
 import BusinessSettings from "@/pages/business-settings";
 import PublicEstimate from "@/pages/public-estimate";
+import PublicInvoice from "@/pages/public-invoice";
 import TimeClock from "@/pages/time-clock";
 import Calendar from "@/pages/calendar";
 import NotFound from "@/pages/not-found";
@@ -79,6 +80,7 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/setup" component={BusinessSetupComplete} />
       <Route path="/estimate/:shareToken" component={PublicEstimate} />
+      <Route path="/invoice/:shareToken" component={PublicInvoice} />
       <Route>
         <AuthGuard fallback={<Login />}>
           <AuthenticatedApp />
