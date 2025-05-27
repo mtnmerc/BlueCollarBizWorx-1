@@ -668,7 +668,7 @@ Thank you for your business!`;
               Record Payment
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-sm mx-4">
+          <DialogContent className="max-w-xs mx-2 max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Record Payment</DialogTitle>
             </DialogHeader>
