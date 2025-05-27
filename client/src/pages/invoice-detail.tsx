@@ -375,7 +375,7 @@ Thank you for your business!`;
                 Delete
               </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent>
+            <AlertDialogContent className="max-w-sm mx-4">
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete Invoice</AlertDialogTitle>
                 <AlertDialogDescription>
