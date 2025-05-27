@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Edit, FileText, DollarSign, Calendar, User, CreditCard, CheckCircle, Mail, Copy, Share } from "lucide-react";
+import { ArrowLeft, Edit, FileText, DollarSign, Calendar, User, CreditCard, CheckCircle, Mail, Copy, Share, MessageSquare } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -16,6 +16,7 @@ export default function InvoiceDetail() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isEmailSent, setIsEmailSent] = useState(false);
+  const [shareToken, setShareToken] = useState<string>("");
 
   const { data: invoice, isLoading } = useQuery({
     queryKey: [`/api/invoices/${invoiceId}`],
@@ -73,34 +74,153 @@ export default function InvoiceDetail() {
     },
   });
 
-  const sendEmailMutation = useMutation({
-    mutationFn: async (): Promise<{ success: boolean }> => {
-      const response = await fetch(`/api/invoices/${invoiceId}/send-email`, {
+  const generateShareMutation = useMutation({
+    mutationFn: async (): Promise<{ shareToken: string }> => {
+      const response = await fetch(`/api/invoices/${invoiceId}/share`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
       });
       if (!response.ok) {
-        throw new Error("Failed to send email");
+        throw new Error("Failed to generate share link");
       }
       return response.json();
     },
-    onSuccess: () => {
-      setIsEmailSent(true);
+  });
+
+  const handleSendInvoice = async () => {
+    // Generate share token if not exists
+    let token = shareToken;
+    if (!token) {
+      try {
+        const response = await generateShareMutation.mutateAsync();
+        token = response.shareToken;
+        setShareToken(token);
+      } catch (error) {
+        return;
+      }
+    }
+
+    const client = clients?.find((c: any) => c.id === invoice?.clientId);
+    if (!client?.email) {
       toast({
-        title: "Invoice Sent!",
-        description: "The invoice has been sent to your client via email.",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Email Failed",
-        description: "Failed to send invoice. Please try again.",
+        title: "No Client Email",
+        description: "This client doesn't have an email address on file.",
         variant: "destructive",
       });
-    },
-  });
+      return;
+    }
+
+    const shareUrl = `${window.location.origin}/invoice/${token}`;
+    const subject = `Invoice: ${invoice?.title || invoice?.invoiceNumber}`;
+    const messageText = `Hello ${client.name},
+
+Please review your invoice for: ${invoice?.title}
+
+View and pay online: ${shareUrl}
+
+Due date: ${invoice?.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : 'upon receipt'}
+
+Thank you for your business!`;
+
+    // Try native share API first (works on mobile)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: subject,
+          text: messageText,
+          url: shareUrl,
+        });
+        toast({
+          title: "Shared Successfully",
+          description: "Invoice shared via your preferred app.",
+        });
+        return;
+      } catch (error) {
+        // User cancelled sharing, continue to fallback
+      }
+    }
+
+    // Fallback to copying link and showing instructions
+    await navigator.clipboard.writeText(shareUrl);
+    
+    // Create Gmail link
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(client.email)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(messageText)}`;
+    
+    // Update invoice status to sent
+    await fetch(`/api/invoices/${invoiceId}/send-email`, { method: "POST" });
+    queryClient.invalidateQueries({ queryKey: [`/api/invoices/${invoiceId}`] });
+    
+    // Open Gmail
+    window.open(gmailUrl, '_blank');
+    
+    toast({
+      title: "Invoice Ready to Send",
+      description: "Link copied and Gmail opened. Send when ready!",
+    });
+  };
+
+  const handleSendSMS = async () => {
+    // Generate share token if not exists
+    let token = shareToken;
+    if (!token) {
+      try {
+        const response = await generateShareMutation.mutateAsync();
+        token = response.shareToken;
+        setShareToken(token);
+      } catch (error) {
+        return;
+      }
+    }
+
+    const client = clients?.find((c: any) => c.id === invoice?.clientId);
+    if (!client?.phone) {
+      toast({
+        title: "No Client Phone",
+        description: "This client doesn't have a phone number on file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const shareUrl = `${window.location.origin}/invoice/${token}`;
+    const smsText = `Hello ${client.name}, please review your invoice: ${shareUrl}`;
+    
+    // Update invoice status to sent
+    await fetch(`/api/invoices/${invoiceId}/send-email`, { method: "POST" });
+    queryClient.invalidateQueries({ queryKey: [`/api/invoices/${invoiceId}`] });
+    
+    const smsUrl = `sms:${client.phone}?body=${encodeURIComponent(smsText)}`;
+    window.location.href = smsUrl;
+    
+    toast({
+      title: "SMS Ready",
+      description: "Message opened in your SMS app.",
+    });
+  };
+
+  const copyShareLink = async () => {
+    // Generate share token if not exists
+    let token = shareToken;
+    if (!token) {
+      try {
+        const response = await generateShareMutation.mutateAsync();
+        token = response.shareToken;
+        setShareToken(token);
+      } catch (error) {
+        return;
+      }
+    }
+
+    const shareUrl = `${window.location.origin}/invoice/${token}`;
+    await navigator.clipboard.writeText(shareUrl);
+    
+    toast({
+      title: "Link Copied",
+      description: "Invoice link copied to clipboard.",
+    });
+  };
 
   if (isLoading) {
     return (
@@ -165,28 +285,37 @@ export default function InvoiceDetail() {
               Edit
             </Button>
           </Link>
-          {invoice.status === "draft" && (
+        </div>
+        <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
+          <div className="flex space-x-2">
             <Button 
-              className="bg-primary hover:bg-primary/90" 
+              onClick={handleSendInvoice}
+              className="bg-green-600 hover:bg-green-700" 
               size="sm"
-              onClick={() => sendEmailMutation.mutate()}
-              disabled={sendEmailMutation.isPending || isEmailSent}
-            >
-              <Mail className="h-4 w-4 mr-2" />
-              {sendEmailMutation.isPending ? "Sending..." : isEmailSent ? "Email Sent" : "Send Invoice"}
-            </Button>
-          )}
-          {invoice.status === "sent" && (
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => sendEmailMutation.mutate()}
-              disabled={sendEmailMutation.isPending}
+              disabled={generateShareMutation.isPending}
             >
               <Share className="h-4 w-4 mr-2" />
-              {sendEmailMutation.isPending ? "Sending..." : "Resend Invoice"}
+              {generateShareMutation.isPending ? "Generating..." : "Share"}
             </Button>
-          )}
+            <Button 
+              onClick={handleSendSMS}
+              variant="outline" 
+              size="sm"
+              disabled={generateShareMutation.isPending}
+            >
+              <MessageSquare className="h-4 w-4 mr-2" />
+              SMS
+            </Button>
+            <Button 
+              onClick={copyShareLink}
+              variant="outline" 
+              size="sm"
+              disabled={generateShareMutation.isPending}
+            >
+              <Copy className="h-4 w-4 mr-2" />
+              Copy Link
+            </Button>
+          </div>
         </div>
       </div>
 

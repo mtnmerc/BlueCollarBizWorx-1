@@ -747,6 +747,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Generate share token for invoice
+  app.post("/api/invoices/:id/share", authenticateSession, async (req, res) => {
+    try {
+      const invoiceId = parseInt(req.params.id);
+      const businessId = req.session.businessId;
+
+      const invoice = await storage.getInvoiceById(invoiceId);
+      if (!invoice || invoice.businessId !== businessId) {
+        return res.status(404).json({ error: "Invoice not found" });
+      }
+
+      const shareToken = await storage.generateInvoiceShareToken(invoiceId);
+      res.json({ shareToken });
+    } catch (error: any) {
+      console.error("Generate invoice share token error:", error);
+      res.status(500).json({ error: "Failed to generate share token" });
+    }
+  });
+
   // Send invoice via email
   app.post("/api/invoices/:id/send-email", authenticateSession, async (req, res) => {
     try {
@@ -758,21 +777,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Invoice not found" });
       }
 
-      const client = await storage.getClientById(invoice.clientId);
-      if (!client || !client.email) {
-        return res.status(400).json({ error: "Client email not found" });
-      }
-
-      const business = await storage.getBusinessById(businessId);
-      if (!business) {
-        return res.status(400).json({ error: "Business not found" });
-      }
-
       // Update invoice status to sent
       await storage.updateInvoice(invoiceId, { status: "sent" });
 
-      // In a real implementation, you would send the email here using SendGrid or similar
-      // For now, we'll simulate successful sending
       res.json({ success: true });
     } catch (error: any) {
       console.error("Send invoice email error:", error);

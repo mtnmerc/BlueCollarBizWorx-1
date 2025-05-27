@@ -58,7 +58,9 @@ export interface IStorage {
   createInvoice(invoice: InsertInvoice): Promise<Invoice>;
   getInvoicesByBusiness(businessId: number): Promise<Invoice[]>;
   getInvoiceById(id: number): Promise<Invoice | undefined>;
+  getInvoiceByShareToken(shareToken: string): Promise<Invoice | undefined>;
   updateInvoice(id: number, invoice: Partial<InsertInvoice>): Promise<Invoice>;
+  generateInvoiceShareToken(invoiceId: number): Promise<string>;
   getRevenueStats(businessId: number, month: number, year: number): Promise<{total: number, count: number}>;
 
   // Time entry methods
@@ -357,6 +359,11 @@ export class DatabaseStorage implements IStorage {
 
   async getInvoiceById(id: number): Promise<Invoice | undefined> {
     const [invoice] = await db.select().from(invoices).where(eq(invoices.id, id));
+    return invoice || undefined;
+  }
+
+  async getInvoiceByShareToken(shareToken: string): Promise<Invoice | undefined> {
+    const [invoice] = await db.select().from(invoices).where(eq(invoices.shareToken, shareToken));
     return invoice || undefined;
   }
 
