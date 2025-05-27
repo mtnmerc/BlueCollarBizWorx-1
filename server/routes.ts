@@ -565,6 +565,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Record payment for invoice
+  app.post("/api/invoices/:id/payment", authenticateSession, async (req, res) => {
+    try {
+      const invoiceId = parseInt(req.params.id);
+      const { businessId } = req.session;
+      const { amount, method, notes } = req.body;
+
+      const invoice = await storage.getInvoiceById(invoiceId);
+      if (!invoice || invoice.businessId !== businessId) {
+        return res.status(404).json({ error: "Invoice not found" });
+      }
+
+      const paymentAmount = parseFloat(amount);
+      const invoiceTotal = parseFloat(invoice.total);
+      const currentAmountPaid = parseFloat(invoice.amountPaid || "0");
+      const newAmountPaid = currentAmountPaid + paymentAmount;
+
+      // Determine new status based on payment
+      let newStatus = invoice.status;
+      if (newAmountPaid >= invoiceTotal) {
+        newStatus = "paid";
+      } else if (newAmountPaid > 0) {
+        newStatus = "partial";
+      }
+
+      const updatedInvoice = await storage.updateInvoice(invoiceId, {
+        amountPaid: newAmountPaid.toString(),
+        status: newStatus,
+        lastPaymentDate: new Date(),
+        lastPaymentMethod: method,
+        lastPaymentAmount: paymentAmount.toString(),
+        paymentNotes: notes || null,
+      });
+
+      res.json(updatedInvoice);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Public invoice endpoint (no auth required)
   app.get("/api/public/invoice/:shareToken", async (req, res) => {
     try {

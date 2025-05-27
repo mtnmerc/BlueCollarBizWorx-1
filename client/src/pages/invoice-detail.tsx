@@ -592,6 +592,86 @@ Thank you for your business!`;
           </Card>
         )}
 
+        {/* Payment Recording Dialog */}
+        <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
+          <DialogTrigger asChild>
+            <Button 
+              variant="outline" 
+              className="w-full mb-6"
+              disabled={invoice?.status === "paid"}
+            >
+              <CreditCard className="h-4 w-4 mr-2" />
+              Record Payment
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Record Payment</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="payment-amount">Payment Amount ($)</Label>
+                <Input
+                  id="payment-amount"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max={parseFloat(invoice?.total || "0")}
+                  placeholder="0.00"
+                  value={paymentAmount}
+                  onChange={(e) => setPaymentAmount(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Invoice total: ${parseFloat(invoice?.total || "0").toFixed(2)}
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="payment-method">Payment Method</Label>
+                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select payment method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash">Cash</SelectItem>
+                    <SelectItem value="check">Check</SelectItem>
+                    <SelectItem value="credit_card">Credit Card</SelectItem>
+                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="payment-notes">Notes (Optional)</Label>
+                <Input
+                  id="payment-notes"
+                  placeholder="Payment reference, check number, etc."
+                  value={paymentNotes}
+                  onChange={(e) => setPaymentNotes(e.target.value)}
+                />
+              </div>
+              
+              <div className="flex gap-3 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setPaymentDialogOpen(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleRecordPayment}
+                  disabled={recordPaymentMutation.isPending}
+                  className="flex-1 gradient-primary"
+                >
+                  {recordPaymentMutation.isPending ? "Recording..." : "Record Payment"}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         {invoice.notes && (
           <Card>
             <CardHeader>
