@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRoute } from "wouter";
+import { useRoute, useLocation } from "wouter";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { ArrowLeft, Edit, FileText, DollarSign, Calendar, User, Mail, Copy, Share, MessageSquare, Trash2 } from "lucide-react";
 import { Link } from "wouter";
 
@@ -15,6 +16,7 @@ export default function EstimateDetail() {
   const estimateId = params?.id;
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
   const [shareToken, setShareToken] = useState<string | null>(null);
 
   const { data: estimate, isLoading } = useQuery({
@@ -88,6 +90,29 @@ export default function EstimateDetail() {
       toast({
         title: "Error",
         description: error.message || "Failed to convert estimate to invoice",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete estimate mutation
+  const deleteEstimateMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("DELETE", `/api/estimates/${estimateId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/estimates"] });
+      toast({
+        title: "Estimate Deleted",
+        description: "The estimate has been deleted successfully.",
+      });
+      setLocation("/estimates");
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete estimate.",
         variant: "destructive",
       });
     },
@@ -321,6 +346,32 @@ Thank you for your business!`;
                 {convertToInvoiceMutation.isPending ? "Converting..." : "Convert to Invoice"}
               </Button>
             )}
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Estimate</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete this estimate? This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={() => deleteEstimateMutation.mutate()}
+                    disabled={deleteEstimateMutation.isPending}
+                    className="bg-destructive hover:bg-destructive/90"
+                  >
+                    {deleteEstimateMutation.isPending ? "Deleting..." : "Delete"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
       </div>
