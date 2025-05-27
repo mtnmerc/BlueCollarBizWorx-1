@@ -318,8 +318,21 @@ export class DatabaseStorage implements IStorage {
 
     // Create invoice from estimate data
     // If deposit was paid on estimate, account for it in the invoice
-    const depositPaidAmount = estimate.depositPaid && estimate.depositAmount ? parseFloat(estimate.depositAmount) : 0;
+    // Check both depositPaid flag and depositPaidAt date to determine if deposit was collected
+    const depositWasPaid = estimate.depositPaid || estimate.depositPaidAt;
+    const depositPaidAmount = depositWasPaid && estimate.depositAmount ? parseFloat(estimate.depositAmount) : 0;
     const remainingTotal = parseFloat(estimate.total) - depositPaidAmount;
+    
+    console.log('Converting estimate to invoice:');
+    console.log('Estimate ID:', estimate.id);
+    console.log('Deposit Required:', estimate.depositRequired);
+    console.log('Deposit Amount:', estimate.depositAmount);
+    console.log('Deposit Paid Flag:', estimate.depositPaid);
+    console.log('Deposit Paid At:', estimate.depositPaidAt);
+    console.log('Deposit Was Paid:', depositWasPaid);
+    console.log('Deposit Paid Amount:', depositPaidAmount);
+    console.log('Original Total:', estimate.total);
+    console.log('Remaining Total:', remainingTotal);
     
     const invoiceData: InsertInvoice = {
       businessId: estimate.businessId,
