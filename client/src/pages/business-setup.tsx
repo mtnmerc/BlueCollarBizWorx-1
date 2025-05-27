@@ -33,7 +33,17 @@ const setupSteps = [
 ];
 
 export default function BusinessSetup() {
-  const [currentStep, setCurrentStep] = useState(1);
+  // Check if we're already in setup mode (business registered, need admin setup)
+  const { data: authData } = useQuery({
+    queryKey: ["/api/auth/me"],
+    queryFn: () => authApi.getMe(),
+    retry: false,
+  });
+
+  // Start at step 2 if already in setup mode, step 1 for new registration
+  const [currentStep, setCurrentStep] = useState(
+    authData?.setupMode ? 2 : 1
+  );
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
