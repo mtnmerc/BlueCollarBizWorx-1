@@ -533,28 +533,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Mark estimate deposit as collected
-  app.post("/api/estimates/:id/mark-deposit-collected", authenticateSession, async (req, res) => {
-    try {
-      const estimateId = parseInt(req.params.id);
-      const { businessId } = req.session;
-
-      const estimate = await storage.getEstimateById(estimateId);
-      if (!estimate || estimate.businessId !== businessId) {
-        return res.status(404).json({ error: "Estimate not found" });
-      }
-
-      const updatedEstimate = await storage.updateEstimate(estimateId, {
-        depositPaid: true,
-        depositPaidAt: new Date(),
-      });
-
-      res.json({ success: true, message: "Deposit marked as collected", estimate: updatedEstimate });
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
   // Convert estimate to invoice
   app.post("/api/estimates/:id/convert-to-invoice", async (req, res) => {
     try {

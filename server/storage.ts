@@ -317,22 +317,17 @@ export class DatabaseStorage implements IStorage {
     dueDate.setDate(dueDate.getDate() + 30);
 
     // Create invoice from estimate data
-    // If deposit was paid on estimate, account for it in the invoice
-    // Check both depositPaid flag and depositPaidAt date to determine if deposit was collected
-    const depositWasPaid = estimate.depositPaid || estimate.depositPaidAt;
-    const depositPaidAmount = depositWasPaid && estimate.depositAmount ? parseFloat(estimate.depositAmount) : 0;
-    const remainingTotal = parseFloat(estimate.total) - depositPaidAmount;
+    // If estimate requires a deposit, the invoice should account for it
+    // The deposit will be collected separately on the invoice
+    const depositAmount = estimate.depositRequired && estimate.depositAmount ? parseFloat(estimate.depositAmount) : 0;
+    const originalTotal = parseFloat(estimate.total);
     
     console.log('Converting estimate to invoice:');
     console.log('Estimate ID:', estimate.id);
     console.log('Deposit Required:', estimate.depositRequired);
     console.log('Deposit Amount:', estimate.depositAmount);
-    console.log('Deposit Paid Flag:', estimate.depositPaid);
-    console.log('Deposit Paid At:', estimate.depositPaidAt);
-    console.log('Deposit Was Paid:', depositWasPaid);
-    console.log('Deposit Paid Amount:', depositPaidAmount);
     console.log('Original Total:', estimate.total);
-    console.log('Remaining Total:', remainingTotal);
+    console.log('Deposit Amount to Account For:', depositAmount);
     
     const invoiceData: InsertInvoice = {
       businessId: estimate.businessId,
@@ -344,15 +339,13 @@ export class DatabaseStorage implements IStorage {
       subtotal: estimate.subtotal,
       taxRate: estimate.taxRate,
       taxAmount: estimate.taxAmount,
-      total: remainingTotal.toString(),
+      total: estimate.total, // Keep original total - deposit will be tracked separately
       depositRequired: estimate.depositRequired,
       depositType: estimate.depositType,
       depositAmount: estimate.depositAmount,
       depositPercentage: estimate.depositPercentage,
-      depositPaid: estimate.depositPaid,
-      depositPaidAt: estimate.depositPaidAt,
-      amountPaid: depositPaidAmount > 0 ? depositPaidAmount.toString() : "0",
-      status: depositPaidAmount > 0 ? "partial" : "draft",
+      amountPaid: "0", // No payments yet on the new invoice
+      status: "draft", // Start as draft, will change when deposit is collected
       dueDate
     };
 
