@@ -3,39 +3,21 @@ import session from "express-session";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
-// Only import connect-pg-simple in production
-let pgSession: any = null;
-if (process.env.NODE_ENV === "production") {
-  const connectPgSimple = require("connect-pg-simple");
-  pgSession = connectPgSimple(session);
-}
-
 const app = express();
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
-// Session configuration
-const sessionConfig: any = {
+// Use simple memory session store for now (works in both dev and production)
+app.use(session({
   secret: process.env.SESSION_SECRET || "bizworx-session-secret-change-in-production",
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: process.env.NODE_ENV === "production",
+    secure: false, // Allow HTTP for now
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
   },
-};
-
-// Use PostgreSQL session store in production
-if (process.env.NODE_ENV === "production" && pgSession && process.env.DATABASE_URL) {
-  sessionConfig.store = new pgSession({
-    conString: process.env.DATABASE_URL,
-    tableName: 'session',
-    createTableIfMissing: true
-  });
-}
-
-app.use(session(sessionConfig));
+}));
 
 app.use((req, res, next) => {
   const start = Date.now();
