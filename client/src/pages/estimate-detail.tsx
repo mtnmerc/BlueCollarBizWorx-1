@@ -442,9 +442,9 @@ Thank you for your business!`;
                     <span>Required Deposit:</span>
                     <span>${depositAmount.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between text-muted-foreground text-sm">
-                    <span>Remaining Balance:</span>
-                    <span>${total.toFixed(2)}</span>
+                  <div className="flex justify-between text-orange-600 font-medium">
+                    <span>Remaining After Deposit:</span>
+                    <span>${(total - depositAmount).toFixed(2)}</span>
                   </div>
                 </>
               )}
