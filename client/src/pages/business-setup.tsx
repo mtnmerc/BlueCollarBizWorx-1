@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -41,9 +41,14 @@ export default function BusinessSetup() {
   });
 
   // Start at step 2 if already in setup mode, step 1 for new registration
-  const [currentStep, setCurrentStep] = useState(
-    authData?.setupMode ? 2 : 1
-  );
+  const [currentStep, setCurrentStep] = useState(1);
+
+  // Update step when authData changes
+  React.useEffect(() => {
+    if (authData?.setupMode) {
+      setCurrentStep(2);
+    }
+  }, [authData]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
