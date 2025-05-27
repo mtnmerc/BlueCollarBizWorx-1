@@ -806,10 +806,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Deposit already collected" });
       }
 
-      // Mark deposit as paid
+      // Mark deposit as paid and record the payment amount
+      const depositAmount = parseFloat(invoice.depositAmount);
+      const currentAmountPaid = parseFloat(invoice.amountPaid || "0");
+      const newAmountPaid = currentAmountPaid + depositAmount;
+      const totalAmount = parseFloat(invoice.total);
+      
+      // Determine new status based on amount paid
+      let newStatus = invoice.status;
+      if (newAmountPaid >= totalAmount) {
+        newStatus = "paid";
+      } else if (newAmountPaid > 0) {
+        newStatus = "partial";
+      }
+
       await storage.updateInvoice(invoiceId, {
         depositPaid: true,
         depositPaidAt: new Date().toISOString(),
+        amountPaid: newAmountPaid.toFixed(2),
+        status: newStatus,
       });
 
       res.json({ 
