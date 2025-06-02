@@ -33,6 +33,7 @@ import BusinessSettings from "@/pages/business-settings";
 import PublicEstimate from "@/pages/public-estimate";
 import PublicInvoice from "@/pages/public-invoice";
 import TimeClock from "@/pages/time-clock";
+import TimeHistory from "@/pages/time-history";
 import Calendar from "@/pages/calendar";
 import NotFound from "@/pages/not-found";
 
@@ -65,6 +66,7 @@ function AuthenticatedApp() {
           <Route path="/team/new" component={TeamNew} />
           <Route path="/business/settings" component={BusinessSettings} />
           <Route path="/time-clock" component={TimeClock} />
+          <Route path="/time-history" component={TimeHistory} />
           <Route component={NotFound} />
         </Switch>
       </main>

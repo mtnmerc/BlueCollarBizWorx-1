@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Clock } from "lucide-react";
+import { ArrowLeft, Clock, History } from "lucide-react";
 import { Link } from "wouter";
 
 export default function TimeClock() {
@@ -141,15 +141,22 @@ export default function TimeClock() {
                 </div>
               )}
               
-              <div className="pt-6 border-t border-border">
+              <div className="pt-6 border-t border-border space-y-4">
                 <p className="text-muted-foreground">
                   Today's Hours: {timeStatus?.todayHours ? parseFloat(timeStatus.todayHours).toFixed(1) : '0.0'}
                 </p>
                 {timeStatus?.activeEntry && (
-                  <p className="text-sm text-muted-foreground mt-2">
+                  <p className="text-sm text-muted-foreground">
                     Currently working: {Math.floor((Date.now() - new Date(timeStatus.activeEntry.clockIn).getTime()) / (1000 * 60))} minutes
                   </p>
                 )}
+                
+                <Link href="/time-history">
+                  <Button variant="outline" className="w-full">
+                    <History className="mr-2 h-4 w-4" />
+                    View Time History
+                  </Button>
+                </Link>
               </div>
             </div>
           </CardContent>
