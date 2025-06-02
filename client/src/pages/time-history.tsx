@@ -280,12 +280,12 @@ export default function TimeHistory() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5" />
-              Team Hours ({calculateTotalHours(teamHistory)} total)
+              Team Hours ({calculateTotalHours(filteredTeamHistory)} total)
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {teamHistory.map((entry: TimeEntry) => (
+              {filteredTeamHistory.map((entry: TimeEntry) => (
                 <div key={entry.id} className="flex items-center justify-between p-3 border rounded-lg">
                   <div>
                     <p className="font-medium">
