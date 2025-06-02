@@ -143,7 +143,7 @@ export default function TimeClock() {
               
               <div className="pt-6 border-t border-border">
                 <p className="text-muted-foreground">
-                  Today's Hours: {timeStatus?.todayHours?.toFixed(1) || '0.0'}
+                  Today's Hours: {timeStatus?.todayHours ? parseFloat(timeStatus.todayHours).toFixed(1) : '0.0'}
                 </p>
                 {timeStatus?.activeEntry && (
                   <p className="text-sm text-muted-foreground mt-2">
