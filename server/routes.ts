@@ -160,17 +160,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Business not found" });
       }
       
-      // Handle pay period settings separately for better validation
-      if (req.body.payPeriodType || req.body.payPeriodStartDay !== undefined) {
-        const updatedBusiness = await storage.updateBusinessSettings(req.session.businessId, {
-          payPeriodType: req.body.payPeriodType,
-          payPeriodStartDay: req.body.payPeriodStartDay
-        });
-        res.json(updatedBusiness);
-      } else {
-        const updatedBusiness = await storage.updateBusiness(req.session.businessId, req.body);
-        res.json(updatedBusiness);
-      }
+      const updatedBusiness = await storage.updateBusiness(req.session.businessId, req.body);
+      res.json(updatedBusiness);
     } catch (error) {
       res.status(400).json({ error: error.message });
     }

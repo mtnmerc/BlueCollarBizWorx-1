@@ -12,8 +12,7 @@ export const businesses = pgTable("businesses", {
   address: text("address"),
   logo: text("logo"), // URL or base64
   password: text("password").notNull(),
-  payPeriodType: text("pay_period_type").default("weekly"), // 'weekly' | 'biweekly'
-  payPeriodStartDay: integer("pay_period_start_day").default(1), // 1 = Monday, 0 = Sunday
+
   createdAt: timestamp("created_at").defaultNow(),
 });
 
