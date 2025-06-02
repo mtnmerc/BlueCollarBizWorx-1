@@ -12,7 +12,6 @@ export const businesses = pgTable("businesses", {
   address: text("address"),
   logo: text("logo"), // URL or base64
   password: text("password").notNull(),
-
   createdAt: timestamp("created_at").defaultNow(),
 });
 

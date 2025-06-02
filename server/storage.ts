@@ -19,7 +19,6 @@ export interface IStorage {
   getBusinessById(id: number): Promise<Business | undefined>;
   updateBusiness(id: number, business: Partial<InsertBusiness>): Promise<Business>;
 
-
   // User methods
   createUser(user: InsertUser): Promise<User>;
   getUserByPin(businessId: number, pin: string): Promise<User | undefined>;
@@ -68,14 +67,9 @@ export interface IStorage {
 
   // Time entry methods
   createTimeEntry(timeEntry: InsertTimeEntry): Promise<TimeEntry>;
-  getTimeEntriesByUser(userId: number, startDate?: string, endDate?: string): Promise<TimeEntry[]>;
-  getTimeEntriesByBusiness(businessId: number, startDate?: string, endDate?: string): Promise<TimeEntry[]>;
+  getTimeEntriesByUser(userId: number): Promise<TimeEntry[]>;
   getActiveTimeEntry(userId: number): Promise<TimeEntry | undefined>;
   updateTimeEntry(id: number, timeEntry: Partial<InsertTimeEntry>): Promise<TimeEntry>;
-  getTodayHours(userId: number): Promise<number>;
-  getTeamHoursSummary(businessId: number, startDate?: string, endDate?: string): Promise<any[]>;
-  getTimeEntryHistory(userId: number, filterType: 'day' | 'week' | 'payPeriod', date?: string): Promise<TimeEntry[]>;
-  getTeamTimeHistory(businessId: number, filterType: 'day' | 'week' | 'payPeriod', date?: string): Promise<any[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -106,8 +100,6 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return updatedBusiness;
   }
-
-
 
   // User methods
   async createUser(insertUser: InsertUser): Promise<User> {
@@ -471,215 +463,6 @@ export class DatabaseStorage implements IStorage {
       .where(eq(timeEntries.id, id))
       .returning();
     return updatedTimeEntry;
-  }
-
-  async getTimeEntriesByUser(userId: number, startDate?: string, endDate?: string): Promise<TimeEntry[]> {
-    let whereConditions = [eq(timeEntries.userId, userId)];
-
-    if (startDate && endDate) {
-      whereConditions.push(
-        sql`DATE(${timeEntries.clockIn}) >= ${startDate}`,
-        sql`DATE(${timeEntries.clockIn}) <= ${endDate}`
-      );
-    }
-
-    const entries = await db
-      .select()
-      .from(timeEntries)
-      .where(and(...whereConditions))
-      .orderBy(desc(timeEntries.clockIn));
-    
-    return entries;
-  }
-
-  async getTimeEntriesByBusiness(businessId: number, startDate?: string, endDate?: string): Promise<TimeEntry[]> {
-    let query = db
-      .select({
-        id: timeEntries.id,
-        businessId: timeEntries.businessId,
-        userId: timeEntries.userId,
-        clockIn: timeEntries.clockIn,
-        clockOut: timeEntries.clockOut,
-        totalHours: timeEntries.totalHours,
-        jobId: timeEntries.jobId,
-        notes: timeEntries.notes,
-        userName: users.firstName,
-        userLastName: users.lastName
-      })
-      .from(timeEntries)
-      .leftJoin(users, eq(timeEntries.userId, users.id))
-      .where(eq(timeEntries.businessId, businessId));
-
-    if (startDate && endDate) {
-      query = query.where(
-        and(
-          eq(timeEntries.businessId, businessId),
-          sql`DATE(${timeEntries.clockIn}) >= ${startDate}`,
-          sql`DATE(${timeEntries.clockIn}) <= ${endDate}`
-        )
-      );
-    }
-
-    const entries = await query.orderBy(desc(timeEntries.clockIn));
-    return entries;
-  }
-
-  async getTodayHours(userId: number): Promise<number> {
-    const today = new Date().toISOString().split('T')[0];
-    
-    const entries = await db
-      .select({ totalHours: timeEntries.totalHours })
-      .from(timeEntries)
-      .where(
-        and(
-          eq(timeEntries.userId, userId),
-          sql`DATE(${timeEntries.clockIn}) = ${today}`,
-          sql`${timeEntries.totalHours} IS NOT NULL`
-        )
-      );
-
-    return entries.reduce((sum, entry) => {
-      const hours = typeof entry.totalHours === 'string' ? parseFloat(entry.totalHours) : entry.totalHours;
-      return sum + (hours || 0);
-    }, 0);
-  }
-
-  async getTimeEntryHistory(userId: number, filterType: 'day' | 'week' | 'payPeriod', date?: string): Promise<TimeEntry[]> {
-    const targetDate = date ? new Date(date) : new Date();
-    let startDate: Date;
-    let endDate: Date;
-
-    switch (filterType) {
-      case 'day':
-        startDate = new Date(targetDate);
-        startDate.setHours(0, 0, 0, 0);
-        endDate = new Date(targetDate);
-        endDate.setHours(23, 59, 59, 999);
-        break;
-      
-      case 'week':
-        startDate = new Date(targetDate);
-        startDate.setDate(targetDate.getDate() - targetDate.getDay()); // Start of week (Sunday)
-        startDate.setHours(0, 0, 0, 0);
-        endDate = new Date(startDate);
-        endDate.setDate(startDate.getDate() + 6); // End of week (Saturday)
-        endDate.setHours(23, 59, 59, 999);
-        break;
-      
-      case 'payPeriod':
-        // Assuming bi-weekly pay periods starting from the 1st and 15th
-        const day = targetDate.getDate();
-        if (day <= 15) {
-          startDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1);
-          endDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), 15, 23, 59, 59, 999);
-        } else {
-          startDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), 16);
-          endDate = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0, 23, 59, 59, 999);
-        }
-        break;
-    }
-
-    return await db
-      .select()
-      .from(timeEntries)
-      .where(
-        and(
-          eq(timeEntries.userId, userId),
-          gte(timeEntries.clockIn, startDate),
-          lte(timeEntries.clockIn, endDate)
-        )
-      )
-      .orderBy(desc(timeEntries.clockIn));
-  }
-
-  async getTeamTimeHistory(businessId: number, filterType: 'day' | 'week' | 'payPeriod', date?: string): Promise<any[]> {
-    const targetDate = date ? new Date(date) : new Date();
-    let startDate: Date;
-    let endDate: Date;
-
-    switch (filterType) {
-      case 'day':
-        startDate = new Date(targetDate);
-        startDate.setHours(0, 0, 0, 0);
-        endDate = new Date(targetDate);
-        endDate.setHours(23, 59, 59, 999);
-        break;
-      
-      case 'week':
-        startDate = new Date(targetDate);
-        startDate.setDate(targetDate.getDate() - targetDate.getDay());
-        startDate.setHours(0, 0, 0, 0);
-        endDate = new Date(startDate);
-        endDate.setDate(startDate.getDate() + 6);
-        endDate.setHours(23, 59, 59, 999);
-        break;
-      
-      case 'payPeriod':
-        const day = targetDate.getDate();
-        if (day <= 15) {
-          startDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1);
-          endDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), 15, 23, 59, 59, 999);
-        } else {
-          startDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), 16);
-          endDate = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0, 23, 59, 59, 999);
-        }
-        break;
-    }
-
-    return await db
-      .select({
-        id: timeEntries.id,
-        userId: timeEntries.userId,
-        userName: users.firstName,
-        userLastName: users.lastName,
-        clockIn: timeEntries.clockIn,
-        clockOut: timeEntries.clockOut,
-        totalHours: timeEntries.totalHours,
-        notes: timeEntries.notes
-      })
-      .from(timeEntries)
-      .leftJoin(users, eq(timeEntries.userId, users.id))
-      .where(
-        and(
-          eq(timeEntries.businessId, businessId),
-          gte(timeEntries.clockIn, startDate),
-          lte(timeEntries.clockIn, endDate)
-        )
-      )
-      .orderBy(desc(timeEntries.clockIn));
-  }
-
-  async getTeamHoursSummary(businessId: number, startDate?: string, endDate?: string): Promise<any[]> {
-    let query = db
-      .select({
-        userId: timeEntries.userId,
-        userName: users.firstName,
-        userLastName: users.lastName,
-        totalHours: sql<number>`COALESCE(SUM(${timeEntries.totalHours}), 0)`
-      })
-      .from(timeEntries)
-      .leftJoin(users, eq(timeEntries.userId, users.id))
-      .where(
-        and(
-          eq(timeEntries.businessId, businessId),
-          sql`${timeEntries.totalHours} IS NOT NULL`
-        )
-      )
-      .groupBy(timeEntries.userId, users.firstName, users.lastName);
-
-    if (startDate && endDate) {
-      query = query.where(
-        and(
-          eq(timeEntries.businessId, businessId),
-          sql`DATE(${timeEntries.clockIn}) >= ${startDate}`,
-          sql`DATE(${timeEntries.clockIn}) <= ${endDate}`,
-          sql`${timeEntries.totalHours} IS NOT NULL`
-        )
-      );
-    }
-
-    const summary = await query;
-    return summary;
   }
 }
 
