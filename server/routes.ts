@@ -811,7 +811,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const updatedEntry = await storage.updateTimeEntry(activeEntry.id, {
         clockOut,
-        totalHours: Math.round(totalHours * 4) / 4, // Round to nearest 15 minutes
+        totalHours: Math.round(totalHours * 100) / 100, // Round to 2 decimal places
       });
 
       res.json(updatedEntry);
