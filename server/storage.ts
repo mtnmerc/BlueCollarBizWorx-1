@@ -68,8 +68,14 @@ export interface IStorage {
   // Time entry methods
   createTimeEntry(timeEntry: InsertTimeEntry): Promise<TimeEntry>;
   getTimeEntriesByUser(userId: number): Promise<TimeEntry[]>;
+  getTimeEntriesByUserAndDate(userId: number, date: Date): Promise<TimeEntry[]>;
   getActiveTimeEntry(userId: number): Promise<TimeEntry | undefined>;
   updateTimeEntry(id: number, timeEntry: Partial<InsertTimeEntry>): Promise<TimeEntry>;
+  getTimeEntriesForPayroll(businessId: number, startDate?: Date, endDate?: Date, userId?: number): Promise<TimeEntry[]>;
+
+  // Payroll settings methods
+  getPayrollSettings(businessId: number): Promise<PayrollSettings | undefined>;
+  updatePayrollSettings(businessId: number, settings: Partial<InsertPayrollSettings>): Promise<PayrollSettings>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -463,6 +469,81 @@ export class DatabaseStorage implements IStorage {
       .where(eq(timeEntries.id, id))
       .returning();
     return updatedTimeEntry;
+  }
+
+  async getTimeEntriesByUserAndDate(userId: number, date: Date): Promise<TimeEntry[]> {
+    const nextDay = new Date(date);
+    nextDay.setDate(date.getDate() + 1);
+    
+    return await db
+      .select()
+      .from(timeEntries)
+      .where(
+        and(
+          eq(timeEntries.userId, userId),
+          gte(timeEntries.clockIn, date),
+          lt(timeEntries.clockIn, nextDay)
+        )
+      )
+      .orderBy(desc(timeEntries.clockIn));
+  }
+
+  async getTimeEntriesForPayroll(businessId: number, startDate?: Date, endDate?: Date, userId?: number): Promise<TimeEntry[]> {
+    const conditions = [eq(timeEntries.businessId, businessId)];
+    
+    if (startDate) {
+      conditions.push(gte(timeEntries.clockIn, startDate));
+    }
+    if (endDate) {
+      conditions.push(lte(timeEntries.clockIn, endDate));
+    }
+    if (userId) {
+      conditions.push(eq(timeEntries.userId, userId));
+    }
+
+    return await db
+      .select()
+      .from(timeEntries)
+      .leftJoin(users, eq(timeEntries.userId, users.id))
+      .where(and(...conditions))
+      .orderBy(desc(timeEntries.clockIn));
+  }
+
+  async getPayrollSettings(businessId: number): Promise<PayrollSettings | undefined> {
+    const [settings] = await db
+      .select()
+      .from(payrollSettings)
+      .where(eq(payrollSettings.businessId, businessId));
+    
+    if (!settings) {
+      // Create default settings if none exist
+      const [newSettings] = await db
+        .insert(payrollSettings)
+        .values({ businessId })
+        .returning();
+      return newSettings;
+    }
+    
+    return settings;
+  }
+
+  async updatePayrollSettings(businessId: number, settings: Partial<InsertPayrollSettings>): Promise<PayrollSettings> {
+    const existing = await this.getPayrollSettings(businessId);
+    
+    if (!existing) {
+      const [newSettings] = await db
+        .insert(payrollSettings)
+        .values({ ...settings, businessId })
+        .returning();
+      return newSettings;
+    }
+
+    const [updatedSettings] = await db
+      .update(payrollSettings)
+      .set({ ...settings, updatedAt: new Date() })
+      .where(eq(payrollSettings.businessId, businessId))
+      .returning();
+    return updatedSettings;
   }
 }
 

@@ -315,6 +315,12 @@ export const insertTimeEntrySchema = createInsertSchema(timeEntries).omit({
   createdAt: true,
 });
 
+export const insertPayrollSettingsSchema = createInsertSchema(payrollSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type Business = typeof businesses.$inferSelect;
 export type InsertBusiness = z.infer<typeof insertBusinessSchema>;
@@ -332,3 +338,5 @@ export type Invoice = typeof invoices.$inferSelect;
 export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
 export type TimeEntry = typeof timeEntries.$inferSelect;
 export type InsertTimeEntry = z.infer<typeof insertTimeEntrySchema>;
+export type PayrollSettings = typeof payrollSettings.$inferSelect;
+export type InsertPayrollSettings = z.infer<typeof insertPayrollSettingsSchema>;
