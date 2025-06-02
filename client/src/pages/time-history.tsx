@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Clock, Users, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar, Clock, Users, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { format, addWeeks, subWeeks, addDays, subDays, startOfWeek, endOfWeek } from "date-fns";
 
 type FilterType = 'day' | 'week' | 'payPeriod';
@@ -84,10 +84,65 @@ export default function TimeHistory() {
     }
   };
 
-  // Filter team history by selected member
+  // Filter and sort team history by selected member
   const filteredTeamHistory = selectedTeamMember === 'all' 
     ? teamHistory 
     : teamHistory.filter((entry: any) => entry.userId.toString() === selectedTeamMember);
+
+  // Sort team history by employee name, then by date for accounting reports
+  const sortedTeamHistory = [...filteredTeamHistory].sort((a: any, b: any) => {
+    // First sort by employee name (last name, then first name)
+    const nameA = `${a.userLastName || ''} ${a.userName || ''}`.trim();
+    const nameB = `${b.userLastName || ''} ${b.userName || ''}`.trim();
+    const nameComparison = nameA.localeCompare(nameB);
+    
+    if (nameComparison !== 0) return nameComparison;
+    
+    // Then sort by date (newest first within each employee)
+    return new Date(b.clockIn).getTime() - new Date(a.clockIn).getTime();
+  });
+
+  // Generate CSV export for accounting
+  const exportToCSV = () => {
+    const headers = [
+      'Employee Name',
+      'Date',
+      'Clock In',
+      'Clock Out', 
+      'Total Hours',
+      'Notes',
+      'Status'
+    ];
+
+    const csvData = sortedTeamHistory.map((entry: any) => [
+      `${entry.userLastName || ''}, ${entry.userName || ''}`.trim(),
+      formatDate(entry.clockIn),
+      formatTime(entry.clockIn),
+      entry.clockOut ? formatTime(entry.clockOut) : 'Not Clocked Out',
+      entry.totalHours ? parseFloat(entry.totalHours).toFixed(2) : '0.00',
+      entry.notes || '',
+      entry.clockOut ? 'Complete' : 'Active'
+    ]);
+
+    // Add summary row
+    const totalHours = calculateTotalHours(sortedTeamHistory);
+    csvData.push(['', '', '', '', '', '', '']);
+    csvData.push(['TOTAL HOURS:', '', '', '', totalHours, '', '']);
+
+    const csvContent = [headers, ...csvData]
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `timesheet_${getDateRangeDisplay().replace(/[^a-zA-Z0-9]/g, '_')}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const formatHours = (hours: string | null) => {
     if (!hours) return '0.0';
@@ -278,14 +333,27 @@ export default function TimeHistory() {
       {teamHistory.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Team Hours ({calculateTotalHours(filteredTeamHistory)} total)
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Team Hours ({calculateTotalHours(sortedTeamHistory)} total)
+              </div>
+              {sortedTeamHistory.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={exportToCSV}
+                  className="flex items-center gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  Export CSV
+                </Button>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {filteredTeamHistory.map((entry: TimeEntry) => (
+              {sortedTeamHistory.map((entry: TimeEntry) => (
                 <div key={entry.id} className="flex items-center justify-between p-3 border rounded-lg">
                   <div>
                     <p className="font-medium">
