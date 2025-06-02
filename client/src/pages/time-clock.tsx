@@ -142,7 +142,14 @@ export default function TimeClock() {
               )}
               
               <div className="pt-6 border-t border-border">
-                <p className="text-muted-foreground">Today's Hours: 0.0</p>
+                <p className="text-muted-foreground">
+                  Today's Hours: {timeStatus?.todayHours?.toFixed(1) || '0.0'}
+                </p>
+                {timeStatus?.activeEntry && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Currently working: {Math.floor((Date.now() - new Date(timeStatus.activeEntry.clockIn).getTime()) / (1000 * 60))} minutes
+                  </p>
+                )}
               </div>
             </div>
           </CardContent>

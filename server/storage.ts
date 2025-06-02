@@ -469,22 +469,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTimeEntriesByUser(userId: number, startDate?: string, endDate?: string): Promise<TimeEntry[]> {
-    let query = db
-      .select()
-      .from(timeEntries)
-      .where(eq(timeEntries.userId, userId));
+    let whereConditions = [eq(timeEntries.userId, userId)];
 
     if (startDate && endDate) {
-      query = query.where(
-        and(
-          eq(timeEntries.userId, userId),
-          sql`DATE(${timeEntries.clockIn}) >= ${startDate}`,
-          sql`DATE(${timeEntries.clockIn}) <= ${endDate}`
-        )
+      whereConditions.push(
+        sql`DATE(${timeEntries.clockIn}) >= ${startDate}`,
+        sql`DATE(${timeEntries.clockIn}) <= ${endDate}`
       );
     }
 
-    const entries = await query.orderBy(desc(timeEntries.clockIn));
+    const entries = await db
+      .select()
+      .from(timeEntries)
+      .where(and(...whereConditions))
+      .orderBy(desc(timeEntries.clockIn));
+    
     return entries;
   }
 
