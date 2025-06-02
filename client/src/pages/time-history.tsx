@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,14 +32,16 @@ export default function TimeHistory() {
 
   // Fetch current business settings for payroll config
   const { data: authData } = useQuery({
-    queryKey: ["/api/auth/me"],
-    onSuccess: (data: any) => {
-      if (data.business) {
-        setPayPeriodType(data.business.payPeriodType || "weekly");
-        setPayPeriodStartDay(data.business.payPeriodStartDay || 1);
-      }
-    }
+    queryKey: ["/api/auth/me"]
   });
+
+  // Update payroll settings when data changes
+  React.useEffect(() => {
+    if (authData?.business) {
+      setPayPeriodType(authData.business.payPeriodType || "weekly");
+      setPayPeriodStartDay(authData.business.payPeriodStartDay || 1);
+    }
+  }, [authData]);
 
   // Update pay period settings
   const updateSettingsMutation = useMutation({

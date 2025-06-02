@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,19 +22,21 @@ export default function BusinessSettings() {
 
   // Fetch current business info
   const { data: authData, isLoading } = useQuery({
-    queryKey: ["/api/auth/me"],
-    onSuccess: (data) => {
-      if (data.business) {
-        setBusinessData({
-          name: data.business.name || "",
-          email: data.business.email || "",
-          phone: data.business.phone || "",
-          address: data.business.address || "",
-          logo: data.business.logo || ""
-        });
-      }
-    }
+    queryKey: ["/api/auth/me"]
   });
+
+  // Update state when data changes
+  React.useEffect(() => {
+    if (authData?.business) {
+      setBusinessData({
+        name: authData.business.name || "",
+        email: authData.business.email || "",
+        phone: authData.business.phone || "",
+        address: authData.business.address || "",
+        logo: authData.business.logo || ""
+      });
+    }
+  }, [authData]);
 
   // Update business info
   const updateBusinessMutation = useMutation({
