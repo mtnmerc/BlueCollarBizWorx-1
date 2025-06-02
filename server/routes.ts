@@ -855,6 +855,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get time entry history with filtering (day/week/pay period)
+  app.get("/api/time/history", authenticateSession, async (req, res) => {
+    try {
+      const { userId } = req.session;
+      const { filterType = 'day', date } = req.query;
+
+      const history = await storage.getTimeEntryHistory(
+        userId, 
+        filterType as 'day' | 'week' | 'payPeriod', 
+        date as string
+      );
+
+      res.json(history);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Get team time history (admin only)
+  app.get("/api/time/team-history", authenticateSession, async (req, res) => {
+    try {
+      const { businessId, role } = req.session;
+      
+      if (role !== "admin") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const { filterType = 'day', date } = req.query;
+
+      const history = await storage.getTeamTimeHistory(
+        businessId, 
+        filterType as 'day' | 'week' | 'payPeriod', 
+        date as string
+      );
+
+      res.json(history);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
   app.put("/api/time/entries/:id", authenticateSession, async (req, res) => {
     try {
       const { id } = req.params;

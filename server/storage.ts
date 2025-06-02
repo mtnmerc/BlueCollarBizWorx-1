@@ -73,6 +73,8 @@ export interface IStorage {
   updateTimeEntry(id: number, timeEntry: Partial<InsertTimeEntry>): Promise<TimeEntry>;
   getTodayHours(userId: number): Promise<number>;
   getTeamHoursSummary(businessId: number, startDate?: string, endDate?: string): Promise<any[]>;
+  getTimeEntryHistory(userId: number, filterType: 'day' | 'week' | 'payPeriod', date?: string): Promise<TimeEntry[]>;
+  getTeamTimeHistory(businessId: number, filterType: 'day' | 'week' | 'payPeriod', date?: string): Promise<any[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -533,7 +535,115 @@ export class DatabaseStorage implements IStorage {
         )
       );
 
-    return entries.reduce((sum, entry) => sum + (entry.totalHours || 0), 0);
+    return entries.reduce((sum, entry) => {
+      const hours = typeof entry.totalHours === 'string' ? parseFloat(entry.totalHours) : entry.totalHours;
+      return sum + (hours || 0);
+    }, 0);
+  }
+
+  async getTimeEntryHistory(userId: number, filterType: 'day' | 'week' | 'payPeriod', date?: string): Promise<TimeEntry[]> {
+    const targetDate = date ? new Date(date) : new Date();
+    let startDate: Date;
+    let endDate: Date;
+
+    switch (filterType) {
+      case 'day':
+        startDate = new Date(targetDate);
+        startDate.setHours(0, 0, 0, 0);
+        endDate = new Date(targetDate);
+        endDate.setHours(23, 59, 59, 999);
+        break;
+      
+      case 'week':
+        startDate = new Date(targetDate);
+        startDate.setDate(targetDate.getDate() - targetDate.getDay()); // Start of week (Sunday)
+        startDate.setHours(0, 0, 0, 0);
+        endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + 6); // End of week (Saturday)
+        endDate.setHours(23, 59, 59, 999);
+        break;
+      
+      case 'payPeriod':
+        // Assuming bi-weekly pay periods starting from the 1st and 15th
+        const day = targetDate.getDate();
+        if (day <= 15) {
+          startDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1);
+          endDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), 15, 23, 59, 59, 999);
+        } else {
+          startDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), 16);
+          endDate = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0, 23, 59, 59, 999);
+        }
+        break;
+    }
+
+    return await db
+      .select()
+      .from(timeEntries)
+      .where(
+        and(
+          eq(timeEntries.userId, userId),
+          gte(timeEntries.clockIn, startDate),
+          lte(timeEntries.clockIn, endDate)
+        )
+      )
+      .orderBy(desc(timeEntries.clockIn));
+  }
+
+  async getTeamTimeHistory(businessId: number, filterType: 'day' | 'week' | 'payPeriod', date?: string): Promise<any[]> {
+    const targetDate = date ? new Date(date) : new Date();
+    let startDate: Date;
+    let endDate: Date;
+
+    switch (filterType) {
+      case 'day':
+        startDate = new Date(targetDate);
+        startDate.setHours(0, 0, 0, 0);
+        endDate = new Date(targetDate);
+        endDate.setHours(23, 59, 59, 999);
+        break;
+      
+      case 'week':
+        startDate = new Date(targetDate);
+        startDate.setDate(targetDate.getDate() - targetDate.getDay());
+        startDate.setHours(0, 0, 0, 0);
+        endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + 6);
+        endDate.setHours(23, 59, 59, 999);
+        break;
+      
+      case 'payPeriod':
+        const day = targetDate.getDate();
+        if (day <= 15) {
+          startDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1);
+          endDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), 15, 23, 59, 59, 999);
+        } else {
+          startDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), 16);
+          endDate = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0, 23, 59, 59, 999);
+        }
+        break;
+    }
+
+    return await db
+      .select({
+        id: timeEntries.id,
+        userId: timeEntries.userId,
+        userName: users.firstName,
+        userLastName: users.lastName,
+        clockIn: timeEntries.clockIn,
+        clockOut: timeEntries.clockOut,
+        totalHours: timeEntries.totalHours,
+        notes: timeEntries.notes
+      })
+      .from(timeEntries)
+      .leftJoin(users, eq(timeEntries.userId, users.id))
+      .where(
+        and(
+          eq(timeEntries.businessId, businessId),
+          gte(timeEntries.clockIn, startDate),
+          lte(timeEntries.clockIn, endDate)
+        )
+      )
+      .orderBy(desc(timeEntries.clockIn));
   }
 
   async getTeamHoursSummary(businessId: number, startDate?: string, endDate?: string): Promise<any[]> {
