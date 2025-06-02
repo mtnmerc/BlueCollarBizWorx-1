@@ -3,8 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Clock, Users } from "lucide-react";
-import { format } from "date-fns";
+import { Calendar, Clock, Users, ChevronLeft, ChevronRight } from "lucide-react";
+import { format, addWeeks, subWeeks, addDays, subDays, startOfWeek, endOfWeek } from "date-fns";
 
 type FilterType = 'day' | 'week' | 'payPeriod';
 
@@ -21,6 +21,7 @@ interface TimeEntry {
 export default function TimeHistory() {
   const [filterType, setFilterType] = useState<FilterType>('day');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedTeamMember, setSelectedTeamMember] = useState<string>('all');
 
   const { data: timeHistory = [], isLoading } = useQuery({
     queryKey: ['/api/time/history', filterType, selectedDate],
@@ -42,6 +43,51 @@ export default function TimeHistory() {
       return response.json();
     }
   });
+
+  const { data: teamMembers = [] } = useQuery({
+    queryKey: ['/api/team'],
+    queryFn: async () => {
+      const response = await fetch('/api/team');
+      return response.json();
+    }
+  });
+
+  // Navigation functions
+  const navigateDate = (direction: 'prev' | 'next') => {
+    const currentDate = new Date(selectedDate);
+    let newDate: Date;
+
+    if (filterType === 'day') {
+      newDate = direction === 'prev' ? subDays(currentDate, 1) : addDays(currentDate, 1);
+    } else if (filterType === 'week') {
+      newDate = direction === 'prev' ? subWeeks(currentDate, 1) : addWeeks(currentDate, 1);
+    } else { // payPeriod
+      newDate = direction === 'prev' ? subWeeks(currentDate, 2) : addWeeks(currentDate, 2);
+    }
+
+    setSelectedDate(newDate.toISOString().split('T')[0]);
+  };
+
+  // Get date range for display
+  const getDateRangeDisplay = () => {
+    const currentDate = new Date(selectedDate);
+    if (filterType === 'day') {
+      return format(currentDate, 'EEEE, MMMM d, yyyy');
+    } else if (filterType === 'week') {
+      const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+      const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
+      return `${format(weekStart, 'MMM d')} - ${format(weekEnd, 'MMM d, yyyy')}`;
+    } else { // payPeriod
+      const payStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+      const payEnd = addWeeks(payStart, 2);
+      return `${format(payStart, 'MMM d')} - ${format(payEnd, 'MMM d, yyyy')}`;
+    }
+  };
+
+  // Filter team history by selected member
+  const filteredTeamHistory = selectedTeamMember === 'all' 
+    ? teamHistory 
+    : teamHistory.filter((entry: any) => entry.userId.toString() === selectedTeamMember);
 
   const formatHours = (hours: string | null) => {
     if (!hours) return '0.0';
@@ -141,11 +187,51 @@ export default function TimeHistory() {
             </div>
           </div>
           
-          <div className="p-3 bg-muted rounded-md">
-            <p className="text-sm text-muted-foreground">
-              Showing: <span className="font-medium">{getDateRange()}</span>
-            </p>
+          {/* Navigation Controls */}
+          <div className="flex items-center justify-between py-3 px-4 bg-muted rounded-md">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => navigateDate('prev')}
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Previous {filterType === 'day' ? 'Day' : filterType === 'week' ? 'Week' : 'Period'}
+            </Button>
+            
+            <div className="text-center">
+              <p className="font-medium text-sm">{getDateRangeDisplay()}</p>
+            </div>
+            
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => navigateDate('next')}
+            >
+              Next {filterType === 'day' ? 'Day' : filterType === 'week' ? 'Week' : 'Period'}
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
           </div>
+
+          {/* Team Member Filter (Admin Only) */}
+          {teamHistory.length > 0 && (
+            <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-md">
+              <Users className="h-4 w-4" />
+              <label className="text-sm font-medium">Filter by Team Member:</label>
+              <Select value={selectedTeamMember} onValueChange={setSelectedTeamMember}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Select team member" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Team Members</SelectItem>
+                  {teamMembers.map((member: any) => (
+                    <SelectItem key={member.id} value={member.id.toString()}>
+                      {member.firstName} {member.lastName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </CardContent>
       </Card>
 
