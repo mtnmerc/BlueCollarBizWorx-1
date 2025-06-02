@@ -152,6 +152,18 @@ export const timeEntries = pgTable("time_entries", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Payroll settings table
+export const payrollSettings = pgTable("payroll_settings", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull().references(() => businesses.id),
+  payPeriodType: text("pay_period_type").notNull().default("weekly"), // weekly, biweekly, monthly
+  payPeriodStartDay: integer("pay_period_start_day").notNull().default(1), // 1=Monday, 0=Sunday
+  overtimeThreshold: decimal("overtime_threshold", { precision: 5, scale: 2 }).default("40.00"),
+  overtimeMultiplier: decimal("overtime_multiplier", { precision: 3, scale: 2 }).default("1.50"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Relations
 export const businessRelations = relations(businesses, ({ many }) => ({
   users: many(users),
@@ -161,6 +173,7 @@ export const businessRelations = relations(businesses, ({ many }) => ({
   estimates: many(estimates),
   invoices: many(invoices),
   timeEntries: many(timeEntries),
+  payrollSettings: many(payrollSettings),
 }));
 
 export const userRelations = relations(users, ({ one, many }) => ({
@@ -242,6 +255,13 @@ export const timeEntryRelations = relations(timeEntries, ({ one }) => ({
   job: one(jobs, {
     fields: [timeEntries.jobId],
     references: [jobs.id],
+  }),
+}));
+
+export const payrollSettingsRelations = relations(payrollSettings, ({ one }) => ({
+  business: one(businesses, {
+    fields: [payrollSettings.businessId],
+    references: [businesses.id],
   }),
 }));
 

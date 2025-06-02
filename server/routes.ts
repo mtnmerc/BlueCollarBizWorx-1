@@ -824,9 +824,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { userId } = req.session;
       const activeEntry = await storage.getActiveTimeEntry(userId);
-      res.json({ activeEntry });
+      
+      // Calculate today's hours
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayEntries = await storage.getTimeEntriesByUserAndDate(userId, today);
+      const todayHours = todayEntries.reduce((total, entry) => total + (entry.totalHours || 0), 0);
+      
+      res.json({ 
+        activeEntry,
+        todayHours: Math.round(todayHours * 100) / 100 
+      });
     } catch (error) {
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get time entries for payroll management
+  app.get("/api/time/entries", authenticateSession, async (req, res) => {
+    try {
+      if (req.session.role !== "admin") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const { startDate, endDate, userId } = req.query;
+      const entries = await storage.getTimeEntriesForPayroll(
+        req.session.businessId, 
+        startDate ? new Date(startDate as string) : undefined,
+        endDate ? new Date(endDate as string) : undefined,
+        userId ? parseInt(userId as string) : undefined
+      );
+      res.json(entries);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Edit time entry
+  app.put("/api/time/entries/:id", authenticateSession, async (req, res) => {
+    try {
+      if (req.session.role !== "admin") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const entryId = parseInt(req.params.id);
+      const { clockIn, clockOut, totalHours } = req.body;
+      
+      const updatedEntry = await storage.updateTimeEntry(entryId, {
+        clockIn: clockIn ? new Date(clockIn) : undefined,
+        clockOut: clockOut ? new Date(clockOut) : undefined,
+        totalHours: totalHours ? parseFloat(totalHours) : undefined
+      });
+
+      res.json(updatedEntry);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Get payroll settings
+  app.get("/api/payroll/settings", authenticateSession, async (req, res) => {
+    try {
+      if (req.session.role !== "admin") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const settings = await storage.getPayrollSettings(req.session.businessId);
+      res.json(settings);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Update payroll settings
+  app.put("/api/payroll/settings", authenticateSession, async (req, res) => {
+    try {
+      if (req.session.role !== "admin") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const settings = await storage.updatePayrollSettings(req.session.businessId, req.body);
+      res.json(settings);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
     }
   });
 
