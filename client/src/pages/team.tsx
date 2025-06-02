@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Link } from "wouter";
 import { 
   Plus, 
   Clock, 
@@ -293,64 +294,70 @@ export default function Team() {
             <div className="space-y-3">
               {isAdmin && (
                 <>
-                  <Card className="interactive-card">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-                            <Settings className="h-5 w-5 text-primary-foreground" />
+                  <Link href="/business-settings">
+                    <Card className="interactive-card cursor-pointer hover:bg-accent/50 transition-colors">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                              <Settings className="h-5 w-5 text-primary-foreground" />
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-foreground">Business Settings</h3>
+                              <p className="text-sm text-muted-foreground">Manage business info and preferences</p>
+                            </div>
                           </div>
-                          <div>
-                            <h3 className="font-semibold text-foreground">Business Settings</h3>
-                            <p className="text-sm text-muted-foreground">Manage business info and preferences</p>
-                          </div>
+                          <Button variant="ghost" size="sm">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
                         </div>
-                        <Button variant="ghost" size="sm">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
+                      </CardContent>
+                    </Card>
+                  </Link>
 
-                  <Card className="interactive-card">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-secondary rounded-lg flex items-center justify-center">
-                            <Shield className="h-5 w-5 text-secondary-foreground" />
+                  <Link href="/team/new">
+                    <Card className="interactive-card cursor-pointer hover:bg-accent/50 transition-colors">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 bg-secondary rounded-lg flex items-center justify-center">
+                              <Shield className="h-5 w-5 text-secondary-foreground" />
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-foreground">User Management</h3>
+                              <p className="text-sm text-muted-foreground">Add, edit, or remove team members</p>
+                            </div>
                           </div>
-                          <div>
-                            <h3 className="font-semibold text-foreground">User Management</h3>
-                            <p className="text-sm text-muted-foreground">Add, edit, or remove team members</p>
-                          </div>
+                          <Button variant="ghost" size="sm">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
                         </div>
-                        <Button variant="ghost" size="sm">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
+                      </CardContent>
+                    </Card>
+                  </Link>
                 </>
               )}
 
-              <Card className="interactive-card">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-accent rounded-lg flex items-center justify-center">
-                        <User className="h-5 w-5 text-accent-foreground" />
+              <Link href="/time-history">
+                <Card className="interactive-card cursor-pointer hover:bg-accent/50 transition-colors">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-accent rounded-lg flex items-center justify-center">
+                          <Clock className="h-5 w-5 text-accent-foreground" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-foreground">Time History</h3>
+                          <p className="text-sm text-muted-foreground">View time entries and payroll settings</p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="font-semibold text-foreground">My Profile</h3>
-                        <p className="text-sm text-muted-foreground">Update your personal information</p>
-                      </div>
+                      <Button variant="ghost" size="sm">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
                     </div>
-                    <Button variant="ghost" size="sm">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </Link>
 
               <Card className="interactive-card" onClick={handleLogout}>
                 <CardContent className="p-4">
