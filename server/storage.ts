@@ -1,5 +1,5 @@
 import { 
-  businesses, users, clients, services, jobs, estimates, invoices, timeEntries,
+  businesses, users, clients, services, jobs, estimates, invoices, timeEntries, payrollSettings,
   type Business, type InsertBusiness,
   type User, type InsertUser,
   type Client, type InsertClient,
@@ -7,10 +7,11 @@ import {
   type Job, type InsertJob,
   type Estimate, type InsertEstimate,
   type Invoice, type InsertInvoice,
-  type TimeEntry, type InsertTimeEntry
+  type TimeEntry, type InsertTimeEntry,
+  type PayrollSettings, type InsertPayrollSettings
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, gte, lte, sql, isNull } from "drizzle-orm";
+import { eq, and, desc, gte, lte, lt, sql, isNull } from "drizzle-orm";
 
 export interface IStorage {
   // Business methods
