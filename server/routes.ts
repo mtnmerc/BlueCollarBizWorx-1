@@ -1066,6 +1066,117 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get payroll data for admin
+  app.get("/api/time/payroll", async (req, res) => {
+    if (!req.session.role || req.session.role !== "admin") {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+
+    try {
+      const { userId, startDate, endDate } = req.query;
+      const entries = await storage.getTimeEntriesForPayroll(
+        req.session.businessId,
+        startDate ? new Date(startDate as string) : undefined,
+        endDate ? new Date(endDate as string) : undefined,
+        userId && userId !== "all" ? parseInt(userId as string) : undefined
+      );
+      
+      res.json(entries);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to get payroll data" });
+    }
+  });
+
+  // Update time entry
+  app.put("/api/time/entries/:id", async (req, res) => {
+    if (!req.session.role || req.session.role !== "admin") {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+
+    try {
+      const { id } = req.params;
+      const { totalHours } = req.body;
+      
+      const updatedEntry = await storage.updateTimeEntry(parseInt(id), {
+        totalHours: totalHours as string
+      });
+      
+      res.json(updatedEntry);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to update time entry" });
+    }
+  });
+
+  // Export payroll data as CSV
+  app.get("/api/time/export", async (req, res) => {
+    if (!req.session.role || req.session.role !== "admin") {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+
+    try {
+      const { userId, startDate, endDate } = req.query;
+      const entries = await storage.getTimeEntriesForPayroll(
+        req.session.businessId,
+        startDate ? new Date(startDate as string) : undefined,
+        endDate ? new Date(endDate as string) : undefined,
+        userId && userId !== "all" ? parseInt(userId as string) : undefined
+      );
+
+      // Generate CSV content
+      const csvHeader = "Employee,Date,Clock In,Clock Out,Break Duration,Total Hours\n";
+      const csvRows = entries.map((entry: any) => {
+        const breakDuration = entry.breakStart && entry.breakEnd 
+          ? Math.round((new Date(entry.breakEnd).getTime() - new Date(entry.breakStart).getTime()) / (1000 * 60))
+          : 0;
+        
+        return [
+          `"${entry.user?.firstName || ''} ${entry.user?.lastName || ''}"`,
+          new Date(entry.clockIn).toLocaleDateString(),
+          new Date(entry.clockIn).toLocaleTimeString(),
+          entry.clockOut ? new Date(entry.clockOut).toLocaleTimeString() : "Active",
+          breakDuration ? `${breakDuration} min` : "-",
+          entry.totalHours || "0"
+        ].join(",");
+      }).join("\n");
+
+      const csvContent = csvHeader + csvRows;
+      
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename="payroll-export.csv"');
+      res.send(csvContent);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to export payroll data" });
+    }
+  });
+
+  // Get payroll settings
+  app.get("/api/payroll/settings", async (req, res) => {
+    if (!req.session.role || req.session.role !== "admin") {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+
+    try {
+      const settings = await storage.getPayrollSettings(req.session.businessId);
+      res.json(settings);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to get payroll settings" });
+    }
+  });
+
+  // Update payroll settings
+  app.put("/api/payroll/settings", async (req, res) => {
+    if (!req.session.role || req.session.role !== "admin") {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+
+    try {
+      const settings = await storage.updatePayrollSettings(req.session.businessId, req.body);
+      res.json(settings);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to update payroll settings" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

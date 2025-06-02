@@ -327,7 +327,7 @@ export default function TimeClock() {
                       <SelectValue placeholder="All team members" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All team members</SelectItem>
+                      <SelectItem value="all">All team members</SelectItem>
                       {teamMembers?.map((member: any) => (
                         <SelectItem key={member.id} value={member.id.toString()}>
                           {member.firstName} {member.lastName}

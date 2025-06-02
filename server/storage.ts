@@ -489,7 +489,7 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(timeEntries.clockIn));
   }
 
-  async getTimeEntriesForPayroll(businessId: number, startDate?: Date, endDate?: Date, userId?: number): Promise<TimeEntry[]> {
+  async getTimeEntriesForPayroll(businessId: number, startDate?: Date, endDate?: Date, userId?: number): Promise<any[]> {
     const conditions = [eq(timeEntries.businessId, businessId)];
     
     if (startDate) {
@@ -502,12 +502,32 @@ export class DatabaseStorage implements IStorage {
       conditions.push(eq(timeEntries.userId, userId));
     }
 
-    return await db
-      .select()
+    const results = await db
+      .select({
+        id: timeEntries.id,
+        businessId: timeEntries.businessId,
+        userId: timeEntries.userId,
+        jobId: timeEntries.jobId,
+        clockIn: timeEntries.clockIn,
+        clockOut: timeEntries.clockOut,
+        breakStart: timeEntries.breakStart,
+        breakEnd: timeEntries.breakEnd,
+        totalHours: timeEntries.totalHours,
+        notes: timeEntries.notes,
+        createdAt: timeEntries.createdAt,
+        user: {
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          username: users.username
+        }
+      })
       .from(timeEntries)
       .leftJoin(users, eq(timeEntries.userId, users.id))
       .where(and(...conditions))
       .orderBy(desc(timeEntries.clockIn));
+
+    return results;
   }
 
   async getPayrollSettings(businessId: number): Promise<PayrollSettings | undefined> {
