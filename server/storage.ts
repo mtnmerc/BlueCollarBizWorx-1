@@ -67,9 +67,12 @@ export interface IStorage {
 
   // Time entry methods
   createTimeEntry(timeEntry: InsertTimeEntry): Promise<TimeEntry>;
-  getTimeEntriesByUser(userId: number): Promise<TimeEntry[]>;
+  getTimeEntriesByUser(userId: number, startDate?: string, endDate?: string): Promise<TimeEntry[]>;
+  getTimeEntriesByBusiness(businessId: number, startDate?: string, endDate?: string): Promise<TimeEntry[]>;
   getActiveTimeEntry(userId: number): Promise<TimeEntry | undefined>;
   updateTimeEntry(id: number, timeEntry: Partial<InsertTimeEntry>): Promise<TimeEntry>;
+  getTodayHours(userId: number): Promise<number>;
+  getTeamHoursSummary(businessId: number, startDate?: string, endDate?: string): Promise<any[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -463,6 +466,108 @@ export class DatabaseStorage implements IStorage {
       .where(eq(timeEntries.id, id))
       .returning();
     return updatedTimeEntry;
+  }
+
+  async getTimeEntriesByUser(userId: number, startDate?: string, endDate?: string): Promise<TimeEntry[]> {
+    let query = db
+      .select()
+      .from(timeEntries)
+      .where(eq(timeEntries.userId, userId));
+
+    if (startDate && endDate) {
+      query = query.where(
+        and(
+          eq(timeEntries.userId, userId),
+          sql`DATE(${timeEntries.clockIn}) >= ${startDate}`,
+          sql`DATE(${timeEntries.clockIn}) <= ${endDate}`
+        )
+      );
+    }
+
+    const entries = await query.orderBy(desc(timeEntries.clockIn));
+    return entries;
+  }
+
+  async getTimeEntriesByBusiness(businessId: number, startDate?: string, endDate?: string): Promise<TimeEntry[]> {
+    let query = db
+      .select({
+        id: timeEntries.id,
+        businessId: timeEntries.businessId,
+        userId: timeEntries.userId,
+        clockIn: timeEntries.clockIn,
+        clockOut: timeEntries.clockOut,
+        totalHours: timeEntries.totalHours,
+        jobId: timeEntries.jobId,
+        notes: timeEntries.notes,
+        userName: users.firstName,
+        userLastName: users.lastName
+      })
+      .from(timeEntries)
+      .leftJoin(users, eq(timeEntries.userId, users.id))
+      .where(eq(timeEntries.businessId, businessId));
+
+    if (startDate && endDate) {
+      query = query.where(
+        and(
+          eq(timeEntries.businessId, businessId),
+          sql`DATE(${timeEntries.clockIn}) >= ${startDate}`,
+          sql`DATE(${timeEntries.clockIn}) <= ${endDate}`
+        )
+      );
+    }
+
+    const entries = await query.orderBy(desc(timeEntries.clockIn));
+    return entries;
+  }
+
+  async getTodayHours(userId: number): Promise<number> {
+    const today = new Date().toISOString().split('T')[0];
+    
+    const entries = await db
+      .select({ totalHours: timeEntries.totalHours })
+      .from(timeEntries)
+      .where(
+        and(
+          eq(timeEntries.userId, userId),
+          sql`DATE(${timeEntries.clockIn}) = ${today}`,
+          sql`${timeEntries.totalHours} IS NOT NULL`
+        )
+      );
+
+    return entries.reduce((sum, entry) => sum + (entry.totalHours || 0), 0);
+  }
+
+  async getTeamHoursSummary(businessId: number, startDate?: string, endDate?: string): Promise<any[]> {
+    let query = db
+      .select({
+        userId: timeEntries.userId,
+        userName: users.firstName,
+        userLastName: users.lastName,
+        totalHours: sql<number>`COALESCE(SUM(${timeEntries.totalHours}), 0)`
+      })
+      .from(timeEntries)
+      .leftJoin(users, eq(timeEntries.userId, users.id))
+      .where(
+        and(
+          eq(timeEntries.businessId, businessId),
+          sql`${timeEntries.totalHours} IS NOT NULL`
+        )
+      )
+      .groupBy(timeEntries.userId, users.firstName, users.lastName);
+
+    if (startDate && endDate) {
+      query = query.where(
+        and(
+          eq(timeEntries.businessId, businessId),
+          sql`DATE(${timeEntries.clockIn}) >= ${startDate}`,
+          sql`DATE(${timeEntries.clockIn}) <= ${endDate}`,
+          sql`${timeEntries.totalHours} IS NOT NULL`
+        )
+      );
+    }
+
+    const summary = await query;
+    return summary;
   }
 }
 

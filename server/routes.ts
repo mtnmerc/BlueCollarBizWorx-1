@@ -823,10 +823,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/time/status", authenticateSession, async (req, res) => {
     try {
       const { userId } = req.session;
+      
       const activeEntry = await storage.getActiveTimeEntry(userId);
-      res.json({ activeEntry });
+      const todayHours = await storage.getTodayHours(userId);
+      
+      res.json({
+        activeEntry,
+        todayHours
+      });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/time/entries", authenticateSession, async (req, res) => {
+    try {
+      const { businessId } = req.session;
+      const { userId, startDate, endDate } = req.query;
+      
+      if (userId) {
+        // Get entries for specific user
+        const entries = await storage.getTimeEntriesByUser(Number(userId), startDate as string, endDate as string);
+        res.json(entries);
+      } else {
+        // Get all entries for business (admin view)
+        const entries = await storage.getTimeEntriesByBusiness(businessId, startDate as string, endDate as string);
+        res.json(entries);
+      }
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.put("/api/time/entries/:id", authenticateSession, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { clockIn, clockOut, totalHours, notes } = req.body;
+      
+      const updatedEntry = await storage.updateTimeEntry(Number(id), {
+        clockIn: clockIn ? new Date(clockIn) : undefined,
+        clockOut: clockOut ? new Date(clockOut) : undefined,
+        totalHours,
+        notes
+      });
+
+      res.json(updatedEntry);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/time/team-hours", authenticateSession, async (req, res) => {
+    try {
+      const { businessId } = req.session;
+      const { startDate, endDate } = req.query;
+      
+      const teamHours = await storage.getTeamHoursSummary(businessId, startDate as string, endDate as string);
+      res.json(teamHours);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
     }
   });
 
