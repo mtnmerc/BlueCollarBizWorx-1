@@ -18,6 +18,7 @@ export interface IStorage {
   getBusinessByEmail(email: string): Promise<Business | undefined>;
   getBusinessById(id: number): Promise<Business | undefined>;
   updateBusiness(id: number, business: Partial<InsertBusiness>): Promise<Business>;
+  updateBusinessSettings(id: number, settings: { payPeriodType?: string; payPeriodStartDay?: number }): Promise<Business>;
 
   // User methods
   createUser(user: InsertUser): Promise<User>;
@@ -101,6 +102,15 @@ export class DatabaseStorage implements IStorage {
     const [updatedBusiness] = await db
       .update(businesses)
       .set(business)
+      .where(eq(businesses.id, id))
+      .returning();
+    return updatedBusiness;
+  }
+
+  async updateBusinessSettings(id: number, settings: { payPeriodType?: string; payPeriodStartDay?: number }): Promise<Business> {
+    const [updatedBusiness] = await db
+      .update(businesses)
+      .set(settings)
       .where(eq(businesses.id, id))
       .returning();
     return updatedBusiness;

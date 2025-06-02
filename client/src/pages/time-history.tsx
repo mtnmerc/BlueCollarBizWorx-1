@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, Clock, Users, ChevronLeft, ChevronRight, Download } from "lucide-react";
-import { format, addWeeks, subWeeks, addDays, subDays, startOfWeek, endOfWeek } from "date-fns";
+import { format, addWeeks, subWeeks, addDays, subDays, startOfWeek, endOfWeek, startOfDay } from "date-fns";
 
 type FilterType = 'day' | 'week' | 'payPeriod';
 
