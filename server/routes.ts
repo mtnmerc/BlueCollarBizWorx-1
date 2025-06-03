@@ -975,6 +975,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update time entry (admin only)
+  app.patch("/api/time/entries/:id", authenticateSession, async (req, res) => {
+    try {
+      if (!req.session.role || req.session.role !== 'admin') {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const entryId = parseInt(req.params.id);
+      const updateData: any = {};
+      
+      if (req.body.clockIn) {
+        updateData.clockIn = new Date(req.body.clockIn);
+      }
+      if (req.body.clockOut) {
+        updateData.clockOut = new Date(req.body.clockOut);
+      }
+      if (req.body.totalHours !== undefined) {
+        updateData.totalHours = req.body.totalHours;
+      }
+      
+      const updatedEntry = await storage.updateTimeEntry(entryId, updateData);
+      res.json(updatedEntry);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update time entry" });
+    }
+  });
+
   app.post("/api/team", authenticateSession, async (req, res) => {
     try {
       if (req.session.role !== "admin") {

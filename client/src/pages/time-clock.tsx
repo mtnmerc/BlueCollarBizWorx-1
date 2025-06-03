@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Clock, Download, Edit2, Settings, Users } from "lucide-react";
+import { ArrowLeft, Clock, Download, Edit2, Settings, Users, Save } from "lucide-react";
 import { Link } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { authApi } from "@/lib/auth";
@@ -31,6 +32,12 @@ export default function TimeClock() {
   const [selectedDateRange, setSelectedDateRange] = useState({
     start: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
     end: new Date().toISOString().split('T')[0]
+  });
+  const [editingEntry, setEditingEntry] = useState<any>(null);
+  const [editForm, setEditForm] = useState({
+    clockIn: "",
+    clockOut: "",
+    totalHours: ""
   });
 
   useEffect(() => {
@@ -153,6 +160,7 @@ export default function TimeClock() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/time/payroll"] });
+      setEditingEntry(null);
       toast({
         title: "Time Entry Updated",
         description: "Successfully updated the time entry.",
@@ -166,6 +174,28 @@ export default function TimeClock() {
       });
     },
   });
+
+  // Handle opening edit dialog
+  const handleEditEntry = (entry: any) => {
+    setEditingEntry(entry);
+    setEditForm({
+      clockIn: entry.clockIn ? new Date(entry.clockIn).toISOString().slice(0, 16) : "",
+      clockOut: entry.clockOut ? new Date(entry.clockOut).toISOString().slice(0, 16) : "",
+      totalHours: entry.totalHours?.toString() || ""
+    });
+  };
+
+  // Handle saving edited entry
+  const handleSaveEdit = () => {
+    if (!editingEntry) return;
+    
+    const updateData: any = { id: editingEntry.id };
+    if (editForm.clockIn) updateData.clockIn = editForm.clockIn;
+    if (editForm.clockOut) updateData.clockOut = editForm.clockOut;
+    if (editForm.totalHours) updateData.totalHours = editForm.totalHours;
+    
+    updateTimeEntryMutation.mutate(updateData);
+  };
 
   // Export payroll mutation
   const exportPayrollMutation = useMutation({
@@ -500,28 +530,90 @@ export default function TimeClock() {
                           }
                         </TableCell>
                         <TableCell>
-                          <Input
-                            type="number"
-                            step="0.1"
-                            value={entry.totalHours || ""}
-                            onChange={(e) => {
-                              // Update local state or handle optimistically
-                            }}
-                            onBlur={(e) => {
-                              if (e.target.value !== entry.totalHours) {
-                                updateTimeEntryMutation.mutate({
-                                  id: entry.id,
-                                  totalHours: e.target.value
-                                });
-                              }
-                            }}
-                            className="w-20"
-                          />
+                          <span className="font-mono">
+                            {entry.totalHours ? `${entry.totalHours}h` : "-"}
+                          </span>
                         </TableCell>
                         <TableCell>
-                          <Button variant="ghost" size="sm">
-                            <Edit2 className="w-4 h-4" />
-                          </Button>
+                          {authData?.user?.role === 'admin' && (
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => handleEditEntry(entry)}
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>Edit Time Entry</DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-4">
+                                  <div>
+                                    <Label htmlFor="edit-employee">Employee</Label>
+                                    <Input
+                                      value={`${entry.user?.firstName} ${entry.user?.lastName}`}
+                                      disabled
+                                      className="bg-muted"
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label htmlFor="edit-date">Date</Label>
+                                    <Input
+                                      value={new Date(entry.clockIn).toLocaleDateString()}
+                                      disabled
+                                      className="bg-muted"
+                                    />
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                      <Label htmlFor="edit-clock-in">Clock In</Label>
+                                      <Input
+                                        id="edit-clock-in"
+                                        type="datetime-local"
+                                        value={editForm.clockIn}
+                                        onChange={(e) => setEditForm(prev => ({ ...prev, clockIn: e.target.value }))}
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label htmlFor="edit-clock-out">Clock Out</Label>
+                                      <Input
+                                        id="edit-clock-out"
+                                        type="datetime-local"
+                                        value={editForm.clockOut}
+                                        onChange={(e) => setEditForm(prev => ({ ...prev, clockOut: e.target.value }))}
+                                      />
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <Label htmlFor="edit-total-hours">Total Hours</Label>
+                                    <Input
+                                      id="edit-total-hours"
+                                      type="number"
+                                      step="0.1"
+                                      value={editForm.totalHours}
+                                      onChange={(e) => setEditForm(prev => ({ ...prev, totalHours: e.target.value }))}
+                                      placeholder="8.0"
+                                    />
+                                  </div>
+                                  <div className="flex justify-end gap-2">
+                                    <DialogTrigger asChild>
+                                      <Button variant="outline">Cancel</Button>
+                                    </DialogTrigger>
+                                    <Button 
+                                      onClick={handleSaveEdit}
+                                      disabled={updateTimeEntryMutation.isPending}
+                                    >
+                                      <Save className="w-4 h-4 mr-2" />
+                                      Save Changes
+                                    </Button>
+                                  </div>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
