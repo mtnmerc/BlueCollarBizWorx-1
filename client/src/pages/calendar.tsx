@@ -57,6 +57,34 @@ export default function Calendar() {
     queryKey: ["/api/team"],
   });
 
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const cancelJobMutation = useMutation({
+    mutationFn: async (jobId: number) => {
+      const response = await apiRequest("PATCH", `/api/jobs/${jobId}`, {
+        status: "cancelled"
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/team"] });
+      toast({
+        title: "Job Cancelled",
+        description: "The job has been successfully cancelled.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to cancel the job. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Calendar navigation
   const navigateDate = (direction: 'prev' | 'next') => {
     const newDate = new Date(currentDate);
@@ -467,36 +495,64 @@ export default function Calendar() {
                     
                     {/* Action buttons */}
                     {job.status === "scheduled" && (
-                      <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t border-border">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="btn-primary flex-1"
-                          onClick={() => window.location.href = `/invoices/new?fromJob=${job.id}`}
-                        >
-                          <FileText className="h-3 w-3 mr-1" />
-                          Draft Invoice
-                        </Button>
-                        {client?.phone && (
-                          <>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => window.open(`sms:${client.phone}?body=Hi ${client.name}, this is regarding your scheduled service: ${job.title}. We'll be arriving as scheduled. Thank you!`, '_self')}
-                            >
-                              <MessageSquare className="h-3 w-3 mr-1" />
-                              SMS
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => window.open(`tel:${client.phone}`, '_self')}
-                            >
-                              <Phone className="h-3 w-3 mr-1" />
-                              Call
-                            </Button>
-                          </>
-                        )}
+                      <div className="space-y-2 mt-4 pt-3 border-t border-border">
+                        <div className="flex flex-wrap gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="btn-primary flex-1"
+                            onClick={() => window.location.href = `/invoices/new?fromJob=${job.id}`}
+                          >
+                            <FileText className="h-3 w-3 mr-1" />
+                            Draft Invoice
+                          </Button>
+                          {client?.phone && (
+                            <>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => window.open(`sms:${client.phone}?body=Hi ${client.name}, this is regarding your scheduled service: ${job.title}. We'll be arriving as scheduled. Thank you!`, '_self')}
+                              >
+                                <MessageSquare className="h-3 w-3 mr-1" />
+                                SMS
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => window.open(`tel:${client.phone}`, '_self')}
+                              >
+                                <Phone className="h-3 w-3 mr-1" />
+                                Call
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                        
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="flex-1"
+                            onClick={() => window.location.href = `/jobs/new?rescheduleJob=${job.id}`}
+                          >
+                            <Edit3 className="h-3 w-3 mr-1" />
+                            Reschedule
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="flex-1 text-red-600 hover:text-red-700"
+                            onClick={() => {
+                              if (window.confirm("Are you sure you want to cancel this job?")) {
+                                cancelJobMutation.mutate(job.id);
+                              }
+                            }}
+                            disabled={cancelJobMutation.isPending}
+                          >
+                            <X className="h-3 w-3 mr-1" />
+                            {cancelJobMutation.isPending ? "Cancelling..." : "Cancel"}
+                          </Button>
+                        </div>
                       </div>
                     )}
                   </CardContent>
