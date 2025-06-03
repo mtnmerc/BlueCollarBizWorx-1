@@ -511,10 +511,24 @@ export default function TimeClock() {
                       <TableHead>Clock Out</TableHead>
                       <TableHead>Break Duration</TableHead>
                       <TableHead>Total Hours</TableHead>
-                      <TableHead></TableHead>
+                      <TableHead className="text-center">
+                        {authData?.user?.role === 'admin' ? 'Edit' : ''}
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
+                    {payrollData && payrollData.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                          No time entries found for the selected period.
+                          {authData?.user?.role === 'admin' && (
+                            <div className="mt-2 text-sm">
+                              To see the admin editing feature, first create some time entries by using the Time Clock.
+                            </div>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    )}
                     {payrollData?.map((entry: any) => (
                       <TableRow key={entry.id}>
                         <TableCell>{entry.user?.firstName} {entry.user?.lastName}</TableCell>
