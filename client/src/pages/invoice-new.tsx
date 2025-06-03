@@ -35,6 +35,10 @@ export default function InvoiceNew() {
   const queryClient = useQueryClient();
   const [serviceLineItems, setServiceLineItems] = useState<ServiceLineItem[]>([]);
   const [totalAmount, setTotalAmount] = useState(0);
+  
+  // Get job ID from URL parameters for pre-filling
+  const urlParams = new URLSearchParams(window.location.search);
+  const fromJobId = urlParams.get('fromJob');
 
   const form = useForm<z.infer<typeof invoiceSchema>>({
     resolver: zodResolver(invoiceSchema),
@@ -53,6 +57,25 @@ export default function InvoiceNew() {
   const { data: services } = useQuery({
     queryKey: ["/api/services"],
   });
+
+  // Fetch job data if creating invoice from job
+  const { data: job } = useQuery({
+    queryKey: [`/api/jobs/${fromJobId}`],
+    enabled: !!fromJobId,
+  });
+
+  // Auto-populate form when job data loads
+  useEffect(() => {
+    if (job && fromJobId) {
+      form.setValue("clientId", (job as any).clientId?.toString() || "");
+      form.setValue("title", (job as any).title || "");
+      form.setValue("description", (job as any).description || "");
+      // Set due date to 30 days from now
+      const dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + 30);
+      form.setValue("dueDate", dueDate.toISOString().split('T')[0]);
+    }
+  }, [job, fromJobId, form]);
 
   // Calculate total amount whenever service line items change
   useEffect(() => {

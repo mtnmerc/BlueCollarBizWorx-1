@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Calendar, MapPin, Clock, User } from "lucide-react";
+import { Plus, Calendar, MapPin, Clock, User, FileText, MessageSquare, Phone } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -91,7 +91,12 @@ export default function Jobs() {
             {job.address && (
               <div className="flex items-center text-sm text-muted-foreground mb-2">
                 <MapPin className="h-4 w-4 mr-1" />
-                {job.address}
+                <button
+                  onClick={() => window.open(`https://maps.google.com?q=${encodeURIComponent(job.address)}`, '_blank')}
+                  className="text-primary hover:underline cursor-pointer"
+                >
+                  {job.address}
+                </button>
               </div>
             )}
           </div>
@@ -119,11 +124,39 @@ export default function Jobs() {
           <span className="text-lg font-semibold text-foreground">
             {formatCurrency(job.estimatedAmount || 0)}
           </span>
-          <div className="flex space-x-2">
+          <div className="flex flex-wrap gap-2">
             {job.status === "scheduled" && (
-              <Button variant="outline" size="sm" className="btn-accent">
-                Start Job
-              </Button>
+              <>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="btn-primary"
+                  onClick={() => window.location.href = `/invoices/new?fromJob=${job.id}`}
+                >
+                  <FileText className="h-3 w-3 mr-1" />
+                  Draft Invoice
+                </Button>
+                {job.client?.phone && (
+                  <>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => window.open(`sms:${job.client.phone}?body=Hi ${job.client.name}, this is regarding your scheduled service: ${job.title}. We'll be arriving as scheduled. Thank you!`, '_self')}
+                    >
+                      <MessageSquare className="h-3 w-3 mr-1" />
+                      SMS
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => window.open(`tel:${job.client.phone}`, '_self')}
+                    >
+                      <Phone className="h-3 w-3 mr-1" />
+                      Call
+                    </Button>
+                  </>
+                )}
+              </>
             )}
             {job.status === "in_progress" && (
               <Button variant="outline" size="sm" className="btn-primary">
