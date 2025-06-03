@@ -211,8 +211,12 @@ export default function JobNew() {
               <Calendar className="h-5 w-5 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Schedule Job</h1>
-              <p className="text-muted-foreground">Schedule a new job for your client</p>
+              <h1 className="text-2xl font-bold text-foreground">
+                {rescheduleJobId ? "Reschedule Job" : "Schedule Job"}
+              </h1>
+              <p className="text-muted-foreground">
+                {rescheduleJobId ? "Update the schedule for this job" : "Schedule a new job for your client"}
+              </p>
             </div>
           </div>
         </div>
@@ -511,7 +515,10 @@ export default function JobNew() {
                     className="flex-1 gradient-primary"
                     disabled={createJobMutation.isPending}
                   >
-                    {createJobMutation.isPending ? "Scheduling..." : "Schedule Job"}
+                    {createJobMutation.isPending 
+                      ? (rescheduleJobId ? "Rescheduling..." : "Scheduling...") 
+                      : (rescheduleJobId ? "Reschedule Job" : "Schedule Job")
+                    }
                   </Button>
                   <Link href="/jobs">
                     <Button variant="outline" className="flex-1">
