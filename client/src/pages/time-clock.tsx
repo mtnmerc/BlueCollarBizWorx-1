@@ -12,10 +12,18 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Clock, Download, Edit2, Settings, Users } from "lucide-react";
 import { Link } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
+import { authApi } from "@/lib/auth";
 
 export default function TimeClock() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // Get auth state
+  const { data: authData } = useQuery({
+    queryKey: ["/api/auth/me"],
+    queryFn: () => authApi.getMe(),
+    retry: false,
+  });
   
   const [currentTime, setCurrentTime] = useState(new Date());
   const [activeTab, setActiveTab] = useState("clock");
@@ -42,6 +50,12 @@ export default function TimeClock() {
   const { data: teamMembers } = useQuery({
     queryKey: ["/api/users"],
     enabled: activeTab === "payroll"
+  });
+
+  // Get today's total hours for current user
+  const { data: todayData } = useQuery({
+    queryKey: ['/api/time/today'],
+    enabled: authState?.isAuthenticated
   });
 
   // Fetch payroll data
