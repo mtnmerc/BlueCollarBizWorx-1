@@ -181,8 +181,8 @@ export default function Dashboard() {
       <div className="px-4 py-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-foreground">Today's Jobs</h3>
-          <Button variant="link" className="text-accent text-sm font-medium p-0">
-            View All
+          <Button variant="link" className="text-accent text-sm font-medium p-0" asChild>
+            <a href="/jobs">View All</a>
           </Button>
         </div>
         

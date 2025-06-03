@@ -13,7 +13,10 @@ import {
   User,
   MapPin,
   Plus,
-  Filter
+  Filter,
+  FileText,
+  MessageSquare,
+  Phone
 } from "lucide-react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
@@ -441,7 +444,12 @@ export default function Calendar() {
                       {job.address && (
                         <div className="flex items-center gap-2">
                           <MapPin className="h-4 w-4 text-muted-foreground" />
-                          <span>{job.address}</span>
+                          <button
+                            onClick={() => window.open(`https://maps.google.com?q=${encodeURIComponent(job.address)}`, '_blank')}
+                            className="text-primary hover:underline cursor-pointer"
+                          >
+                            {job.address}
+                          </button>
                         </div>
                       )}
                       
@@ -452,6 +460,41 @@ export default function Calendar() {
                         </div>
                       )}
                     </div>
+                    
+                    {/* Action buttons */}
+                    {job.status === "scheduled" && (
+                      <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t border-border">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="btn-primary flex-1"
+                          onClick={() => window.location.href = `/invoices/new?fromJob=${job.id}`}
+                        >
+                          <FileText className="h-3 w-3 mr-1" />
+                          Draft Invoice
+                        </Button>
+                        {client?.phone && (
+                          <>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => window.open(`sms:${client.phone}?body=Hi ${client.name}, this is regarding your scheduled service: ${job.title}. We'll be arriving as scheduled. Thank you!`, '_self')}
+                            >
+                              <MessageSquare className="h-3 w-3 mr-1" />
+                              SMS
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => window.open(`tel:${client.phone}`, '_self')}
+                            >
+                              <Phone className="h-3 w-3 mr-1" />
+                              Call
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               );
