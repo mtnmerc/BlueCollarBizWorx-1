@@ -410,7 +410,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Job not found" });
       }
       
-      const updatedJob = await storage.updateJob(parseInt(req.params.id), req.body);
+      // Process the request body to handle date conversions properly
+      const updateData = { ...req.body };
+      
+      // Convert date strings to Date objects if they exist
+      if (updateData.scheduledStart && typeof updateData.scheduledStart === 'string') {
+        updateData.scheduledStart = new Date(updateData.scheduledStart);
+      }
+      if (updateData.scheduledEnd && typeof updateData.scheduledEnd === 'string') {
+        updateData.scheduledEnd = new Date(updateData.scheduledEnd);
+      }
+      if (updateData.recurringEndDate && typeof updateData.recurringEndDate === 'string') {
+        updateData.recurringEndDate = new Date(updateData.recurringEndDate);
+      }
+      
+      // Convert numeric fields
+      if (updateData.clientId) {
+        updateData.clientId = parseInt(updateData.clientId);
+      }
+      if (updateData.assignedUserId) {
+        updateData.assignedUserId = parseInt(updateData.assignedUserId);
+      }
+      if (updateData.estimatedAmount) {
+        updateData.estimatedAmount = parseFloat(updateData.estimatedAmount);
+      }
+      
+      const updatedJob = await storage.updateJob(parseInt(req.params.id), updateData);
       res.json(updatedJob);
     } catch (error) {
       res.status(400).json({ error: error.message });
