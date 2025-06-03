@@ -98,8 +98,10 @@ export default function JobNew() {
 
   // Auto-populate form when existing job data loads for rescheduling
   useEffect(() => {
-    if (existingJob && rescheduleJobId) {
+    if (existingJob && rescheduleJobId && clients && teamMembers) {
       const job = existingJob as any;
+      
+      // Only set values if clients and team data are loaded
       form.setValue("clientId", job.clientId?.toString() || "");
       form.setValue("assignedUserId", job.assignedUserId?.toString() || "");
       form.setValue("title", job.title || "");
@@ -131,7 +133,7 @@ export default function JobNew() {
         }
       }
     }
-  }, [existingJob, rescheduleJobId, form]);
+  }, [existingJob, rescheduleJobId, clients, teamMembers, form]);
 
   // Auto-fill client information when client is selected
   const handleClientChange = (clientId: string) => {
