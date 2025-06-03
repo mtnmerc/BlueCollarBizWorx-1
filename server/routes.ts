@@ -1066,6 +1066,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get team members/users for business
+  app.get("/api/users", async (req, res) => {
+    if (!req.session.businessId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    try {
+      const users = await storage.getUsersByBusiness(req.session.businessId);
+      res.json(users);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to get users" });
+    }
+  });
+
   // Get payroll data for admin
   app.get("/api/time/payroll", async (req, res) => {
     if (!req.session.role || req.session.role !== "admin") {

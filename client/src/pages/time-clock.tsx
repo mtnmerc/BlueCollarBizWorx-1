@@ -49,11 +49,10 @@ export default function TimeClock() {
   // Fetch team members for admin payroll view
   const { data: teamMembers } = useQuery({
     queryKey: ["/api/users"],
-    enabled: activeTab === "payroll" && !!authData?.user?.role
+    enabled: activeTab === "payroll"
   });
 
-  // Debug log for team members
-  console.log("Team members data:", teamMembers);
+
 
   // Get today's total hours for current user
   const { data: todayData } = useQuery({
