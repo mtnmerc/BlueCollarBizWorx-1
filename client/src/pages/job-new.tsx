@@ -233,7 +233,7 @@ export default function JobNew() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Client</FormLabel>
-                      <Select onValueChange={handleClientChange} defaultValue={field.value}>
+                      <Select onValueChange={handleClientChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select a client" />
