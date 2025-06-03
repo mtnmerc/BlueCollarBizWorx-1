@@ -55,7 +55,7 @@ export default function TimeClock() {
   // Get today's total hours for current user
   const { data: todayData } = useQuery({
     queryKey: ['/api/time/today'],
-    enabled: authState?.isAuthenticated
+    enabled: !!authData?.user
   });
 
   // Fetch payroll data
@@ -307,7 +307,7 @@ export default function TimeClock() {
                   
                   <div className="pt-6 border-t border-border">
                     <p className="text-muted-foreground">
-                      Today's Hours: {timeStatus?.todayHours?.toFixed(1) || "0.0"}
+                      Today's Hours: {(todayData?.total || timeStatus?.todayHours || 0).toFixed(1)}
                     </p>
                   </div>
                 </div>
