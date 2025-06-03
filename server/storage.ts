@@ -78,6 +78,10 @@ export interface IStorage {
   // Payroll settings methods
   getPayrollSettings(businessId: number): Promise<PayrollSettings | undefined>;
   updatePayrollSettings(businessId: number, settings: Partial<InsertPayrollSettings>): Promise<PayrollSettings>;
+
+  // Additional business and job management methods
+  getAllBusinesses(): Promise<Business[]>;
+  getIncompleteJobsForDate(businessId: number, date: Date): Promise<Job[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -599,6 +603,28 @@ export class DatabaseStorage implements IStorage {
       .where(eq(payrollSettings.businessId, businessId))
       .returning();
     return updatedSettings;
+  }
+
+  // Additional business and job management methods
+  async getAllBusinesses(): Promise<Business[]> {
+    return await db.select().from(businesses);
+  }
+
+  async getIncompleteJobsForDate(businessId: number, date: Date): Promise<Job[]> {
+    const nextDay = new Date(date);
+    nextDay.setDate(date.getDate() + 1);
+    
+    return await db
+      .select()
+      .from(jobs)
+      .where(
+        and(
+          eq(jobs.businessId, businessId),
+          eq(jobs.status, "scheduled"),
+          gte(jobs.scheduledStart, date),
+          lt(jobs.scheduledStart, nextDay)
+        )
+      );
   }
 }
 
