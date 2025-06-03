@@ -7,7 +7,8 @@ import {
   Shield, 
   Phone, 
   Mail,
-  MoreVertical
+  MoreVertical,
+  ChevronRight
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { authApi } from "@/lib/auth";
 import { apiRequest } from "@/lib/queryClient";
+import { Link } from "wouter";
 
 export default function Team() {
   const { toast } = useToast();
@@ -295,39 +297,39 @@ export default function Team() {
                 <>
                   <Card className="interactive-card">
                     <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-                            <Settings className="h-5 w-5 text-primary-foreground" />
+                      <Link href="/business-settings">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                              <Settings className="h-5 w-5 text-primary-foreground" />
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-foreground">Business Settings</h3>
+                              <p className="text-sm text-muted-foreground">Manage business info and preferences</p>
+                            </div>
                           </div>
-                          <div>
-                            <h3 className="font-semibold text-foreground">Business Settings</h3>
-                            <p className="text-sm text-muted-foreground">Manage business info and preferences</p>
-                          </div>
+                          <ChevronRight className="h-5 w-5 text-muted-foreground" />
                         </div>
-                        <Button variant="ghost" size="sm">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      </Link>
                     </CardContent>
                   </Card>
 
                   <Card className="interactive-card">
                     <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-secondary rounded-lg flex items-center justify-center">
-                            <Shield className="h-5 w-5 text-secondary-foreground" />
+                      <Link href="/team/new">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 bg-secondary rounded-lg flex items-center justify-center">
+                              <Shield className="h-5 w-5 text-secondary-foreground" />
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-foreground">User Management</h3>
+                              <p className="text-sm text-muted-foreground">Add, edit, or remove team members</p>
+                            </div>
                           </div>
-                          <div>
-                            <h3 className="font-semibold text-foreground">User Management</h3>
-                            <p className="text-sm text-muted-foreground">Add, edit, or remove team members</p>
-                          </div>
+                          <ChevronRight className="h-5 w-5 text-muted-foreground" />
                         </div>
-                        <Button variant="ghost" size="sm">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      </Link>
                     </CardContent>
                   </Card>
                 </>
@@ -335,20 +337,20 @@ export default function Team() {
 
               <Card className="interactive-card">
                 <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-accent rounded-lg flex items-center justify-center">
-                        <User className="h-5 w-5 text-accent-foreground" />
+                  <Link href="/profile">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-accent rounded-lg flex items-center justify-center">
+                          <User className="h-5 w-5 text-accent-foreground" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-foreground">My Profile</h3>
+                          <p className="text-sm text-muted-foreground">Update your personal information</p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="font-semibold text-foreground">My Profile</h3>
-                        <p className="text-sm text-muted-foreground">Update your personal information</p>
-                      </div>
+                      <ChevronRight className="h-5 w-5 text-muted-foreground" />
                     </div>
-                    <Button variant="ghost" size="sm">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  </Link>
                 </CardContent>
               </Card>
 
