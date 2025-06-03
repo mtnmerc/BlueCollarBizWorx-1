@@ -36,9 +36,10 @@ export default function JobNew() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Get invoice ID from URL params if coming from invoice
+  // Get URL params
   const urlParams = new URLSearchParams(window.location.search);
   const fromInvoiceId = urlParams.get("fromInvoice");
+  const rescheduleJobId = urlParams.get("rescheduleJob");
 
   const form = useForm<z.infer<typeof jobSchema>>({
     resolver: zodResolver(jobSchema),
@@ -75,6 +76,12 @@ export default function JobNew() {
     enabled: !!fromInvoiceId,
   });
 
+  // Fetch existing job data if rescheduling
+  const { data: existingJob } = useQuery({
+    queryKey: [`/api/jobs/${rescheduleJobId}`],
+    enabled: !!rescheduleJobId,
+  });
+
   // Auto-populate form when invoice data loads
   useEffect(() => {
     if (invoice && fromInvoiceId) {
@@ -88,6 +95,43 @@ export default function JobNew() {
       form.setValue("scheduledDate", tomorrow.toISOString().split('T')[0]);
     }
   }, [invoice, fromInvoiceId, form]);
+
+  // Auto-populate form when existing job data loads for rescheduling
+  useEffect(() => {
+    if (existingJob && rescheduleJobId) {
+      const job = existingJob as any;
+      form.setValue("clientId", job.clientId?.toString() || "");
+      form.setValue("assignedUserId", job.assignedUserId?.toString() || "");
+      form.setValue("title", job.title || "");
+      form.setValue("description", job.description || "");
+      form.setValue("address", job.address || "");
+      form.setValue("estimatedAmount", job.estimatedAmount?.toString() || "");
+      form.setValue("priority", job.priority || "normal");
+      form.setValue("jobType", job.jobType || "");
+      form.setValue("notes", job.notes || "");
+      
+      // Parse existing scheduled date and time
+      if (job.scheduledStart) {
+        const startDate = new Date(job.scheduledStart);
+        form.setValue("scheduledDate", startDate.toISOString().split('T')[0]);
+        form.setValue("startTime", startDate.toTimeString().slice(0, 5));
+      }
+      
+      if (job.scheduledEnd) {
+        const endDate = new Date(job.scheduledEnd);
+        form.setValue("endTime", endDate.toTimeString().slice(0, 5));
+      }
+      
+      // Handle recurring fields
+      if (job.isRecurring) {
+        form.setValue("recurring", true);
+        form.setValue("recurringFrequency", job.recurringFrequency);
+        if (job.recurringEndDate) {
+          form.setValue("recurringEndDate", new Date(job.recurringEndDate).toISOString().split('T')[0]);
+        }
+      }
+    }
+  }, [existingJob, rescheduleJobId, form]);
 
   // Auto-fill client information when client is selected
   const handleClientChange = (clientId: string) => {
@@ -105,19 +149,27 @@ export default function JobNew() {
   };
 
   const createJobMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("POST", "/api/jobs", data),
+    mutationFn: (data: any) => {
+      if (rescheduleJobId) {
+        return apiRequest("PATCH", `/api/jobs/${rescheduleJobId}`, data);
+      } else {
+        return apiRequest("POST", "/api/jobs", data);
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/team"] });
       toast({
-        title: "Job Scheduled",
-        description: "Job has been scheduled successfully.",
+        title: rescheduleJobId ? "Job Rescheduled" : "Job Scheduled",
+        description: rescheduleJobId ? "Job has been rescheduled successfully." : "Job has been scheduled successfully.",
       });
       window.location.href = "/jobs";
     },
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to schedule job",
+        description: error.message || (rescheduleJobId ? "Failed to reschedule job" : "Failed to schedule job"),
         variant: "destructive",
       });
     },
