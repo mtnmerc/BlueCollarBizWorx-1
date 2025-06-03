@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, decimal, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, decimal, jsonb, date } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -157,7 +157,8 @@ export const payrollSettings = pgTable("payroll_settings", {
   id: serial("id").primaryKey(),
   businessId: integer("business_id").notNull().references(() => businesses.id),
   payPeriodType: text("pay_period_type").notNull().default("weekly"), // weekly, biweekly, monthly
-  payPeriodStartDay: integer("pay_period_start_day").notNull().default(1), // 1=Monday, 0=Sunday
+  payPeriodStartDay: integer("pay_period_start_day").notNull().default(1), // 1=Monday, 0=Sunday (deprecated in favor of payPeriodStartDate)
+  payPeriodStartDate: date("pay_period_start_date"), // Specific start date for pay period alignment
   overtimeThreshold: decimal("overtime_threshold", { precision: 5, scale: 2 }).default("40.00"),
   overtimeMultiplier: decimal("overtime_multiplier", { precision: 3, scale: 2 }).default("1.50"),
   createdAt: timestamp("created_at").defaultNow().notNull(),

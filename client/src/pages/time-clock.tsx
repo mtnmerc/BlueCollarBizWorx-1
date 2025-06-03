@@ -468,28 +468,23 @@ export default function TimeClock() {
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="start-day">Pay Period Start Day</Label>
-                  <Select 
-                    value={payrollSettings?.payPeriodStartDay?.toString() || "1"}
-                    onValueChange={(value) => {
-                      updatePayrollSettingsMutation.mutate({
-                        payPeriodStartDay: parseInt(value)
-                      });
+                  <Label htmlFor="start-date">Pay Period Start Date</Label>
+                  <input
+                    type="date"
+                    id="start-date"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    value={payrollSettings?.payPeriodStartDate ? new Date(payrollSettings.payPeriodStartDate).toISOString().split('T')[0] : ''}
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        updatePayrollSettingsMutation.mutate({
+                          payPeriodStartDate: new Date(e.target.value)
+                        });
+                      }
                     }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">Monday</SelectItem>
-                      <SelectItem value="2">Tuesday</SelectItem>
-                      <SelectItem value="3">Wednesday</SelectItem>
-                      <SelectItem value="4">Thursday</SelectItem>
-                      <SelectItem value="5">Friday</SelectItem>
-                      <SelectItem value="6">Saturday</SelectItem>
-                      <SelectItem value="0">Sunday</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  />
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Set the first day of your pay period cycle. For bi-weekly schedules, this ensures proper alignment.
+                  </p>
                 </div>
                 <div>
                   <Label htmlFor="overtime-threshold">Overtime Threshold (hours)</Label>
