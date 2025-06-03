@@ -344,38 +344,118 @@ export default function TimeClock() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-4">
+                {/* Quick Date Range Buttons */}
                 <div>
-                  <Label htmlFor="team-member">Team Member</Label>
-                  <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="All team members" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All team members</SelectItem>
-                      {teamMembers && Array.isArray(teamMembers) && teamMembers.map((member: any) => (
-                        <SelectItem key={member.id} value={member.id.toString()}>
-                          {member.firstName} {member.lastName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label>Quick Select</Label>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const today = new Date().toISOString().split('T')[0];
+                        setSelectedDateRange({ start: today, end: today });
+                      }}
+                    >
+                      Today
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const today = new Date();
+                        const monday = new Date(today);
+                        monday.setDate(today.getDate() - today.getDay() + 1);
+                        const sunday = new Date(monday);
+                        sunday.setDate(monday.getDate() + 6);
+                        setSelectedDateRange({
+                          start: monday.toISOString().split('T')[0],
+                          end: sunday.toISOString().split('T')[0]
+                        });
+                      }}
+                    >
+                      This Week
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const today = new Date();
+                        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+                        const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                        setSelectedDateRange({
+                          start: firstDay.toISOString().split('T')[0],
+                          end: lastDay.toISOString().split('T')[0]
+                        });
+                      }}
+                    >
+                      This Month
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        // Calculate current pay period based on settings
+                        const today = new Date();
+                        const startDate = payrollSettings?.payPeriodStartDate ? new Date(payrollSettings.payPeriodStartDate) : new Date();
+                        const daysDiff = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+                        
+                        let periodLength = 7; // weekly default
+                        if (payrollSettings?.payPeriodType === 'bi-weekly') {
+                          periodLength = 14;
+                        }
+                        
+                        const currentPeriodStart = new Date(startDate);
+                        currentPeriodStart.setDate(startDate.getDate() + Math.floor(daysDiff / periodLength) * periodLength);
+                        
+                        const currentPeriodEnd = new Date(currentPeriodStart);
+                        currentPeriodEnd.setDate(currentPeriodStart.getDate() + periodLength - 1);
+                        
+                        setSelectedDateRange({
+                          start: currentPeriodStart.toISOString().split('T')[0],
+                          end: currentPeriodEnd.toISOString().split('T')[0]
+                        });
+                      }}
+                    >
+                      Current Pay Period
+                    </Button>
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="start-date">Start Date</Label>
-                  <Input
-                    type="date"
-                    value={selectedDateRange.start}
-                    onChange={(e) => setSelectedDateRange(prev => ({ ...prev, start: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="end-date">End Date</Label>
-                  <Input
-                    type="date"
-                    value={selectedDateRange.end}
-                    onChange={(e) => setSelectedDateRange(prev => ({ ...prev, end: e.target.value }))}
-                  />
+
+                {/* Filter Controls */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="team-member">Team Member</Label>
+                    <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="All team members" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All team members</SelectItem>
+                        {teamMembers && Array.isArray(teamMembers) && teamMembers.map((member: any) => (
+                          <SelectItem key={member.id} value={member.id.toString()}>
+                            {member.firstName} {member.lastName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="start-date">Start Date</Label>
+                    <Input
+                      type="date"
+                      value={selectedDateRange.start}
+                      onChange={(e) => setSelectedDateRange(prev => ({ ...prev, start: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="end-date">End Date</Label>
+                    <Input
+                      type="date"
+                      value={selectedDateRange.end}
+                      onChange={(e) => setSelectedDateRange(prev => ({ ...prev, end: e.target.value }))}
+                    />
+                  </div>
                 </div>
               </div>
 
