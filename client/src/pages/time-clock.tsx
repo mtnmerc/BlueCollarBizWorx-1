@@ -140,17 +140,29 @@ export default function TimeClock() {
     },
   });
 
-  // Update time entry mutation
+  // Update time entry mutation for admin editing
   const updateTimeEntryMutation = useMutation({
-    mutationFn: async ({ id, totalHours }: { id: number; totalHours: string }) => {
-      const response = await apiRequest("PUT", `/api/time/entries/${id}`, { totalHours });
+    mutationFn: async ({ id, clockIn, clockOut, totalHours }: { id: number; clockIn?: string; clockOut?: string; totalHours?: string }) => {
+      const updateData: any = {};
+      if (clockIn) updateData.clockIn = clockIn;
+      if (clockOut) updateData.clockOut = clockOut;
+      if (totalHours) updateData.totalHours = parseFloat(totalHours);
+      
+      const response = await apiRequest("PATCH", `/api/time/entries/${id}`, updateData);
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/time/payroll"] });
       toast({
-        title: "Updated",
-        description: "Time entry updated successfully.",
+        title: "Time Entry Updated",
+        description: "Successfully updated the time entry.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update time entry. Please try again.",
+        variant: "destructive",
       });
     },
   });
