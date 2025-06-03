@@ -152,6 +152,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // User profile endpoint
+  app.patch("/api/user/profile", authenticateSession, async (req, res) => {
+    try {
+      const userId = req.session.userId;
+      const { firstName, lastName, pin } = req.body;
+      
+      const user = await storage.getUserById(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // Build update data
+      const updateData: any = {};
+      if (firstName) updateData.firstName = firstName;
+      if (lastName) updateData.lastName = lastName;
+      if (pin && pin.length >= 4) updateData.pin = pin;
+
+      const updatedUser = await storage.updateUser(userId, updateData);
+      res.json(updatedUser);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
   // Business settings endpoints
   app.patch("/api/business/settings", authenticateSession, async (req, res) => {
     try {

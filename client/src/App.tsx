@@ -14,6 +14,7 @@ import Invoices from "@/pages/invoices";
 import Clients from "@/pages/clients";
 import Team from "@/pages/team";
 import TeamNew from "@/pages/team-new";
+import Profile from "@/pages/profile";
 import BusinessSetupComplete from "@/pages/business-setup-complete";
 import InvoiceNew from "@/pages/invoice-new";
 import ClientNew from "@/pages/client-new";
@@ -63,7 +64,8 @@ function AuthenticatedApp() {
           <Route path="/services/:id/edit" component={ServiceEdit} />
           <Route path="/team" component={Team} />
           <Route path="/team/new" component={TeamNew} />
-          <Route path="/business/settings" component={BusinessSettings} />
+          <Route path="/profile" component={Profile} />
+          <Route path="/business-settings" component={BusinessSettings} />
           <Route path="/time-clock" component={TimeClock} />
           <Route component={NotFound} />
         </Switch>

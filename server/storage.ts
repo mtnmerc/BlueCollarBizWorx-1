@@ -25,6 +25,7 @@ export interface IStorage {
   getUserByPin(businessId: number, pin: string): Promise<User | undefined>;
   getUsersByBusiness(businessId: number): Promise<User[]>;
   getUserById(id: number): Promise<User | undefined>;
+  updateUser(id: number, user: Partial<InsertUser>): Promise<User>;
 
   // Client methods
   createClient(client: InsertClient): Promise<Client>;
