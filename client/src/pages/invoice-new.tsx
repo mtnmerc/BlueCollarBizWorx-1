@@ -149,6 +149,7 @@ export default function InvoiceNew() {
 
     createInvoiceMutation.mutate({
       clientId: parseInt(values.clientId),
+      jobId: fromJobId ? parseInt(fromJobId) : null,
       title: values.title,
       description: values.description,
       lineItems: serviceLineItems.map(item => ({

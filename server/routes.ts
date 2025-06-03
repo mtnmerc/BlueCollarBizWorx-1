@@ -441,6 +441,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       const invoice = await storage.createInvoice(data);
+      
+      // If this invoice is created from a job, mark the job as completed
+      if (data.jobId) {
+        await storage.updateJob(data.jobId, { status: "completed" });
+      }
+      
       res.json(invoice);
     } catch (error) {
       res.status(400).json({ error: error.message });
