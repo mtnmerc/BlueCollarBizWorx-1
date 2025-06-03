@@ -63,6 +63,14 @@ export default function TimeClock() {
   // Fetch payroll data
   const { data: payrollData } = useQuery({
     queryKey: ["/api/time/payroll", selectedUserId, selectedDateRange.start, selectedDateRange.end],
+    queryFn: () => {
+      const params = new URLSearchParams({
+        userId: selectedUserId,
+        startDate: selectedDateRange.start,
+        endDate: selectedDateRange.end
+      });
+      return apiRequest("GET", `/api/time/payroll?${params.toString()}`);
+    },
     enabled: activeTab === "payroll"
   });
 
