@@ -49,8 +49,11 @@ export default function TimeClock() {
   // Fetch team members for admin payroll view
   const { data: teamMembers } = useQuery({
     queryKey: ["/api/users"],
-    enabled: activeTab === "payroll"
+    enabled: activeTab === "payroll" && !!authData?.user?.role
   });
+
+  // Debug log for team members
+  console.log("Team members data:", teamMembers);
 
   // Get today's total hours for current user
   const { data: todayData } = useQuery({
@@ -342,7 +345,7 @@ export default function TimeClock() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All team members</SelectItem>
-                      {teamMembers?.map((member: any) => (
+                      {teamMembers && Array.isArray(teamMembers) && teamMembers.map((member: any) => (
                         <SelectItem key={member.id} value={member.id.toString()}>
                           {member.firstName} {member.lastName}
                         </SelectItem>
