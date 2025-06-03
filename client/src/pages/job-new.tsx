@@ -89,6 +89,21 @@ export default function JobNew() {
     }
   }, [invoice, fromInvoiceId, form]);
 
+  // Auto-fill client information when client is selected
+  const handleClientChange = (clientId: string) => {
+    form.setValue("clientId", clientId);
+    
+    if (clients && clientId) {
+      const selectedClient = (clients as any[]).find(client => client.id.toString() === clientId);
+      if (selectedClient) {
+        // Auto-fill address if client has one and current address is empty
+        if (selectedClient.address && !form.getValues("address")) {
+          form.setValue("address", selectedClient.address);
+        }
+      }
+    }
+  };
+
   const createJobMutation = useMutation({
     mutationFn: (data: any) => apiRequest("POST", "/api/jobs", data),
     onSuccess: () => {
@@ -160,7 +175,7 @@ export default function JobNew() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Client</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={handleClientChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select a client" />

@@ -229,93 +229,37 @@ export class DatabaseStorage implements IStorage {
     return job;
   }
 
-  async getJobsByBusiness(businessId: number): Promise<Job[]> {
-    return await db
+  async getJobsByBusiness(businessId: number): Promise<any[]> {
+    const jobsWithRelations = await db
       .select({
-        id: jobs.id,
-        businessId: jobs.businessId,
-        clientId: jobs.clientId,
-        assignedUserId: jobs.assignedUserId,
-        title: jobs.title,
-        description: jobs.description,
-        address: jobs.address,
-        scheduledStart: jobs.scheduledStart,
-        scheduledEnd: jobs.scheduledEnd,
-        status: jobs.status,
-        priority: jobs.priority,
-        jobType: jobs.jobType,
-        estimatedAmount: jobs.estimatedAmount,
-        actualAmount: jobs.actualAmount,
-        notes: jobs.notes,
-        photos: jobs.photos,
-        isRecurring: jobs.isRecurring,
-        recurringFrequency: jobs.recurringFrequency,
-        recurringEndDate: jobs.recurringEndDate,
-        createdAt: jobs.createdAt,
-        updatedAt: jobs.updatedAt,
-        client: {
-          id: clients.id,
-          name: clients.name,
-          email: clients.email,
-          phone: clients.phone,
-          address: clients.address
-        },
-        assignedUser: {
-          id: users.id,
-          firstName: users.firstName,
-          lastName: users.lastName,
-          username: users.username
-        }
+        job: jobs,
+        client: clients,
+        assignedUser: users
       })
       .from(jobs)
       .leftJoin(clients, eq(jobs.clientId, clients.id))
       .leftJoin(users, eq(jobs.assignedUserId, users.id))
       .where(eq(jobs.businessId, businessId))
       .orderBy(desc(jobs.scheduledStart));
+
+    return jobsWithRelations.map(row => ({
+      ...row.job,
+      client: row.client,
+      assignedUser: row.assignedUser
+    }));
   }
 
-  async getJobsByDate(businessId: number, date: Date): Promise<Job[]> {
+  async getJobsByDate(businessId: number, date: Date): Promise<any[]> {
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);
     const endOfDay = new Date(date);
     endOfDay.setHours(23, 59, 59, 999);
 
-    return await db
+    const jobsWithRelations = await db
       .select({
-        id: jobs.id,
-        businessId: jobs.businessId,
-        clientId: jobs.clientId,
-        assignedUserId: jobs.assignedUserId,
-        title: jobs.title,
-        description: jobs.description,
-        address: jobs.address,
-        scheduledStart: jobs.scheduledStart,
-        scheduledEnd: jobs.scheduledEnd,
-        status: jobs.status,
-        priority: jobs.priority,
-        jobType: jobs.jobType,
-        estimatedAmount: jobs.estimatedAmount,
-        actualAmount: jobs.actualAmount,
-        notes: jobs.notes,
-        photos: jobs.photos,
-        isRecurring: jobs.isRecurring,
-        recurringFrequency: jobs.recurringFrequency,
-        recurringEndDate: jobs.recurringEndDate,
-        createdAt: jobs.createdAt,
-        updatedAt: jobs.updatedAt,
-        client: {
-          id: clients.id,
-          name: clients.name,
-          email: clients.email,
-          phone: clients.phone,
-          address: clients.address
-        },
-        assignedUser: {
-          id: users.id,
-          firstName: users.firstName,
-          lastName: users.lastName,
-          username: users.username
-        }
+        job: jobs,
+        client: clients,
+        assignedUser: users
       })
       .from(jobs)
       .leftJoin(clients, eq(jobs.clientId, clients.id))
@@ -328,6 +272,12 @@ export class DatabaseStorage implements IStorage {
         )
       )
       .orderBy(jobs.scheduledStart);
+
+    return jobsWithRelations.map(row => ({
+      ...row.job,
+      client: row.client,
+      assignedUser: row.assignedUser
+    }));
   }
 
   async getJobById(id: number): Promise<Job | undefined> {
