@@ -1,0 +1,26 @@
+{
+  "name": "BizWorx - Business Management Suite",
+  "short_name": "BizWorx",
+  "description": "Progressive Web App for blue-collar business operations with workforce management tools",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#22c55e",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "categories": ["business", "productivity", "utilities"]
+}
