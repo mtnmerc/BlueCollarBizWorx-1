@@ -39,7 +39,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/auth/business/login", async (req, res) => {
     try {
-      const { email, password } = req.body;
+      const { email, password, rememberMe } = req.body;
       
       const business = await storage.getBusinessByEmail(email);
       if (!business || business.password !== password) {
@@ -47,6 +47,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       req.session.businessId = business.id;
+      
+      // Set session duration based on rememberMe preference
+      if (rememberMe) {
+        req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
+      } else {
+        req.session.cookie.maxAge = 24 * 60 * 60 * 1000; // 24 hours
+      }
       
       // Check if business has any users (setup completed)
       const users = await storage.getUsersByBusiness(business.id);
@@ -94,7 +101,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/auth/user/login", async (req, res) => {
     try {
-      const { pin } = req.body;
+      const { pin, rememberMe } = req.body;
       const { businessId } = req.session;
       
       if (!businessId) {
@@ -108,6 +115,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       req.session.userId = user.id;
       req.session.role = user.role;
+      
+      // Set session duration based on rememberMe preference
+      if (rememberMe) {
+        req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
+      } else {
+        req.session.cookie.maxAge = 24 * 60 * 60 * 1000; // 24 hours
+      }
 
       res.json({ user });
     } catch (error) {
