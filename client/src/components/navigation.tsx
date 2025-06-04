@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { authApi } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
+import { PWAInstallButton } from "./pwa-install";
 
 export function TopNavigation() {
   const { toast } = useToast();
@@ -54,6 +55,7 @@ export function TopNavigation() {
           <h1 className="text-xl font-bold text-foreground">BizWorx</h1>
         </div>
         <div className="flex items-center space-x-3">
+          <PWAInstallButton />
           <Button variant="ghost" size="sm" className="p-2">
             <Bell className="h-5 w-5 text-muted-foreground" />
           </Button>
