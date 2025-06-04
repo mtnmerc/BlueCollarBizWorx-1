@@ -8,16 +8,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { authApi } from "@/lib/auth";
 
 const businessLoginSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(1, "Password is required"),
+  rememberMe: z.boolean().optional(),
 });
 
 const userLoginSchema = z.object({
   pin: z.string().length(4, "PIN must be 4 digits"),
+  rememberMe: z.boolean().optional(),
 });
 
 const businessRegisterSchema = z.object({
@@ -45,6 +48,7 @@ export default function Login() {
     } : {
       email: "",
       password: "",
+      rememberMe: true,
     },
   });
 
@@ -52,6 +56,7 @@ export default function Login() {
     resolver: zodResolver(userLoginSchema),
     defaultValues: {
       pin: "",
+      rememberMe: true,
     },
   });
 
@@ -225,6 +230,28 @@ export default function Login() {
                     </>
                   )}
 
+                  {!isRegister && (
+                    <FormField
+                      control={businessForm.control}
+                      name="rememberMe"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel className="text-sm">
+                              Keep me logged in for 30 days
+                            </FormLabel>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                  )}
+
                   <Button
                     type="submit"
                     className="w-full btn-primary"
@@ -273,6 +300,26 @@ export default function Login() {
                           />
                         </FormControl>
                         <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={userForm.control}
+                    name="rememberMe"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel className="text-sm">
+                            Keep me logged in for 30 days
+                          </FormLabel>
+                        </div>
                       </FormItem>
                     )}
                   />

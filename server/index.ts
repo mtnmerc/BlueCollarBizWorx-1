@@ -15,7 +15,7 @@ app.use(session({
   cookie: {
     secure: false, // Allow HTTP for now
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days - persistent login
   },
 }));
 
