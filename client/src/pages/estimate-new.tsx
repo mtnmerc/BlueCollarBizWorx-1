@@ -18,7 +18,7 @@ const estimateSchema = z.object({
   clientId: z.string().min(1, "Client is required"),
   title: z.string().min(1, "Title is required"),
   description: z.string().min(1, "Description is required"),
-  validUntil: z.string().min(1, "Valid until date is required"),
+  validUntil: z.string().optional(),
   depositType: z.enum(["none", "fixed", "percentage"]).default("none"),
   depositValue: z.string().optional(),
 });
@@ -85,11 +85,12 @@ export default function EstimateNew() {
     
     // If service is selected, update name, rate, and unit
     if (field === 'serviceId' && services) {
-      const selectedService = services.find((s: any) => s.id.toString() === value);
+      const servicesArray = Array.isArray(services) ? services : [];
+      const selectedService = servicesArray.find((s: any) => s.id.toString() === value);
       if (selectedService) {
         updatedItems[index].serviceName = selectedService.name;
-        updatedItems[index].rate = parseFloat(selectedService.rate);
-        updatedItems[index].unit = selectedService.unit;
+        updatedItems[index].rate = parseFloat(selectedService.rate || 0);
+        updatedItems[index].unit = selectedService.unit || 'each';
       }
     }
     
@@ -101,13 +102,14 @@ export default function EstimateNew() {
 
   const createEstimateMutation = useMutation({
     mutationFn: (data: any) => apiRequest("POST", "/api/estimates", data),
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/estimates"] });
+      const isDraft = data.status === 'draft';
       toast({
-        title: "Estimate Created",
-        description: "Estimate has been created successfully.",
+        title: isDraft ? "Draft Saved" : "Estimate Created",
+        description: isDraft ? "Draft estimate has been saved successfully." : "Estimate has been created successfully.",
       });
-      window.location.href = "/invoices";
+      window.location.href = "/estimates";
     },
     onError: (error: any) => {
       toast({
@@ -119,31 +121,8 @@ export default function EstimateNew() {
   });
 
   const onSubmit = (values: z.infer<typeof estimateSchema>) => {
-    if (serviceLineItems.length === 0) {
-      toast({
-        title: "No Services Selected",
-        description: "Please add at least one service to the estimate.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Calculate deposit amount and settings
-    let depositAmount = 0;
-    let depositRequired = false;
-    let depositType = "fixed";
-    let depositPercentage = null;
-
-    if (values.depositType === "fixed" && values.depositValue) {
-      depositRequired = true;
-      depositType = "fixed";
-      depositAmount = parseFloat(values.depositValue);
-    } else if (values.depositType === "percentage" && values.depositValue) {
-      depositRequired = true;
-      depositType = "percentage";
-      depositPercentage = parseFloat(values.depositValue);
-      depositAmount = (totalAmount * depositPercentage) / 100;
-    }
+    // Create draft estimate - no services required, minimal validation
+    const validUntilDate = values.validUntil ? new Date(values.validUntil).toISOString() : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(); // Default 30 days from now
 
     createEstimateMutation.mutate({
       clientId: parseInt(values.clientId),
@@ -157,11 +136,9 @@ export default function EstimateNew() {
       })),
       subtotal: totalAmount.toString(),
       total: totalAmount.toString(),
-      depositRequired,
-      depositType,
-      depositAmount: depositAmount > 0 ? depositAmount.toString() : undefined,
-      depositPercentage: depositPercentage ? depositPercentage.toString() : undefined,
-      validUntil: new Date(values.validUntil).toISOString(),
+      depositRequired: false,
+      depositType: "fixed",
+      validUntil: validUntilDate,
       status: "draft",
     });
   };
@@ -433,9 +410,9 @@ export default function EstimateNew() {
                     className="flex-1 gradient-primary"
                     disabled={createEstimateMutation.isPending}
                   >
-                    {createEstimateMutation.isPending ? "Creating..." : "Create Estimate"}
+                    {createEstimateMutation.isPending ? "Saving..." : "Save as Draft"}
                   </Button>
-                  <Link href="/invoices">
+                  <Link href="/estimates">
                     <Button variant="outline" className="flex-1">
                       Cancel
                     </Button>
