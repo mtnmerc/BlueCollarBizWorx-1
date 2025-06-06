@@ -12,6 +12,30 @@ const authenticateSession = (req: any, res: any, next: any) => {
   next();
 };
 
+// API Key authentication middleware for external services like n8n
+const authenticateApiKey = async (req: any, res: any, next: any) => {
+  const apiKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
+  
+  if (!apiKey) {
+    return res.status(401).json({ error: "API key required" });
+  }
+
+  try {
+    // Get business by API key (you'll need to add this method to storage)
+    const business = await storage.getBusinessByApiKey(apiKey);
+    if (!business) {
+      return res.status(401).json({ error: "Invalid API key" });
+    }
+
+    // Set business context for the request
+    req.businessId = business.id;
+    req.apiKeyAuth = true;
+    next();
+  } catch (error) {
+    res.status(401).json({ error: "Invalid API key" });
+  }
+};
+
 export async function registerRoutes(app: Express): Promise<Server> {
   
   // Business authentication
@@ -214,6 +238,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const updatedBusiness = await storage.updateBusiness(req.session.businessId, { logo: req.body.logo });
       res.json(updatedBusiness);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Generate API key for external integrations
+  app.post("/api/business/api-key", authenticateSession, async (req, res) => {
+    try {
+      if (req.session.role !== "admin") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const apiKey = await storage.generateApiKey(req.session.businessId);
+      res.json({ apiKey });
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Revoke API key
+  app.delete("/api/business/api-key", authenticateSession, async (req, res) => {
+    try {
+      if (req.session.role !== "admin") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      await storage.revokeApiKey(req.session.businessId);
+      res.json({ success: true });
     } catch (error) {
       res.status(400).json({ error: error.message });
     }
@@ -1290,6 +1342,143 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(settings);
     } catch (error: any) {
       res.status(500).json({ error: "Failed to update payroll settings" });
+    }
+  });
+
+  // External API endpoints for n8n and other integrations
+  
+  // Get all clients (external API)
+  app.get("/api/external/clients", authenticateApiKey, async (req, res) => {
+    try {
+      const clients = await storage.getClientsByBusiness(req.businessId);
+      res.json(clients);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Create client (external API)
+  app.post("/api/external/clients", authenticateApiKey, async (req, res) => {
+    try {
+      const data = insertClientSchema.parse({
+        ...req.body,
+        businessId: req.businessId,
+      });
+      const client = await storage.createClient(data);
+      res.json(client);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Get all jobs (external API)
+  app.get("/api/external/jobs", authenticateApiKey, async (req, res) => {
+    try {
+      const jobs = await storage.getJobsByBusiness(req.businessId);
+      res.json(jobs);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Create job (external API)
+  app.post("/api/external/jobs", authenticateApiKey, async (req, res) => {
+    try {
+      const jobData = {
+        businessId: req.businessId,
+        clientId: req.body.clientId,
+        assignedUserId: req.body.assignedUserId || null,
+        title: req.body.title,
+        description: req.body.description,
+        address: req.body.address || null,
+        scheduledStart: req.body.scheduledStart ? new Date(req.body.scheduledStart) : null,
+        scheduledEnd: req.body.scheduledEnd ? new Date(req.body.scheduledEnd) : null,
+        status: req.body.status || "scheduled",
+        priority: req.body.priority || "normal",
+        jobType: req.body.jobType || null,
+        estimatedAmount: req.body.estimatedAmount ? String(req.body.estimatedAmount) : null,
+        notes: req.body.notes || null,
+      };
+      
+      const job = await storage.createJob(jobData);
+      res.json(job);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Update job status (external API)
+  app.patch("/api/external/jobs/:id/status", authenticateApiKey, async (req, res) => {
+    try {
+      const job = await storage.getJobById(parseInt(req.params.id));
+      if (!job || job.businessId !== req.businessId) {
+        return res.status(404).json({ error: "Job not found" });
+      }
+      
+      const updatedJob = await storage.updateJob(parseInt(req.params.id), {
+        status: req.body.status
+      });
+      res.json(updatedJob);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Get all invoices (external API)
+  app.get("/api/external/invoices", authenticateApiKey, async (req, res) => {
+    try {
+      const invoices = await storage.getInvoicesByBusiness(req.businessId);
+      res.json(invoices);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Create invoice (external API)
+  app.post("/api/external/invoices", authenticateApiKey, async (req, res) => {
+    try {
+      // Generate invoice number
+      const now = new Date();
+      const dateStr = now.toISOString().slice(2, 10).replace(/-/g, '');
+      const invoiceNumber = `INV-${dateStr}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+
+      const data = insertInvoiceSchema.parse({
+        ...req.body,
+        businessId: req.businessId,
+        invoiceNumber,
+      });
+      
+      const invoice = await storage.createInvoice(data);
+      res.json(invoice);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Webhook endpoint for n8n to receive notifications
+  app.post("/api/webhook/n8n", authenticateApiKey, async (req, res) => {
+    try {
+      // Process webhook data from n8n
+      const { event, data } = req.body;
+      
+      // You can handle different events here
+      switch (event) {
+        case 'job_reminder':
+          // Handle job reminder logic
+          break;
+        case 'payment_received':
+          // Handle payment notification
+          break;
+        case 'client_follow_up':
+          // Handle client follow-up
+          break;
+        default:
+          console.log('Unknown webhook event:', event);
+      }
+      
+      res.json({ success: true, event, processed: true });
+    } catch (error) {
+      res.status(400).json({ error: error.message });
     }
   });
 

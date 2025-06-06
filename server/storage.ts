@@ -82,12 +82,18 @@ export interface IStorage {
   // Additional business and job management methods
   getAllBusinesses(): Promise<Business[]>;
   getIncompleteJobsForDate(businessId: number, date: Date): Promise<Job[]>;
+
+  // API Key Management methods
+  generateApiKey(businessId: number): Promise<string>;
+  revokeApiKey(businessId: number): Promise<void>;
+  getBusinessByApiKey(apiKey: string): Promise<Business | null>;
 }
 
 export class DatabaseStorage implements IStorage {
+  db = db;
   // Business methods
   async createBusiness(insertBusiness: InsertBusiness): Promise<Business> {
-    const [business] = await db
+    const [business] = await this.db
       .insert(businesses)
       .values(insertBusiness)
       .returning();
@@ -95,17 +101,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getBusinessByEmail(email: string): Promise<Business | undefined> {
-    const [business] = await db.select().from(businesses).where(eq(businesses.email, email));
+    const [business] = await this.db.select().from(businesses).where(eq(businesses.email, email));
     return business || undefined;
   }
 
   async getBusinessById(id: number): Promise<Business | undefined> {
-    const [business] = await db.select().from(businesses).where(eq(businesses.id, id));
+    const [business] = await this.db.select().from(businesses).where(eq(businesses.id, id));
     return business || undefined;
   }
 
   async updateBusiness(id: number, business: Partial<InsertBusiness>): Promise<Business> {
-    const [updatedBusiness] = await db
+    const [updatedBusiness] = await this.db
       .update(businesses)
       .set(business)
       .where(eq(businesses.id, id))
@@ -115,7 +121,7 @@ export class DatabaseStorage implements IStorage {
 
   // User methods
   async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db
+    const [user] = await this.db
       .insert(users)
       .values(insertUser)
       .returning();
@@ -123,7 +129,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserByPin(businessId: number, pin: string): Promise<User | undefined> {
-    const [user] = await db
+    const [user] = await this.db
       .select()
       .from(users)
       .where(and(eq(users.businessId, businessId), eq(users.pin, pin), eq(users.isActive, true)));
@@ -131,19 +137,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUsersByBusiness(businessId: number): Promise<User[]> {
-    return await db
+    return await this.db
       .select()
       .from(users)
       .where(and(eq(users.businessId, businessId), eq(users.isActive, true)));
   }
 
   async getUserById(id: number): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
+    const [user] = await this.db.select().from(users).where(eq(users.id, id));
     return user || undefined;
   }
 
   async updateUser(id: number, user: Partial<InsertUser>): Promise<User> {
-    const [updatedUser] = await db
+    const [updatedUser] = await this.db
       .update(users)
       .set(user)
       .where(eq(users.id, id))
@@ -153,7 +159,7 @@ export class DatabaseStorage implements IStorage {
 
   // Client methods
   async createClient(insertClient: InsertClient): Promise<Client> {
-    const [client] = await db
+    const [client] = await this.db
       .insert(clients)
       .values(insertClient)
       .returning();
@@ -161,7 +167,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getClientsByBusiness(businessId: number): Promise<Client[]> {
-    return await db
+    return await this.db
       .select()
       .from(clients)
       .where(eq(clients.businessId, businessId))
@@ -169,12 +175,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getClientById(id: number): Promise<Client | undefined> {
-    const [client] = await db.select().from(clients).where(eq(clients.id, id));
+    const [client] = await this.db.select().from(clients).where(eq(clients.id, id));
     return client || undefined;
   }
 
   async updateClient(id: number, client: Partial<InsertClient>): Promise<Client> {
-    const [updatedClient] = await db
+    const [updatedClient] = await this.db
       .update(clients)
       .set(client)
       .where(eq(clients.id, id))
@@ -184,7 +190,7 @@ export class DatabaseStorage implements IStorage {
 
   // Service methods
   async createService(insertService: InsertService): Promise<Service> {
-    const [service] = await db
+    const [service] = await this.db
       .insert(services)
       .values(insertService)
       .returning();
@@ -192,19 +198,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getServicesByBusiness(businessId: number): Promise<Service[]> {
-    return await db
+    return await this.db
       .select()
       .from(services)
       .where(and(eq(services.businessId, businessId), eq(services.isActive, true)));
   }
 
   async getServiceById(id: number): Promise<Service | undefined> {
-    const [service] = await db.select().from(services).where(eq(services.id, id));
+    const [service] = await this.db.select().from(services).where(eq(services.id, id));
     return service || undefined;
   }
 
   async updateService(id: number, service: Partial<InsertService>): Promise<Service> {
-    const [updatedService] = await db
+    const [updatedService] = await this.db
       .update(services)
       .set(service)
       .where(eq(services.id, id))
@@ -213,7 +219,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteService(id: number): Promise<void> {
-    await db.delete(services).where(eq(services.id, id));
+    await this.db.delete(services).where(eq(services.id, id));
   }
 
   // Job methods
@@ -225,8 +231,8 @@ export class DatabaseStorage implements IStorage {
       scheduledEnd: insertJob.scheduledEnd ? new Date(insertJob.scheduledEnd) : null,
       recurringEndDate: insertJob.recurringEndDate ? new Date(insertJob.recurringEndDate) : null,
     };
-    
-    const [job] = await db
+
+    const [job] = await this.db
       .insert(jobs)
       .values(jobData)
       .returning();
@@ -234,7 +240,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getJobsByBusiness(businessId: number): Promise<any[]> {
-    const jobsWithRelations = await db
+    const jobsWithRelations = await this.db
       .select({
         job: jobs,
         client: clients,
@@ -259,7 +265,7 @@ export class DatabaseStorage implements IStorage {
     const endOfDay = new Date(date);
     endOfDay.setHours(23, 59, 59, 999);
 
-    const jobsWithRelations = await db
+    const jobsWithRelations = await this.db
       .select({
         job: jobs,
         client: clients,
@@ -285,12 +291,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getJobById(id: number): Promise<Job | undefined> {
-    const [job] = await db.select().from(jobs).where(eq(jobs.id, id));
+    const [job] = await this.db.select().from(jobs).where(eq(jobs.id, id));
     return job || undefined;
   }
 
   async updateJob(id: number, job: Partial<InsertJob>): Promise<Job> {
-    const [updatedJob] = await db
+    const [updatedJob] = await this.db
       .update(jobs)
       .set(job)
       .where(eq(jobs.id, id))
@@ -300,7 +306,7 @@ export class DatabaseStorage implements IStorage {
 
   // Estimate methods
   async createEstimate(insertEstimate: InsertEstimate): Promise<Estimate> {
-    const [estimate] = await db
+    const [estimate] = await this.db
       .insert(estimates)
       .values(insertEstimate)
       .returning();
@@ -308,7 +314,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getEstimatesByBusiness(businessId: number): Promise<Estimate[]> {
-    return await db
+    return await this.db
       .select()
       .from(estimates)
       .where(eq(estimates.businessId, businessId))
@@ -316,12 +322,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getEstimateById(id: number): Promise<Estimate | undefined> {
-    const [estimate] = await db.select().from(estimates).where(eq(estimates.id, id));
+    const [estimate] = await this.db.select().from(estimates).where(eq(estimates.id, id));
     return estimate || undefined;
   }
 
   async updateEstimate(id: number, estimate: Partial<InsertEstimate>): Promise<Estimate> {
-    const [updatedEstimate] = await db
+    const [updatedEstimate] = await this.db
       .update(estimates)
       .set(estimate)
       .where(eq(estimates.id, id))
@@ -330,17 +336,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteEstimate(id: number): Promise<void> {
-    await db.delete(estimates).where(eq(estimates.id, id));
+    await this.db.delete(estimates).where(eq(estimates.id, id));
   }
 
   async getEstimateByShareToken(shareToken: string): Promise<Estimate | undefined> {
-    const [estimate] = await db.select().from(estimates).where(eq(estimates.shareToken, shareToken));
+    const [estimate] = await this.db.select().from(estimates).where(eq(estimates.shareToken, shareToken));
     return estimate || undefined;
   }
 
   async generateShareToken(estimateId: number): Promise<string> {
     const shareToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    await db
+    await this.db
       .update(estimates)
       .set({ shareToken })
       .where(eq(estimates.id, estimateId));
@@ -355,11 +361,11 @@ export class DatabaseStorage implements IStorage {
     }
 
     // Generate invoice number
-    const invoiceCount = await db
+    const invoiceCount = await this.db
       .select({ count: sql<number>`count(*)` })
       .from(invoices)
       .where(eq(invoices.businessId, estimate.businessId));
-    
+
     const count = invoiceCount[0]?.count || 0;
     const invoiceNumber = `INV-${new Date().toISOString().slice(2, 10).replace(/-/g, '')}${String.fromCharCode(65 + (count % 26))}`;
 
@@ -372,14 +378,14 @@ export class DatabaseStorage implements IStorage {
     // The deposit will be collected separately on the invoice
     const depositAmount = estimate.depositRequired && estimate.depositAmount ? parseFloat(estimate.depositAmount) : 0;
     const originalTotal = parseFloat(estimate.total);
-    
+
     console.log('Converting estimate to invoice:');
     console.log('Estimate ID:', estimate.id);
     console.log('Deposit Required:', estimate.depositRequired);
     console.log('Deposit Amount:', estimate.depositAmount);
     console.log('Original Total:', estimate.total);
     console.log('Deposit Amount to Account For:', depositAmount);
-    
+
     const invoiceData: InsertInvoice = {
       businessId: estimate.businessId,
       clientId: estimate.clientId,
@@ -406,7 +412,7 @@ export class DatabaseStorage implements IStorage {
 
   // Invoice methods
   async createInvoice(insertInvoice: InsertInvoice): Promise<Invoice> {
-    const [invoice] = await db
+    const [invoice] = await this.db
       .insert(invoices)
       .values(insertInvoice)
       .returning();
@@ -414,7 +420,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getInvoicesByBusiness(businessId: number): Promise<Invoice[]> {
-    return await db
+    return await this.db
       .select()
       .from(invoices)
       .where(eq(invoices.businessId, businessId))
@@ -422,17 +428,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getInvoiceById(id: number): Promise<Invoice | undefined> {
-    const [invoice] = await db.select().from(invoices).where(eq(invoices.id, id));
+    const [invoice] = await this.db.select().from(invoices).where(eq(invoices.id, id));
     return invoice || undefined;
   }
 
   async getInvoiceByShareToken(shareToken: string): Promise<Invoice | undefined> {
-    const [invoice] = await db.select().from(invoices).where(eq(invoices.shareToken, shareToken));
+    const [invoice] = await this.db.select().from(invoices).where(eq(invoices.shareToken, shareToken));
     return invoice || undefined;
   }
 
   async updateInvoice(id: number, invoice: Partial<InsertInvoice>): Promise<Invoice> {
-    const [updatedInvoice] = await db
+    const [updatedInvoice] = await this.db
       .update(invoices)
       .set(invoice)
       .where(eq(invoices.id, id))
@@ -441,12 +447,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteInvoice(id: number): Promise<void> {
-    await db.delete(invoices).where(eq(invoices.id, id));
+    await this.db.delete(invoices).where(eq(invoices.id, id));
   }
 
   async generateInvoiceShareToken(invoiceId: number): Promise<string> {
     const shareToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    await db
+    await this.db
       .update(invoices)
       .set({ shareToken })
       .where(eq(invoices.id, invoiceId));
@@ -457,7 +463,7 @@ export class DatabaseStorage implements IStorage {
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0, 23, 59, 59);
 
-    const result = await db
+    const result = await this.db
       .select({
         total: sql<number>`COALESCE(SUM(CAST(${invoices.total} AS DECIMAL)), 0)`,
         count: sql<number>`COUNT(*)`
@@ -477,7 +483,7 @@ export class DatabaseStorage implements IStorage {
 
   // Time entry methods
   async createTimeEntry(insertTimeEntry: InsertTimeEntry): Promise<TimeEntry> {
-    const [timeEntry] = await db
+    const [timeEntry] = await this.db
       .insert(timeEntries)
       .values(insertTimeEntry)
       .returning();
@@ -485,7 +491,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTimeEntriesByUser(userId: number): Promise<TimeEntry[]> {
-    return await db
+    return await this.db
       .select()
       .from(timeEntries)
       .where(eq(timeEntries.userId, userId))
@@ -493,7 +499,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getActiveTimeEntry(userId: number): Promise<TimeEntry | undefined> {
-    const [timeEntry] = await db
+    const [timeEntry] = await this.db
       .select()
       .from(timeEntries)
       .where(and(eq(timeEntries.userId, userId), sql`${timeEntries.clockOut} IS NULL`))
@@ -502,7 +508,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateTimeEntry(id: number, timeEntry: Partial<InsertTimeEntry>): Promise<TimeEntry> {
-    const [updatedTimeEntry] = await db
+    const [updatedTimeEntry] = await this.db
       .update(timeEntries)
       .set(timeEntry)
       .where(eq(timeEntries.id, id))
@@ -513,8 +519,8 @@ export class DatabaseStorage implements IStorage {
   async getTimeEntriesByUserAndDate(userId: number, date: Date): Promise<TimeEntry[]> {
     const nextDay = new Date(date);
     nextDay.setDate(date.getDate() + 1);
-    
-    return await db
+
+    return await this.db
       .select()
       .from(timeEntries)
       .where(
@@ -529,7 +535,7 @@ export class DatabaseStorage implements IStorage {
 
   async getTimeEntriesForPayroll(businessId: number, startDate?: Date, endDate?: Date, userId?: number): Promise<any[]> {
     const conditions = [eq(timeEntries.businessId, businessId)];
-    
+
     if (startDate) {
       conditions.push(gte(timeEntries.clockIn, startDate));
     }
@@ -540,7 +546,7 @@ export class DatabaseStorage implements IStorage {
       conditions.push(eq(timeEntries.userId, userId));
     }
 
-    const results = await db
+    const results = await this.db
       .select({
         id: timeEntries.id,
         businessId: timeEntries.businessId,
@@ -569,35 +575,35 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPayrollSettings(businessId: number): Promise<PayrollSettings | undefined> {
-    const [settings] = await db
+    const [settings] = await this.db
       .select()
       .from(payrollSettings)
       .where(eq(payrollSettings.businessId, businessId));
-    
+
     if (!settings) {
       // Create default settings if none exist
-      const [newSettings] = await db
+      const [newSettings] = await this.db
         .insert(payrollSettings)
         .values({ businessId })
         .returning();
       return newSettings;
     }
-    
+
     return settings;
   }
 
   async updatePayrollSettings(businessId: number, settings: Partial<InsertPayrollSettings>): Promise<PayrollSettings> {
     const existing = await this.getPayrollSettings(businessId);
-    
+
     if (!existing) {
-      const [newSettings] = await db
+      const [newSettings] = await this.db
         .insert(payrollSettings)
         .values({ ...settings, businessId })
         .returning();
       return newSettings;
     }
 
-    const [updatedSettings] = await db
+    const [updatedSettings] = await this.db
       .update(payrollSettings)
       .set({ ...settings, updatedAt: new Date() })
       .where(eq(payrollSettings.businessId, businessId))
@@ -607,14 +613,14 @@ export class DatabaseStorage implements IStorage {
 
   // Additional business and job management methods
   async getAllBusinesses(): Promise<Business[]> {
-    return await db.select().from(businesses);
+    return await this.db.select().from(businesses);
   }
 
   async getIncompleteJobsForDate(businessId: number, date: Date): Promise<Job[]> {
     const nextDay = new Date(date);
     nextDay.setDate(date.getDate() + 1);
-    
-    return await db
+
+    return await this.db
       .select()
       .from(jobs)
       .where(
@@ -625,6 +631,27 @@ export class DatabaseStorage implements IStorage {
           lt(jobs.scheduledStart, nextDay)
         )
       );
+  }
+
+  async generateApiKey(businessId: number): Promise<string> {
+    const apiKey = 'bzx_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+
+    await this.db.update(businesses).set({
+      apiKey: apiKey
+    }).where(eq(businesses.id, businessId));
+
+    return apiKey;
+  }
+
+  async revokeApiKey(businessId: number): Promise<void> {
+    await this.db.update(businesses).set({
+      apiKey: null
+    }).where(eq(businesses.id, businessId));
+  }
+
+  async getBusinessByApiKey(apiKey: string): Promise<Business | null> {
+    const [result] = await this.db.select().from(businesses).where(eq(businesses.apiKey, apiKey));
+    return result || null;
   }
 }
 
