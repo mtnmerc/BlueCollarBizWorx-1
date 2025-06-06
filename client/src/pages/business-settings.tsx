@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { ArrowLeft, Building, Upload, X, Camera } from "lucide-react";
+import { ArrowLeft, Building, Upload, X, Camera, Key, Copy, Eye, EyeOff } from "lucide-react";
 import { Link } from "wouter";
 
 const businessSettingsSchema = z.object({
@@ -26,6 +26,9 @@ export default function BusinessSettings() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [apiKey, setApiKey] = useState<string | null>(null);
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [isGeneratingKey, setIsGeneratingKey] = useState(false);
 
   const { data: authData } = useQuery({
     queryKey: ["/api/auth/me"],
@@ -54,6 +57,9 @@ export default function BusinessSettings() {
       });
       if (business.logo) {
         setLogoPreview(business.logo);
+      }
+      if (business.apiKey) {
+        setApiKey(business.apiKey);
       }
     }
   });
@@ -163,6 +169,55 @@ export default function BusinessSettings() {
     uploadLogoMutation.mutate("");
   };
 
+  const generateApiKey = async () => {
+    setIsGeneratingKey(true);
+    try {
+      const response = await apiRequest("POST", "/api/business/api-key", {});
+      setApiKey(response.apiKey);
+      toast({
+        title: "Success",
+        description: "API key generated successfully!",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate API key",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingKey(false);
+    }
+  };
+
+  const revokeApiKey = async () => {
+    try {
+      await apiRequest("DELETE", "/api/business/api-key", {});
+      setApiKey(null);
+      toast({
+        title: "Success",
+        description: "API key revoked successfully!",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to revoke API key",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const copyApiKey = () => {
+    if (apiKey) {
+      navigator.clipboard.writeText(apiKey);
+      toast({
+        title: "Copied!",
+        description: "API key copied to clipboard",
+      });
+    }
+  };
+
   const onSubmit = (values: z.infer<typeof businessSettingsSchema>) => {
     updateBusinessMutation.mutate(values);
   };
@@ -244,6 +299,86 @@ export default function BusinessSettings() {
               onChange={handleFileSelect}
               className="hidden"
             />
+          </CardContent>
+        </Card>
+
+        {/* API Key Management */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Key className="h-5 w-5 text-primary" />
+              <span>API Integration</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Generate an API key to integrate your BizWorx data with external tools like n8n, Zapier, or custom applications.
+              </p>
+              
+              {apiKey ? (
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      type={showApiKey ? "text" : "password"}
+                      value={apiKey}
+                      readOnly
+                      className="font-mono text-sm"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setShowApiKey(!showApiKey)}
+                    >
+                      {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={copyApiKey}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      onClick={revokeApiKey}
+                    >
+                      Revoke Key
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    No API key generated yet. Click below to create one.
+                  </p>
+                  <Button
+                    type="button"
+                    onClick={generateApiKey}
+                    disabled={isGeneratingKey}
+                  >
+                    <Key className="h-4 w-4 mr-2" />
+                    {isGeneratingKey ? "Generating..." : "Generate API Key"}
+                  </Button>
+                </div>
+              )}
+              
+              <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+                <h4 className="text-sm font-medium mb-2">API Usage Instructions:</h4>
+                <ul className="text-xs text-muted-foreground space-y-1">
+                  <li>• Include the API key in the <code>X-API-Key</code> header</li>
+                  <li>• Base URL: <code>{window.location.origin}/api/external/</code></li>
+                  <li>• Available endpoints: clients, jobs, invoices</li>
+                  <li>• Example: <code>GET /api/external/clients</code></li>
+                </ul>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
