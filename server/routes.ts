@@ -578,9 +578,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Estimate not found" });
       }
       
-      const updatedEstimate = await storage.updateEstimate(parseInt(req.params.id), req.body);
+      // Handle validUntil date conversion safely
+      const updateData = { ...req.body };
+      if (updateData.validUntil && typeof updateData.validUntil === 'string') {
+        updateData.validUntil = new Date(updateData.validUntil);
+      }
+      
+      const updatedEstimate = await storage.updateEstimate(parseInt(req.params.id), updateData);
       res.json(updatedEstimate);
-    } catch (error) {
+    } catch (error: any) {
       res.status(400).json({ error: error.message });
     }
   });

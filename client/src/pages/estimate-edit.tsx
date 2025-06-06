@@ -178,11 +178,16 @@ export default function EstimateEdit() {
       unit: item.unit,
     }));
 
+    // Handle date conversion safely
+    const validUntilDate = values.validUntil instanceof Date ? 
+      values.validUntil.toISOString() : 
+      new Date(values.validUntil).toISOString();
+
     updateEstimateMutation.mutate({
       clientId: parseInt(values.clientId),
       title: values.title,
       description: values.description,
-      validUntil: new Date(values.validUntil).toISOString(),
+      validUntil: validUntilDate,
       status: values.status,
       lineItems: lineItemsData,
       subtotal: subtotal.toFixed(2),
