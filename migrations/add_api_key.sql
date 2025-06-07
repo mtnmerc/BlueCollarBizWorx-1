@@ -1,0 +1,2 @@
+
+ALTER TABLE businesses ADD COLUMN api_key TEXT UNIQUE;
