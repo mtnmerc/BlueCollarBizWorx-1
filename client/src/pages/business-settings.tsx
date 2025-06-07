@@ -34,7 +34,7 @@ export default function BusinessSettings() {
     queryKey: ["/api/auth/me"],
   });
 
-  const business = authData?.business;
+  const business = (authData as any)?.business;
 
   const form = useForm<z.infer<typeof businessSettingsSchema>>({
     resolver: zodResolver(businessSettingsSchema),
@@ -58,9 +58,9 @@ export default function BusinessSettings() {
       if (business.logo) {
         setLogoPreview(business.logo);
       }
-    }
-    if (apiKeyData?.apiKey) {
-      setApiKey(apiKeyData.apiKey);
+      if (business.apiKey) {
+        setApiKey(business.apiKey);
+      }
     }
   });
 
