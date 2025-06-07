@@ -184,7 +184,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Authentication required" });
       }
 
-      res.json({ user, business });
+      // Include API key for admin users
+      const businessWithApiKey = req.session.role === "admin" ? 
+        { ...business, apiKey: business.apiKey } : 
+        { ...business, apiKey: null };
+
+      res.json({ user, business: businessWithApiKey });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
@@ -243,6 +248,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get current API key
+  app.get("/api/business/api-key", authenticateSession, async (req, res) => {
+    try {
+      if (req.session.role !== "admin") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const business = await storage.getBusinessById(req.session.businessId);
+      res.json({ apiKey: business?.apiKey || null });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
   // Generate API key for external integrations
   app.post("/api/business/api-key", authenticateSession, async (req, res) => {
     try {
@@ -252,7 +271,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const apiKey = await storage.generateApiKey(req.session.businessId);
       res.json({ apiKey });
-    } catch (error) {
+    } catch (error: any) {
       res.status(400).json({ error: error.message });
     }
   });
@@ -266,7 +285,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       await storage.revokeApiKey(req.session.businessId);
       res.json({ success: true });
-    } catch (error) {
+    } catch (error: any) {
       res.status(400).json({ error: error.message });
     }
   });

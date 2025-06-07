@@ -58,9 +58,9 @@ export default function BusinessSettings() {
       if (business.logo) {
         setLogoPreview(business.logo);
       }
-      if (business.apiKey) {
-        setApiKey(business.apiKey);
-      }
+    }
+    if (apiKeyData?.apiKey) {
+      setApiKey(apiKeyData.apiKey);
     }
   });
 
@@ -173,7 +173,9 @@ export default function BusinessSettings() {
     setIsGeneratingKey(true);
     try {
       const response = await apiRequest("POST", "/api/business/api-key", {});
-      setApiKey(response.apiKey);
+      const data = await response.json();
+      setApiKey(data.apiKey);
+      setShowApiKey(true);
       toast({
         title: "Success",
         description: "API key generated successfully!",
