@@ -653,6 +653,22 @@ export class DatabaseStorage implements IStorage {
     const [result] = await this.db.select().from(businesses).where(eq(businesses.apiKey, apiKey));
     return result || null;
   }
+
+  async generateApiKey(businessId: number): Promise<string> {
+    const apiKey = 'bw_' + Math.random().toString(36).substr(2, 32) + Date.now().toString(36);
+    
+    await this.db.update(businesses)
+      .set({ apiKey })
+      .where(eq(businesses.id, businessId));
+    
+    return apiKey;
+  }
+
+  async revokeApiKey(businessId: number): Promise<void> {
+    await this.db.update(businesses)
+      .set({ apiKey: null })
+      .where(eq(businesses.id, businessId));
+  }
 }
 
 export const storage = new DatabaseStorage();
