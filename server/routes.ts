@@ -1574,6 +1574,249 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update job (external API)
+  app.put("/api/external/jobs/:id", authenticateApiKey, async (req, res) => {
+    try {
+      const job = await storage.getJobById(parseInt(req.params.id));
+      if (!job || job.businessId !== req.businessId) {
+        return res.status(404).json({ error: "Job not found" });
+      }
+      
+      // Process the request body to handle date conversions properly
+      const updateData = { ...req.body };
+      
+      // Convert date strings to Date objects if they exist
+      if (updateData.scheduledStart && typeof updateData.scheduledStart === 'string') {
+        updateData.scheduledStart = new Date(updateData.scheduledStart);
+      }
+      if (updateData.scheduledEnd && typeof updateData.scheduledEnd === 'string') {
+        updateData.scheduledEnd = new Date(updateData.scheduledEnd);
+      }
+      if (updateData.recurringEndDate && typeof updateData.recurringEndDate === 'string') {
+        updateData.recurringEndDate = new Date(updateData.recurringEndDate);
+      }
+      
+      // Convert numeric fields
+      if (updateData.clientId) {
+        updateData.clientId = parseInt(updateData.clientId);
+      }
+      if (updateData.assignedUserId) {
+        updateData.assignedUserId = parseInt(updateData.assignedUserId);
+      }
+      if (updateData.estimatedAmount) {
+        updateData.estimatedAmount = parseFloat(updateData.estimatedAmount);
+      }
+      
+      const updatedJob = await storage.updateJob(parseInt(req.params.id), updateData);
+      res.json(updatedJob);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Delete job (external API)
+  app.delete("/api/external/jobs/:id", authenticateApiKey, async (req, res) => {
+    try {
+      const job = await storage.getJobById(parseInt(req.params.id));
+      if (!job || job.businessId !== req.businessId) {
+        return res.status(404).json({ error: "Job not found" });
+      }
+      
+      await storage.deleteJob(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Get single job details (external API)
+  app.get("/api/external/jobs/:id", authenticateApiKey, async (req, res) => {
+    try {
+      const job = await storage.getJobById(parseInt(req.params.id));
+      if (!job || job.businessId !== req.businessId) {
+        return res.status(404).json({ error: "Job not found" });
+      }
+      res.json(job);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get users/team members (external API)
+  app.get("/api/external/users", authenticateApiKey, async (req, res) => {
+    try {
+      const users = await storage.getUsersByBusiness(req.businessId);
+      res.json(users);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Create user/team member (external API)
+  app.post("/api/external/users", authenticateApiKey, async (req, res) => {
+    try {
+      const data = insertUserSchema.parse({
+        ...req.body,
+        businessId: req.businessId,
+      });
+      const user = await storage.createUser(data);
+      res.json(user);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Get services (external API)
+  app.get("/api/external/services", authenticateApiKey, async (req, res) => {
+    try {
+      const services = await storage.getServicesByBusiness(req.businessId);
+      res.json(services);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Create service (external API)
+  app.post("/api/external/services", authenticateApiKey, async (req, res) => {
+    try {
+      const data = insertServiceSchema.parse({
+        ...req.body,
+        businessId: req.businessId,
+      });
+      const service = await storage.createService(data);
+      res.json(service);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Get estimates (external API)
+  app.get("/api/external/estimates", authenticateApiKey, async (req, res) => {
+    try {
+      const estimates = await storage.getEstimatesByBusiness(req.businessId);
+      res.json(estimates);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Create estimate (external API)
+  app.post("/api/external/estimates", authenticateApiKey, async (req, res) => {
+    try {
+      // Generate unique estimate number
+      const now = new Date();
+      const dateStr = now.toISOString().slice(2, 10).replace(/-/g, '');
+      const timeStr = now.getHours().toString().padStart(2, '0') + now.getMinutes().toString().padStart(2, '0');
+      const estimateNumber = `EST-${dateStr}-${timeStr}`;
+
+      const data = insertEstimateSchema.parse({
+        ...req.body,
+        businessId: req.businessId,
+        estimateNumber,
+      });
+      
+      const estimate = await storage.createEstimate(data);
+      res.json(estimate);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Update estimate (external API)
+  app.put("/api/external/estimates/:id", authenticateApiKey, async (req, res) => {
+    try {
+      const estimate = await storage.getEstimateById(parseInt(req.params.id));
+      if (!estimate || estimate.businessId !== req.businessId) {
+        return res.status(404).json({ error: "Estimate not found" });
+      }
+      
+      const updateData = { ...req.body };
+      if (updateData.validUntil && typeof updateData.validUntil === 'string') {
+        updateData.validUntil = new Date(updateData.validUntil);
+      }
+      
+      const updatedEstimate = await storage.updateEstimate(parseInt(req.params.id), updateData);
+      res.json(updatedEstimate);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Update invoice (external API)
+  app.put("/api/external/invoices/:id", authenticateApiKey, async (req, res) => {
+    try {
+      const invoice = await storage.getInvoiceById(parseInt(req.params.id));
+      if (!invoice || invoice.businessId !== req.businessId) {
+        return res.status(404).json({ error: "Invoice not found" });
+      }
+      
+      const updatedInvoice = await storage.updateInvoice(parseInt(req.params.id), req.body);
+      res.json(updatedInvoice);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Bulk create jobs (external API) - useful for recurring job creation
+  app.post("/api/external/jobs/bulk", authenticateApiKey, async (req, res) => {
+    try {
+      const { jobs } = req.body;
+      
+      if (!Array.isArray(jobs)) {
+        return res.status(400).json({ error: "Jobs must be an array" });
+      }
+
+      const createdJobs = [];
+      for (const jobData of jobs) {
+        const job = {
+          businessId: req.businessId,
+          clientId: jobData.clientId,
+          assignedUserId: jobData.assignedUserId || null,
+          title: jobData.title,
+          description: jobData.description,
+          address: jobData.address || null,
+          scheduledStart: jobData.scheduledStart ? new Date(jobData.scheduledStart) : null,
+          scheduledEnd: jobData.scheduledEnd ? new Date(jobData.scheduledEnd) : null,
+          status: jobData.status || "scheduled",
+          priority: jobData.priority || "normal",
+          jobType: jobData.jobType || null,
+          estimatedAmount: jobData.estimatedAmount ? String(jobData.estimatedAmount) : null,
+          notes: jobData.notes || null,
+        };
+        
+        const createdJob = await storage.createJob(job);
+        createdJobs.push(createdJob);
+      }
+      
+      res.json({ created: createdJobs.length, jobs: createdJobs });
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Get business dashboard stats (external API)
+  app.get("/api/external/dashboard/stats", authenticateApiKey, async (req, res) => {
+    try {
+      const now = new Date();
+      const currentMonth = now.getMonth() + 1;
+      const currentYear = now.getFullYear();
+
+      const revenue = await storage.getRevenueStats(req.businessId, currentMonth, currentYear);
+      const todaysJobs = await storage.getJobsByDate(req.businessId, now);
+      const recentInvoices = await storage.getInvoicesByBusiness(req.businessId);
+      const teamMembers = await storage.getUsersByBusiness(req.businessId);
+
+      res.json({
+        revenue,
+        todaysJobs: todaysJobs.slice(0, 5),
+        recentInvoices: recentInvoices.slice(0, 5),
+        teamMembers,
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Webhook endpoint for n8n to receive notifications
   app.post("/api/webhook/n8n", authenticateApiKey, async (req, res) => {
     try {
@@ -1609,6 +1852,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             const job = await storage.createJob(jobData);
             return res.json({ success: true, event, job });
+          }
+          break;
+        case 'create_recurring_jobs':
+          // Handle creation of multiple recurring jobs
+          if (data.template && data.dates) {
+            const createdJobs = [];
+            for (const date of data.dates) {
+              const jobData = {
+                businessId: req.businessId,
+                clientId: data.template.clientId,
+                title: data.template.title,
+                description: data.template.description || '',
+                scheduledStart: new Date(date.start),
+                scheduledEnd: new Date(date.end),
+                status: data.template.status || "scheduled",
+                priority: data.template.priority || "normal",
+                estimatedAmount: data.template.estimatedAmount || null,
+                notes: data.template.notes || null,
+                isRecurring: true,
+                recurringFrequency: data.template.frequency,
+              };
+              
+              const job = await storage.createJob(jobData);
+              createdJobs.push(job);
+            }
+            return res.json({ success: true, event, jobs: createdJobs });
           }
           break;
         default:

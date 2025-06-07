@@ -46,6 +46,7 @@ export interface IStorage {
   getJobsByDate(businessId: number, date: Date): Promise<Job[]>;
   getJobById(id: number): Promise<Job | undefined>;
   updateJob(id: number, job: Partial<InsertJob>): Promise<Job>;
+  deleteJob(id: number): Promise<void>;
   getJobsByDateRange(businessId: number, startDate: Date, endDate: Date): Promise<Job[]>;
 
   // Estimate methods
@@ -303,6 +304,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(jobs.id, id))
       .returning();
     return updatedJob;
+  }
+
+  async deleteJob(id: number): Promise<void> {
+    await this.db.delete(jobs).where(eq(jobs.id, id));
   }
 
   async getJobsByDateRange(businessId: number, startDate: Date, endDate: Date): Promise<Job[]> {

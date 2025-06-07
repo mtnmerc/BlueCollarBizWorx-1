@@ -376,8 +376,16 @@ export default function BusinessSettings() {
                 <ul className="text-xs text-muted-foreground space-y-1">
                   <li>• Include the API key in the <code>X-API-Key</code> header</li>
                   <li>• Base URL: <code>{window.location.origin}/api/external/</code></li>
-                  <li>• Available endpoints: clients, jobs, invoices</li>
-                  <li>• Example: <code>GET /api/external/clients</code></li>
+                  <li>• <strong>Complete Endpoint Coverage:</strong></li>
+                  <li>&nbsp;&nbsp;• Clients: GET, POST /clients</li>
+                  <li>&nbsp;&nbsp;• Jobs: GET, POST, PUT, DELETE /jobs, /jobs/bulk, /jobs/calendar</li>
+                  <li>&nbsp;&nbsp;• Invoices: GET, POST, PUT /invoices</li>
+                  <li>&nbsp;&nbsp;• Estimates: GET, POST, PUT /estimates</li>
+                  <li>&nbsp;&nbsp;• Users/Team: GET, POST /users</li>
+                  <li>&nbsp;&nbsp;• Services: GET, POST /services</li>
+                  <li>&nbsp;&nbsp;• Calendar: GET /schedule/available-slots</li>
+                  <li>&nbsp;&nbsp;• Dashboard: GET /dashboard/stats</li>
+                  <li>&nbsp;&nbsp;• Webhook: POST /webhook/n8n</li>
                 </ul>
               </div>
             </div>
