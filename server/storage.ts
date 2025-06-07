@@ -634,27 +634,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   async generateApiKey(businessId: number): Promise<string> {
-    const apiKey = 'bzx_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-
-    await this.db.update(businesses).set({
-      apiKey: apiKey
-    }).where(eq(businesses.id, businessId));
-
-    return apiKey;
-  }
-
-  async revokeApiKey(businessId: number): Promise<void> {
-    await this.db.update(businesses).set({
-      apiKey: null
-    }).where(eq(businesses.id, businessId));
-  }
-
-  async getBusinessByApiKey(apiKey: string): Promise<Business | null> {
-    const [result] = await this.db.select().from(businesses).where(eq(businesses.apiKey, apiKey));
-    return result || null;
-  }
-
-  async generateApiKey(businessId: number): Promise<string> {
     const apiKey = 'bw_' + Math.random().toString(36).substr(2, 32) + Date.now().toString(36);
     
     await this.db.update(businesses)
@@ -668,6 +647,11 @@ export class DatabaseStorage implements IStorage {
     await this.db.update(businesses)
       .set({ apiKey: null })
       .where(eq(businesses.id, businessId));
+  }
+
+  async getBusinessByApiKey(apiKey: string): Promise<Business | null> {
+    const [result] = await this.db.select().from(businesses).where(eq(businesses.apiKey, apiKey));
+    return result || null;
   }
 }
 
