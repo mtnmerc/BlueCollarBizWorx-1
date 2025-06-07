@@ -1474,6 +1474,106 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get jobs by date range (external API)
+  app.get("/api/external/jobs/calendar", authenticateApiKey, async (req, res) => {
+    try {
+      const { startDate, endDate } = req.query;
+      
+      if (!startDate || !endDate) {
+        return res.status(400).json({ error: "startDate and endDate are required" });
+      }
+
+      const jobs = await storage.getJobsByDateRange(
+        req.businessId, 
+        new Date(startDate as string), 
+        new Date(endDate as string)
+      );
+      res.json(jobs);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get jobs for a specific date (external API)
+  app.get("/api/external/jobs/date/:date", authenticateApiKey, async (req, res) => {
+    try {
+      const { date } = req.params;
+      const jobs = await storage.getJobsByDate(req.businessId, new Date(date));
+      res.json(jobs);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Update job schedule (external API)
+  app.patch("/api/external/jobs/:id/schedule", authenticateApiKey, async (req, res) => {
+    try {
+      const { scheduledStart, scheduledEnd } = req.body;
+      
+      const job = await storage.getJobById(parseInt(req.params.id));
+      if (!job || job.businessId !== req.businessId) {
+        return res.status(404).json({ error: "Job not found" });
+      }
+      
+      const updateData: any = {};
+      if (scheduledStart) updateData.scheduledStart = new Date(scheduledStart);
+      if (scheduledEnd) updateData.scheduledEnd = new Date(scheduledEnd);
+      
+      const updatedJob = await storage.updateJob(parseInt(req.params.id), updateData);
+      res.json(updatedJob);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Get available time slots for scheduling (external API)
+  app.get("/api/external/schedule/available-slots", authenticateApiKey, async (req, res) => {
+    try {
+      const { date, duration } = req.query;
+      
+      if (!date || !duration) {
+        return res.status(400).json({ error: "date and duration (in hours) are required" });
+      }
+
+      const requestedDate = new Date(date as string);
+      const durationHours = parseFloat(duration as string);
+      
+      // Get existing jobs for the date
+      const existingJobs = await storage.getJobsByDate(req.businessId, requestedDate);
+      
+      // Generate available time slots (8 AM to 6 PM)
+      const availableSlots = [];
+      for (let hour = 8; hour < 18 - durationHours; hour += 0.5) {
+        const slotStart = new Date(requestedDate);
+        slotStart.setHours(Math.floor(hour), (hour % 1) * 60, 0, 0);
+        
+        const slotEnd = new Date(slotStart);
+        slotEnd.setHours(slotEnd.getHours() + Math.floor(durationHours), slotEnd.getMinutes() + ((durationHours % 1) * 60));
+        
+        // Check if this slot conflicts with existing jobs
+        const hasConflict = existingJobs.some((job: any) => {
+          if (!job.scheduledStart || !job.scheduledEnd) return false;
+          const jobStart = new Date(job.scheduledStart);
+          const jobEnd = new Date(job.scheduledEnd);
+          return (slotStart < jobEnd && slotEnd > jobStart);
+        });
+        
+        if (!hasConflict) {
+          availableSlots.push({
+            start: slotStart.toISOString(),
+            end: slotEnd.toISOString(),
+            startTime: slotStart.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
+            endTime: slotEnd.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+          });
+        }
+      }
+      
+      res.json({ date: requestedDate.toISOString().split('T')[0], availableSlots });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Webhook endpoint for n8n to receive notifications
   app.post("/api/webhook/n8n", authenticateApiKey, async (req, res) => {
     try {
@@ -1490,6 +1590,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           break;
         case 'client_follow_up':
           // Handle client follow-up
+          break;
+        case 'schedule_job':
+          // Handle automated job scheduling
+          if (data.clientId && data.title && data.scheduledStart) {
+            const jobData = {
+              businessId: req.businessId,
+              clientId: data.clientId,
+              title: data.title,
+              description: data.description || '',
+              scheduledStart: new Date(data.scheduledStart),
+              scheduledEnd: data.scheduledEnd ? new Date(data.scheduledEnd) : null,
+              status: data.status || "scheduled",
+              priority: data.priority || "normal",
+              estimatedAmount: data.estimatedAmount || null,
+              notes: data.notes || null,
+            };
+            
+            const job = await storage.createJob(jobData);
+            return res.json({ success: true, event, job });
+          }
           break;
         default:
           console.log('Unknown webhook event:', event);

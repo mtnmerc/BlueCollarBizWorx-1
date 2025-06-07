@@ -46,6 +46,7 @@ export interface IStorage {
   getJobsByDate(businessId: number, date: Date): Promise<Job[]>;
   getJobById(id: number): Promise<Job | undefined>;
   updateJob(id: number, job: Partial<InsertJob>): Promise<Job>;
+  getJobsByDateRange(businessId: number, startDate: Date, endDate: Date): Promise<Job[]>;
 
   // Estimate methods
   createEstimate(estimate: InsertEstimate): Promise<Estimate>;
@@ -302,6 +303,26 @@ export class DatabaseStorage implements IStorage {
       .where(eq(jobs.id, id))
       .returning();
     return updatedJob;
+  }
+
+  async getJobsByDateRange(businessId: number, startDate: Date, endDate: Date): Promise<Job[]> {
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+
+    return await this.db
+      .select()
+      .from(jobs)
+      .where(
+        and(
+          eq(jobs.businessId, businessId),
+          gte(jobs.scheduledStart, start),
+          lte(jobs.scheduledStart, end)
+        )
+      )
+      .orderBy(jobs.scheduledStart);
   }
 
   // Estimate methods
@@ -635,11 +656,11 @@ export class DatabaseStorage implements IStorage {
 
   async generateApiKey(businessId: number): Promise<string> {
     const apiKey = 'bw_' + Math.random().toString(36).substr(2, 32) + Date.now().toString(36);
-    
+
     await this.db.update(businesses)
       .set({ apiKey })
       .where(eq(businesses.id, businessId));
-    
+
     return apiKey;
   }
 
