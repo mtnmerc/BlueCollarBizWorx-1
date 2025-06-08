@@ -42,7 +42,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Parse Telegram command and extract parameters\nconst messageText = $input.first().json.message.text;\nconst chatId = $input.first().json.message.chat.id;\n\n// Extract command\nconst commandMatch = messageText.match(/^\\/([a-zA-Z_]+)/);\nconst command = commandMatch ? commandMatch[1] : '';\n\n// Parse parameters using regex patterns\nconst parseParams = (text) => {\n  const params = {};\n  \n  // Match key:\"value\" or key:value patterns\n  const paramMatches = text.match(/([a-zA-Z]+):(\"[^\"]*\"|[^\\s]+)/g) || [];\n  \n  paramMatches.forEach(match => {\n    const [key, value] = match.split(':');\n    params[key] = value.replace(/\"/g, ''); // Remove quotes\n  });\n  \n  return params;\n};\n\nconst parameters = parseParams(messageText);\n\nreturn {\n  command: command,\n  chatId: chatId,\n  originalMessage: messageText,\n  parameters: parameters,\n  // Extract common parameters with defaults\n  clientId: parameters.clientId || parameters.client || 1,\n  title: parameters.title || `${command} from Telegram`,\n  description: parameters.description || `Created via Telegram bot`,\n  scheduledStart: parameters.scheduledStart || parameters.start || new Date().toISOString(),\n  scheduledEnd: parameters.scheduledEnd || parameters.end,\n  priority: parameters.priority || 'normal',\n  status: parameters.status || 'draft',\n  name: parameters.name,\n  email: parameters.email,\n  phone: parameters.phone,\n  address: parameters.address,\n  jobId: parameters.jobId || parameters.job,\n  dueDate: parameters.dueDate || parameters.due,\n  validUntil: parameters.validUntil || parameters.valid,\n  invoiceId: parameters.invoiceId || parameters.invoice,\n  estimateId: parameters.estimateId || parameters.estimate,\n  items: parameters.items ? JSON.parse(parameters.items) : []\n};"
+        "jsCode": "// Enhanced Natural Language Processing for Telegram\nconst messageText = $input.first().json.message.text;\nconst chatId = $input.first().json.message.chat.id;\nconst isVoiceMessage = $input.first().json.message.voice;\n\n// Extract traditional command if present\nconst commandMatch = messageText.match(/^\\/([a-zA-Z_]+)/);\nconst explicitCommand = commandMatch ? commandMatch[1] : null;\n\n// Determine intent from natural language\nlet intent = explicitCommand;\nif (!intent) {\n  const lowerText = messageText.toLowerCase();\n  \n  // Intent detection based on keywords and context\n  if (lowerText.includes('create') || lowerText.includes('new') || lowerText.includes('add')) {\n    if (lowerText.includes('job') || lowerText.includes('work') || lowerText.includes('appointment') || lowerText.includes('schedule')) {\n      intent = 'create_job';\n    } else if (lowerText.includes('client') || lowerText.includes('customer')) {\n      intent = 'create_client';\n    } else if (lowerText.includes('invoice') || lowerText.includes('bill')) {\n      intent = 'create_invoice';\n    } else if (lowerText.includes('estimate') || lowerText.includes('quote')) {\n      intent = 'create_estimate';\n    }\n  } else if (lowerText.includes('schedule') || lowerText.includes('book')) {\n    intent = 'schedule_job';\n  } else if (lowerText.includes('get') || lowerText.includes('show') || lowerText.includes('list')) {\n    if (lowerText.includes('stats') || lowerText.includes('dashboard') || lowerText.includes('summary')) {\n      intent = 'get_stats';\n    } else if (lowerText.includes('job')) {\n      intent = 'get_jobs';\n    } else if (lowerText.includes('invoice')) {\n      intent = 'get_invoices';\n    }\n  } else if (lowerText.includes('help') || lowerText.includes('what can') || lowerText.includes('commands')) {\n    intent = 'help';\n  } else {\n    // Default to job creation for unrecognized patterns\n    intent = 'create_job';\n  }\n}\n\n// Parse traditional parameters if they exist\nconst parseParams = (text) => {\n  const params = {};\n  const paramMatches = text.match(/([a-zA-Z]+):(\"[^\"]*\"|[^\\s]+)/g) || [];\n  paramMatches.forEach(match => {\n    const [key, value] = match.split(':');\n    params[key] = value.replace(/\"/g, '');\n  });\n  return params;\n};\n\nconst traditionalParams = parseParams(messageText);\n\n// For natural language, we'll let the AI processing endpoint handle extraction\nconst isNaturalLanguage = !explicitCommand && !Object.keys(traditionalParams).length;\n\nreturn {\n  command: intent,\n  chatId: chatId,\n  originalMessage: messageText,\n  isVoiceMessage: !!isVoiceMessage,\n  isNaturalLanguage: isNaturalLanguage,\n  intent: intent,\n  \n  // Traditional parameter extraction for backward compatibility\n  parameters: traditionalParams,\n  clientId: traditionalParams.clientId || traditionalParams.client || null,\n  title: traditionalParams.title || null,\n  description: traditionalParams.description || (isNaturalLanguage ? messageText : null),\n  scheduledStart: traditionalParams.scheduledStart || traditionalParams.start || null,\n  scheduledEnd: traditionalParams.scheduledEnd || traditionalParams.end || null,\n  priority: traditionalParams.priority || 'normal',\n  status: traditionalParams.status || 'draft',\n  name: traditionalParams.name || null,\n  email: traditionalParams.email || null,\n  phone: traditionalParams.phone || null,\n  address: traditionalParams.address || null,\n  jobId: traditionalParams.jobId || traditionalParams.job || null,\n  dueDate: traditionalParams.dueDate || traditionalParams.due || null,\n  validUntil: traditionalParams.validUntil || traditionalParams.valid || null,\n  invoiceId: traditionalParams.invoiceId || traditionalParams.invoice || null,\n  estimateId: traditionalParams.estimateId || traditionalParams.estimate || null,\n  items: traditionalParams.items ? JSON.parse(traditionalParams.items) : [],\n  \n  // Flag to trigger AI processing\n  needsAiProcessing: isNaturalLanguage\n};"
       },
       "id": "parse-command-1234-5678-90ab-cdef",
       "name": "Parse Command & Parameters",
@@ -138,6 +138,50 @@
       "name": "If Edit Invoice Command",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
+
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/ai/process-command",
+        "options": {
+          "headers": {
+            "X-API-Key": "={{$node[\"Set BizWorx Config\"].json[\"apiKey\"]}}",
+            "Content-Type": "application/json"
+          },
+          "body": {
+            "bodyType": "json",
+            "value": {
+              "message": "={{ $json.originalMessage }}",
+              "intent": "={{ $json.intent }}"
+            }
+          }
+        },
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.needsAiProcessing }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "ai-process-command-1234-5678-90ab-cdef",
+      "name": "AI Process Natural Language",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 150]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merge AI-processed data with original command data\nconst originalData = $input.first().json;\nconst aiData = $input.last().json;\n\n// If AI processing was successful, merge the extracted fields\nif (aiData && aiData.extractedFields) {\n  const merged = {\n    ...originalData,\n    // Override with AI-extracted data where available\n    clientId: aiData.extractedFields.clientId || originalData.clientId,\n    title: aiData.extractedFields.title || originalData.title || 'New Task',\n    description: aiData.extractedFields.description || originalData.description,\n    scheduledStart: aiData.extractedFields.scheduledDate ? \n      (aiData.extractedFields.scheduledTime ? \n        new Date(`${aiData.extractedFields.scheduledDate}T${convertTo24Hour(aiData.extractedFields.scheduledTime)}`).toISOString() :\n        new Date(`${aiData.extractedFields.scheduledDate}T09:00:00`).toISOString()\n      ) : originalData.scheduledStart,\n    priority: aiData.extractedFields.priority || originalData.priority,\n    name: aiData.extractedFields.newClientName || aiData.extractedFields.clientName || originalData.name,\n    email: aiData.extractedFields.email || originalData.email,\n    phone: aiData.extractedFields.phone || originalData.phone,\n    address: aiData.extractedFields.address || originalData.address,\n    estimatedAmount: aiData.extractedFields.amount?.toString() || originalData.estimatedAmount,\n    \n    // Add AI-specific data\n    aiProcessed: true,\n    aiConfidence: aiData.confidence || 0,\n    suggestedAction: aiData.suggestedAction\n  };\n  \n  return merged;\n} else {\n  // Return original data if AI processing failed\n  return originalData;\n}\n\n// Helper function to convert 12-hour to 24-hour format\nfunction convertTo24Hour(time12h) {\n  const [time, modifier] = time12h.split(/\\s+/);\n  let [hours, minutes] = time.split(':');\n  \n  if (hours === '12') {\n    hours = '00';\n  }\n  \n  if (modifier && modifier.toLowerCase() === 'pm') {\n    hours = parseInt(hours, 10) + 12;\n  }\n  \n  return `${hours.toString().padStart(2, '0')}:${minutes || '00'}:00`;\n}"
+      },
+      "id": "merge-ai-data-1234-5678-90ab-cdef",
+      "name": "Merge AI Processed Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 150]
+    },
+
       "position": [900, 500]
     },
     {
@@ -657,7 +701,7 @@
     {
       "parameters": {
         "chatId": "={{ $json.chatId }}",
-        "text": "🤖 **BizWorx Bot - Complete Command List:**\n\n**📋 Job Management:**\n• `/create_job title:\"Job Name\" client:1 description:\"Job details\"`\n• `/schedule_job title:\"Job Name\" client:1 start:\"2024-01-15T09:00:00Z\"`\n• `/get_jobs` - List all jobs\n\n**👤 Client Management:**\n• `/create_client name:\"Client Name\" email:\"email@example.com\" phone:\"555-1234\"`\n\n**💰 Invoice Management:**\n• `/create_invoice client:1 job:5 due:\"2024-02-01T00:00:00Z\"`\n• `/edit_invoice invoice:123 status:\"sent\"`\n• `/get_invoices` - List recent invoices\n\n**📊 Estimate Management:**\n• `/create_estimate client:1 title:\"Estimate Name\" valid:\"2024-02-01T00:00:00Z\"`\n• `/edit_estimate estimate:456 status:\"approved\"`\n\n**📈 Analytics:**\n• `/get_stats` - View dashboard statistics\n\n**❓ Help:**\n• `/help` - Show this command list\n\n💡 **Parameter Format:**\n• Use `key:\"value\"` for strings with spaces\n• Use `key:value` for single words/numbers\n• Dates should be in ISO format (YYYY-MM-DDTHH:mm:ssZ)\n\n🚀 **Ready to automate your business!**"
+        "text": "🤖 **BizWorx Bot - Smart Business Assistant**\n\n**🗣️ Natural Language Commands:**\nJust speak or type naturally! Examples:\n\n**📋 Job Management:**\n• \"Schedule a plumbing job for John Smith tomorrow at 2 PM\"\n• \"Create urgent electrical work for 123 Main St\"\n• \"Book maintenance for next Tuesday\"\n• \"Show me today's jobs\"\n\n**👤 Client Management:**\n• \"Add new client Sarah Johnson, email sarah@email.com, phone 555-1234\"\n• \"Create client Mike's Auto Shop on Oak Street\"\n\n**💰 Invoice & Estimates:**\n• \"Create invoice for plumbing job, $350 for John Smith\"\n• \"Make estimate for bathroom remodel, $2500\"\n• \"Bill customer for yesterday's work\"\n• \"Show recent invoices\"\n\n**📈 Business Stats:**\n• \"Show dashboard stats\"\n• \"What's my revenue this month?\"\n• \"How many jobs today?\"\n\n**🎙️ Voice Commands Supported!**\nSend voice messages - I understand spoken commands too!\n\n**⚡ Traditional Commands Still Work:**\n• `/create_job title:\"Job Name\" client:1`\n• `/get_stats` - Dashboard stats\n• `/help` - This help\n\n**💡 Tips:**\n• Mention client names, dates, amounts, and addresses\n• Use \"urgent\" or \"high priority\" for important jobs\n• Include phone/email when adding clients\n• Speak naturally - I'll understand!\n\n🚀 **AI-Powered Business Automation!**"
       },
       "id": "telegram-help-response-1234-5678-90ab",
       "name": "Send Help Response",
@@ -696,6 +740,33 @@
       ]
     },
     "Parse Command & Parameters": {
+      "main": [
+        [
+          {
+            "node": "AI Process Natural Language",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge AI Processed Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Process Natural Language": {
+      "main": [
+        [
+          {
+            "node": "Merge AI Processed Data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge AI Processed Data": {
       "main": [
         [
           {

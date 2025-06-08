@@ -1659,6 +1659,271 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // AI Natural Language Processing endpoint for converting text to structured data
+  app.post("/api/ai/process-command", authenticateApiKey, async (req, res) => {
+    try {
+      const { message, intent } = req.body;
+
+      if (!message) {
+        return res.status(400).json({ error: "Message is required" });
+      }
+
+      // Get business context for better processing
+      const business = await storage.getBusinessById(req.businessId);
+      const clients = await storage.getClientsByBusiness(req.businessId);
+      const services = await storage.getServicesByBusiness(req.businessId);
+      const users = await storage.getUsersByBusiness(req.businessId);
+
+      // Create context for AI processing
+      const context = {
+        business: business?.name,
+        clients: clients.map(c => ({ id: c.id, name: c.name, email: c.email })),
+        services: services.map(s => ({ id: s.id, name: s.name, rate: s.rate })),
+        users: users.map(u => ({ id: u.id, name: `${u.firstName} ${u.lastName}`, role: u.role }))
+      };
+
+      // Process the natural language input
+      const processedData = await processNaturalLanguage(message, intent, context);
+
+      res.json(processedData);
+    } catch (error: any) {
+      console.error("AI Processing error:", error);
+      res.status(500).json({ error: "Failed to process natural language command" });
+    }
+  });
+
+  // Helper function to process natural language and extract structured data
+  async function processNaturalLanguage(message: string, intent: string, context: any) {
+    // This is a simplified AI processing function
+    // In production, you'd integrate with OpenAI, Google AI, or similar service
+    
+    const lowerMessage = message.toLowerCase();
+    
+    // Extract common patterns using regex and keywords
+    const patterns = {
+      // Client patterns
+      clientName: /(?:for|client|customer)\s+([a-zA-Z\s]+?)(?:\s|$|,|\.|phone|email|at)/i,
+      clientEmail: /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i,
+      clientPhone: /(?:phone|call|number)\s*:?\s*([0-9\-\(\)\s+]{10,})/i,
+      
+      // Job/Service patterns
+      jobTitle: /(?:job|work|service|task|project)\s+(?:for|on|called|titled)\s+([^,.\n]+)/i,
+      serviceType: /(?:plumbing|electrical|hvac|cleaning|repair|install|maintenance|inspection)/i,
+      
+      // Date/Time patterns
+      datePattern: /(?:on|for|scheduled)\s+([a-zA-Z]+\s+\d{1,2}(?:st|nd|rd|th)?|tomorrow|today|next\s+\w+|\d{1,2}\/\d{1,2}\/?\d{0,4})/i,
+      timePattern: /(?:at|around)\s+(\d{1,2}(?::\d{2})?\s*(?:am|pm|AM|PM))/i,
+      
+      // Amount patterns
+      amountPattern: /(?:\$|dollar|cost|charge|price|amount)\s*(\d+(?:\.\d{2})?)/i,
+      hourlyRate: /(\d+(?:\.\d{2})?)\s*(?:per\s+hour|\/hour|hourly)/i,
+      
+      // Address patterns
+      addressPattern: /(?:at|address|location)\s+([^,.\n]+(?:street|st|avenue|ave|road|rd|drive|dr|lane|ln|way|circle|cir|court|ct|place|pl))/i,
+      
+      // Status patterns
+      urgentPattern: /(?:urgent|emergency|asap|rush|immediate)/i,
+      priorityPattern: /(?:high|low|normal|medium)\s+priority/i,
+      
+      // Description patterns
+      descriptionPattern: /(?:description|details|about|regarding)\s*:?\s*([^.!?]+)/i
+    };
+
+    // Extract data based on intent
+    const extractedData: any = {
+      intent: intent,
+      confidence: 0.8, // Mock confidence score
+      extractedFields: {}
+    };
+
+    // Find matching client
+    const clientMatch = message.match(patterns.clientName);
+    if (clientMatch) {
+      const clientName = clientMatch[1].trim();
+      const matchingClient = context.clients.find((c: any) => 
+        c.name.toLowerCase().includes(clientName.toLowerCase()) ||
+        clientName.toLowerCase().includes(c.name.toLowerCase())
+      );
+      if (matchingClient) {
+        extractedData.extractedFields.clientId = matchingClient.id;
+        extractedData.extractedFields.clientName = matchingClient.name;
+      } else {
+        extractedData.extractedFields.newClientName = clientName;
+      }
+    }
+
+    // Extract email and phone
+    const emailMatch = message.match(patterns.clientEmail);
+    if (emailMatch) {
+      extractedData.extractedFields.email = emailMatch[1];
+    }
+
+    const phoneMatch = message.match(patterns.clientPhone);
+    if (phoneMatch) {
+      extractedData.extractedFields.phone = phoneMatch[1].replace(/\D/g, '');
+    }
+
+    // Extract job/service information
+    const jobTitleMatch = message.match(patterns.jobTitle);
+    if (jobTitleMatch) {
+      extractedData.extractedFields.title = jobTitleMatch[1].trim();
+    }
+
+    // Extract service type and find matching service
+    const serviceTypeMatch = message.match(patterns.serviceType);
+    if (serviceTypeMatch) {
+      const serviceType = serviceTypeMatch[0];
+      const matchingService = context.services.find((s: any) => 
+        s.name.toLowerCase().includes(serviceType.toLowerCase())
+      );
+      if (matchingService) {
+        extractedData.extractedFields.serviceId = matchingService.id;
+        extractedData.extractedFields.serviceName = matchingService.name;
+        extractedData.extractedFields.rate = matchingService.rate;
+      }
+    }
+
+    // Extract dates and times
+    const dateMatch = message.match(patterns.datePattern);
+    if (dateMatch) {
+      const dateStr = dateMatch[1];
+      const parsedDate = parseNaturalDate(dateStr);
+      if (parsedDate) {
+        extractedData.extractedFields.scheduledDate = parsedDate.toISOString().split('T')[0];
+      }
+    }
+
+    const timeMatch = message.match(patterns.timePattern);
+    if (timeMatch) {
+      extractedData.extractedFields.scheduledTime = timeMatch[1];
+    }
+
+    // Extract amounts
+    const amountMatch = message.match(patterns.amountPattern);
+    if (amountMatch) {
+      extractedData.extractedFields.amount = parseFloat(amountMatch[1]);
+    }
+
+    const hourlyRateMatch = message.match(patterns.hourlyRate);
+    if (hourlyRateMatch) {
+      extractedData.extractedFields.hourlyRate = parseFloat(hourlyRateMatch[1]);
+    }
+
+    // Extract address
+    const addressMatch = message.match(patterns.addressPattern);
+    if (addressMatch) {
+      extractedData.extractedFields.address = addressMatch[1].trim();
+    }
+
+    // Determine priority
+    if (patterns.urgentPattern.test(lowerMessage)) {
+      extractedData.extractedFields.priority = 'high';
+    } else if (patterns.priorityPattern.test(lowerMessage)) {
+      const priorityMatch = message.match(patterns.priorityPattern);
+      if (priorityMatch) {
+        extractedData.extractedFields.priority = priorityMatch[1].toLowerCase();
+      }
+    }
+
+    // Extract description
+    const descMatch = message.match(patterns.descriptionPattern);
+    if (descMatch) {
+      extractedData.extractedFields.description = descMatch[1].trim();
+    } else {
+      // Use the entire message as description if no specific pattern found
+      extractedData.extractedFields.description = message;
+    }
+
+    // Generate suggestions based on intent
+    switch (intent) {
+      case 'create_job':
+        extractedData.suggestedAction = {
+          endpoint: '/api/external/jobs',
+          method: 'POST',
+          payload: {
+            clientId: extractedData.extractedFields.clientId,
+            title: extractedData.extractedFields.title || 'New Job',
+            description: extractedData.extractedFields.description,
+            address: extractedData.extractedFields.address,
+            priority: extractedData.extractedFields.priority || 'normal',
+            status: 'scheduled',
+            estimatedAmount: extractedData.extractedFields.amount?.toString()
+          }
+        };
+        break;
+
+      case 'create_client':
+        extractedData.suggestedAction = {
+          endpoint: '/api/external/clients',
+          method: 'POST',
+          payload: {
+            name: extractedData.extractedFields.newClientName || extractedData.extractedFields.clientName,
+            email: extractedData.extractedFields.email,
+            phone: extractedData.extractedFields.phone,
+            address: extractedData.extractedFields.address
+          }
+        };
+        break;
+
+      case 'create_invoice':
+        extractedData.suggestedAction = {
+          endpoint: '/api/external/invoices',
+          method: 'POST',
+          payload: {
+            clientId: extractedData.extractedFields.clientId,
+            items: extractedData.extractedFields.serviceName ? [
+              {
+                description: extractedData.extractedFields.serviceName,
+                quantity: 1,
+                rate: extractedData.extractedFields.rate || extractedData.extractedFields.amount || 0,
+                total: extractedData.extractedFields.rate || extractedData.extractedFields.amount || 0
+              }
+            ] : [],
+            status: 'draft'
+          }
+        };
+        break;
+    }
+
+    return extractedData;
+  }
+
+  // Helper function to parse natural language dates
+  function parseNaturalDate(dateStr: string): Date | null {
+    const today = new Date();
+    const lower = dateStr.toLowerCase();
+
+    if (lower === 'today') {
+      return today;
+    } else if (lower === 'tomorrow') {
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
+      return tomorrow;
+    } else if (lower.startsWith('next ')) {
+      const dayName = lower.replace('next ', '');
+      const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+      const targetDay = days.indexOf(dayName);
+      if (targetDay !== -1) {
+        const nextDate = new Date(today);
+        const currentDay = today.getDay();
+        const daysUntilTarget = (targetDay + 7 - currentDay) % 7 || 7;
+        nextDate.setDate(today.getDate() + daysUntilTarget);
+        return nextDate;
+      }
+    } else if (/\d{1,2}\/\d{1,2}/.test(dateStr)) {
+      // Handle MM/DD or MM/DD/YYYY format
+      const parts = dateStr.split('/');
+      const month = parseInt(parts[0]) - 1; // Month is 0-indexed
+      const day = parseInt(parts[1]);
+      const year = parts[2] ? parseInt(parts[2]) : today.getFullYear();
+      return new Date(year, month, day);
+    }
+
+    return null;
+  }
+
+
+
   // Get users/team members (external API)
   app.get("/api/external/users", authenticateApiKey, async (req, res) => {
     try {
