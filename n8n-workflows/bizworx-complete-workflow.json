@@ -1,0 +1,625 @@
+
+{
+  "name": "BizWorx Complete Business Automation",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "b8c7d890-1234-5678-9abc-def012345678",
+      "name": "When clicking 'Test workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/external/clients",
+        "options": {
+          "headers": {
+            "X-API-Key": "={{$node[\"Set BizWorx Config\"].json[\"apiKey\"]}}"
+          }
+        }
+      },
+      "id": "a1b2c3d4-5678-90ef-1234-567890abcdef",
+      "name": "Get All Clients",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 180]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "baseUrl",
+              "value": "https://your-repl-name.replit.app"
+            },
+            {
+              "name": "apiKey",
+              "value": "your_generated_api_key_here"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "config123-4567-89ab-cdef-0123456789ab",
+      "name": "Set BizWorx Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/external/clients",
+        "options": {
+          "headers": {
+            "X-API-Key": "={{$node[\"Set BizWorx Config\"].json[\"apiKey\"]}}",
+            "Content-Type": "application/json"
+          },
+          "body": {
+            "bodyType": "json",
+            "value": {
+              "name": "{{ $json.name }}",
+              "email": "{{ $json.email }}",
+              "phone": "{{ $json.phone }}",
+              "address": "{{ $json.address }}",
+              "notes": "{{ $json.notes }}"
+            }
+          }
+        }
+      },
+      "id": "client-create-1234-5678-90ab-cdef0123",
+      "name": "Create New Client",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 320]
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/external/jobs",
+        "options": {
+          "headers": {
+            "X-API-Key": "={{$node[\"Set BizWorx Config\"].json[\"apiKey\"]}}"
+          }
+        }
+      },
+      "id": "jobs-get-1234-5678-90ab-cdef012345",
+      "name": "Get All Jobs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 460]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/external/jobs",
+        "options": {
+          "headers": {
+            "X-API-Key": "={{$node[\"Set BizWorx Config\"].json[\"apiKey\"]}}",
+            "Content-Type": "application/json"
+          },
+          "body": {
+            "bodyType": "json",
+            "value": {
+              "clientId": "{{ $json.clientId }}",
+              "title": "{{ $json.title }}",
+              "description": "{{ $json.description }}",
+              "address": "{{ $json.address }}",
+              "scheduledStart": "{{ $json.scheduledStart }}",
+              "scheduledEnd": "{{ $json.scheduledEnd }}",
+              "status": "{{ $json.status || 'scheduled' }}",
+              "priority": "{{ $json.priority || 'normal' }}",
+              "estimatedAmount": "{{ $json.estimatedAmount }}",
+              "notes": "{{ $json.notes }}"
+            }
+          }
+        }
+      },
+      "id": "job-create-1234-5678-90ab-cdef01234",
+      "name": "Create New Job",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 600]
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/external/schedule/available-slots",
+        "options": {
+          "headers": {
+            "X-API-Key": "={{$node[\"Set BizWorx Config\"].json[\"apiKey\"]}}"
+          },
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "date",
+                "value": "{{ $json.date }}"
+              },
+              {
+                "name": "duration",
+                "value": "{{ $json.duration }}"
+              }
+            ]
+          }
+        }
+      },
+      "id": "schedule-slots-1234-5678-90ab-cdef",
+      "name": "Get Available Time Slots",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 740]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/external/jobs/bulk",
+        "options": {
+          "headers": {
+            "X-API-Key": "={{$node[\"Set BizWorx Config\"].json[\"apiKey\"]}}",
+            "Content-Type": "application/json"
+          },
+          "body": {
+            "bodyType": "json",
+            "value": {
+              "jobs": "{{ $json.jobs }}"
+            }
+          }
+        }
+      },
+      "id": "bulk-jobs-1234-5678-90ab-cdef0123",
+      "name": "Create Bulk Jobs (Recurring)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 880]
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/external/invoices",
+        "options": {
+          "headers": {
+            "X-API-Key": "={{$node[\"Set BizWorx Config\"].json[\"apiKey\"]}}"
+          }
+        }
+      },
+      "id": "invoices-get-1234-5678-90ab-cdef",
+      "name": "Get All Invoices",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 180]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/external/invoices",
+        "options": {
+          "headers": {
+            "X-API-Key": "={{$node[\"Set BizWorx Config\"].json[\"apiKey\"]}}",
+            "Content-Type": "application/json"
+          },
+          "body": {
+            "bodyType": "json",
+            "value": {
+              "clientId": "{{ $json.clientId }}",
+              "jobId": "{{ $json.jobId }}",
+              "title": "{{ $json.title }}",
+              "description": "{{ $json.description }}",
+              "lineItems": "{{ $json.lineItems }}",
+              "subtotal": "{{ $json.subtotal }}",
+              "taxRate": "{{ $json.taxRate }}",
+              "taxAmount": "{{ $json.taxAmount }}",
+              "total": "{{ $json.total }}",
+              "dueDate": "{{ $json.dueDate }}",
+              "depositRequired": "{{ $json.depositRequired }}",
+              "depositAmount": "{{ $json.depositAmount }}"
+            }
+          }
+        }
+      },
+      "id": "invoice-create-1234-5678-90ab-cdef",
+      "name": "Create Invoice",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 320]
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/external/estimates",
+        "options": {
+          "headers": {
+            "X-API-Key": "={{$node[\"Set BizWorx Config\"].json[\"apiKey\"]}}"
+          }
+        }
+      },
+      "id": "estimates-get-1234-5678-90ab-cdef",
+      "name": "Get All Estimates",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 460]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/external/estimates",
+        "options": {
+          "headers": {
+            "X-API-Key": "={{$node[\"Set BizWorx Config\"].json[\"apiKey\"]}}",
+            "Content-Type": "application/json"
+          },
+          "body": {
+            "bodyType": "json",
+            "value": {
+              "clientId": "{{ $json.clientId }}",
+              "title": "{{ $json.title }}",
+              "description": "{{ $json.description }}",
+              "lineItems": "{{ $json.lineItems }}",
+              "subtotal": "{{ $json.subtotal }}",
+              "taxRate": "{{ $json.taxRate }}",
+              "taxAmount": "{{ $json.taxAmount }}",
+              "total": "{{ $json.total }}",
+              "validUntil": "{{ $json.validUntil }}",
+              "depositRequired": "{{ $json.depositRequired }}",
+              "depositAmount": "{{ $json.depositAmount }}"
+            }
+          }
+        }
+      },
+      "id": "estimate-create-1234-5678-90ab-cdef",
+      "name": "Create Estimate",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 600]
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/external/users",
+        "options": {
+          "headers": {
+            "X-API-Key": "={{$node[\"Set BizWorx Config\"].json[\"apiKey\"]}}"
+          }
+        }
+      },
+      "id": "users-get-1234-5678-90ab-cdef0123",
+      "name": "Get Team Members",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 740]
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/external/dashboard/stats",
+        "options": {
+          "headers": {
+            "X-API-Key": "={{$node[\"Set BizWorx Config\"].json[\"apiKey\"]}}"
+          }
+        }
+      },
+      "id": "dashboard-stats-1234-5678-90ab-cdef",
+      "name": "Get Dashboard Stats",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 880]
+    },
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        }
+      },
+      "id": "cron-trigger-1234-5678-90ab-cdef01",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [240, 580]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/webhook/n8n",
+        "options": {
+          "headers": {
+            "X-API-Key": "={{$node[\"Set BizWorx Config\"].json[\"apiKey\"]}}",
+            "Content-Type": "application/json"
+          },
+          "body": {
+            "bodyType": "json",
+            "value": {
+              "event": "{{ $json.event }}",
+              "data": "{{ $json.data }}"
+            }
+          }
+        }
+      },
+      "id": "webhook-notify-1234-5678-90ab-cdef",
+      "name": "Send Webhook to BizWorx",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 1020]
+    },
+    {
+      "parameters": {
+        "path": "bizworx-webhook",
+        "options": {}
+      },
+      "id": "webhook-receive-1234-5678-90ab-cde",
+      "name": "Webhook Receiver",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 1020],
+      "webhookId": "bizworx-automation-webhook"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body.event }}",
+              "operation": "equal",
+              "value2": "job_reminder"
+            }
+          ]
+        }
+      },
+      "id": "if-job-reminder-1234-5678-90ab-cd",
+      "name": "If Job Reminder",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [460, 1020]
+    },
+    {
+      "parameters": {
+        "authentication": "generic",
+        "genericAuthType": "httpHeaderAuth",
+        "httpHeaderAuth": {
+          "name": "Authorization",
+          "value": "Bearer YOUR_EMAIL_SERVICE_API_KEY"
+        },
+        "requestMethod": "POST",
+        "url": "https://api.emailservice.com/send",
+        "options": {
+          "headers": {
+            "Content-Type": "application/json"
+          },
+          "body": {
+            "bodyType": "json",
+            "value": {
+              "to": "{{ $json.client.email }}",
+              "subject": "Job Reminder: {{ $json.job.title }}",
+              "html": "<p>Hello {{ $json.client.name }},</p><p>This is a reminder about your scheduled job: <strong>{{ $json.job.title }}</strong></p><p>Scheduled for: {{ $json.job.scheduledStart }}</p><p>Best regards,<br>Your BizWorx Team</p>"
+            }
+          }
+        }
+      },
+      "id": "send-email-reminder-1234-5678-90ab",
+      "name": "Send Email Reminder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 1160]
+    },
+    {
+      "parameters": {
+        "httpMethod": "PUT",
+        "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/external/jobs/{{ $json.jobId }}",
+        "options": {
+          "headers": {
+            "X-API-Key": "={{$node[\"Set BizWorx Config\"].json[\"apiKey\"]}}",
+            "Content-Type": "application/json"
+          },
+          "body": {
+            "bodyType": "json",
+            "value": {
+              "status": "{{ $json.newStatus }}",
+              "notes": "{{ $json.notes }}"
+            }
+          }
+        }
+      },
+      "id": "update-job-status-1234-5678-90ab",
+      "name": "Update Job Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1120, 180]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "recurringJobTemplate",
+              "value": "{\n  \"template\": {\n    \"clientId\": 1,\n    \"title\": \"Weekly Maintenance\",\n    \"description\": \"Regular maintenance service\",\n    \"estimatedAmount\": \"150.00\",\n    \"priority\": \"normal\",\n    \"frequency\": \"weekly\"\n  },\n  \"dates\": [\n    {\n      \"start\": \"2024-01-08T09:00:00Z\",\n      \"end\": \"2024-01-08T11:00:00Z\"\n    },\n    {\n      \"start\": \"2024-01-15T09:00:00Z\",\n      \"end\": \"2024-01-15T11:00:00Z\"\n    }\n  ]\n}"
+            }
+          ]
+        }
+      },
+      "id": "recurring-job-template-1234-5678",
+      "name": "Recurring Job Template",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [460, 1300]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/webhook/n8n",
+        "options": {
+          "headers": {
+            "X-API-Key": "={{$node[\"Set BizWorx Config\"].json[\"apiKey\"]}}",
+            "Content-Type": "application/json"
+          },
+          "body": {
+            "bodyType": "json",
+            "value": {
+              "event": "create_recurring_jobs",
+              "data": "{{ JSON.parse($json.recurringJobTemplate) }}"
+            }
+          }
+        }
+      },
+      "id": "create-recurring-jobs-1234-5678",
+      "name": "Create Recurring Jobs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 1300]
+    }
+  ],
+  "connections": {
+    "When clicking 'Test workflow'": {
+      "main": [
+        [
+          {
+            "node": "Set BizWorx Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set BizWorx Config": {
+      "main": [
+        [
+          {
+            "node": "Get All Clients",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create New Client",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get All Jobs",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create New Job",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Available Time Slots",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create Bulk Jobs (Recurring)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get All Invoices",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create Invoice",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get All Estimates",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create Estimate",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Team Members",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Dashboard Stats",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Update Job Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set BizWorx Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Receiver": {
+      "main": [
+        [
+          {
+            "node": "If Job Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Job Reminder": {
+      "main": [
+        [
+          {
+            "node": "Send Email Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recurring Job Template": {
+      "main": [
+        [
+          {
+            "node": "Create Recurring Jobs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "createdAt": "2024-01-07T12:00:00.000Z",
+  "id": "bizworx-complete-workflow",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "name": "BizWorx Complete Business Automation",
+  "nodes": [],
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "createdAt": "2024-01-07T12:00:00.000Z",
+      "id": "bizworx-automation",
+      "name": "BizWorx Automation",
+      "updatedAt": "2024-01-07T12:00:00.000Z"
+    }
+  ],
+  "triggerCount": 0,
+  "updatedAt": "2024-01-07T12:00:00.000Z",
+  "versionId": "1"
+}
