@@ -1,0 +1,238 @@
+
+{
+  "name": "BizWorx If Nodes Only",
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.needsUserResponse }}",
+              "operation": "equal",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "if-needs-clarification-1234-5678",
+      "name": "If Needs Clarification",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [300, 100]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.command }}",
+              "operation": "equal",
+              "value2": "create_job"
+            }
+          ]
+        }
+      },
+      "id": "if-create-job-1234-5678-90ab-cd",
+      "name": "If Create Job Command",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [300, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.command }}",
+              "operation": "equal",
+              "value2": "schedule_job"
+            }
+          ]
+        }
+      },
+      "id": "if-schedule-job-1234-5678-90ab-cd",
+      "name": "If Schedule Job Command",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [300, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.command }}",
+              "operation": "equal",
+              "value2": "create_client"
+            }
+          ]
+        }
+      },
+      "id": "if-create-client-1234-5678-90ab-cd",
+      "name": "If Create Client Command",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [300, 400]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.command }}",
+              "operation": "equal",
+              "value2": "create_invoice"
+            }
+          ]
+        }
+      },
+      "id": "if-create-invoice-1234-5678-90ab-cd",
+      "name": "If Create Invoice Command",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [300, 500]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.command }}",
+              "operation": "equal",
+              "value2": "edit_invoice"
+            }
+          ]
+        }
+      },
+      "id": "if-edit-invoice-1234-5678-90ab-cd",
+      "name": "If Edit Invoice Command",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [300, 600]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.command }}",
+              "operation": "equal",
+              "value2": "create_estimate"
+            }
+          ]
+        }
+      },
+      "id": "if-create-estimate-1234-5678-90ab-cd",
+      "name": "If Create Estimate Command",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [300, 700]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.command }}",
+              "operation": "equal",
+              "value2": "edit_estimate"
+            }
+          ]
+        }
+      },
+      "id": "if-edit-estimate-1234-5678-90ab-cd",
+      "name": "If Edit Estimate Command",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [300, 800]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.command }}",
+              "operation": "equal",
+              "value2": "get_stats"
+            }
+          ]
+        }
+      },
+      "id": "if-get-stats-1234-5678-90ab-cd",
+      "name": "If Get Stats Command",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [300, 900]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.command }}",
+              "operation": "equal",
+              "value2": "get_jobs"
+            }
+          ]
+        }
+      },
+      "id": "if-get-jobs-1234-5678-90ab-cd",
+      "name": "If Get Jobs Command",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [300, 1000]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.command }}",
+              "operation": "equal",
+              "value2": "get_invoices"
+            }
+          ]
+        }
+      },
+      "id": "if-get-invoices-1234-5678-90ab-cd",
+      "name": "If Get Invoices Command",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [300, 1100]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.command }}",
+              "operation": "equal",
+              "value2": "help"
+            }
+          ]
+        }
+      },
+      "id": "if-help-command-1234-5678-90ab-cd",
+      "name": "If Help Command",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [300, 1200]
+    }
+  ],
+  "connections": {},
+  "createdAt": "2024-01-07T12:00:00.000Z",
+  "id": "bizworx-if-nodes-only",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "name": "BizWorx If Nodes Only",
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2024-01-07T12:00:00.000Z",
+  "versionId": "1"
+}
