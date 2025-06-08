@@ -3,6 +3,8 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertBusinessSchema, insertUserSchema, insertClientSchema, insertServiceSchema, insertJobSchema, insertInvoiceSchema, insertEstimateSchema, insertTimeEntrySchema } from "@shared/schema";
 import { z } from "zod";
+import express from "express";
+import path from "path";
 
 // Authentication middleware
 const authenticateSession = (req: any, res: any, next: any) => {
@@ -15,7 +17,7 @@ const authenticateSession = (req: any, res: any, next: any) => {
 // API Key authentication middleware for external services like n8n
 const authenticateApiKey = async (req: any, res: any, next: any) => {
   const apiKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
-  
+
   if (!apiKey) {
     return res.status(401).json({ error: "API key required" });
   }
@@ -37,12 +39,12 @@ const authenticateApiKey = async (req: any, res: any, next: any) => {
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  
+
   // Business authentication
   app.post("/api/auth/business/register", async (req, res) => {
     try {
       const data = insertBusinessSchema.parse(req.body);
-      
+
       // Check if business already exists
       const existing = await storage.getBusinessByEmail(data.email);
       if (existing) {
@@ -50,7 +52,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const business = await storage.createBusiness(data);
-      
+
       req.session.businessId = business.id;
       req.session.setupMode = true; // Flag for setup completion
       req.session.save(); // Ensure session is saved
@@ -64,21 +66,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/business/login", async (req, res) => {
     try {
       const { email, password, rememberMe } = req.body;
-      
+
       const business = await storage.getBusinessByEmail(email);
       if (!business || business.password !== password) {
         return res.status(401).json({ error: "Invalid credentials" });
       }
 
       req.session.businessId = business.id;
-      
+
       // Set session duration based on rememberMe preference
       if (rememberMe) {
         req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
       } else {
         req.session.cookie.maxAge = 24 * 60 * 60 * 1000; // 24 hours
       }
-      
+
       // Check if business has any users (setup completed)
       const users = await storage.getUsersByBusiness(business.id);
       if (users.length === 0) {
@@ -97,7 +99,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { firstName, lastName, pin } = req.body;
       const { businessId, setupMode } = req.session as any;
-      
+
       if (!businessId || !setupMode) {
         return res.status(401).json({ error: "Setup mode required" });
       }
@@ -127,7 +129,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { pin, rememberMe } = req.body;
       const { businessId } = req.session;
-      
+
       if (!businessId) {
         return res.status(401).json({ error: "Business not selected" });
       }
@@ -139,7 +141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       req.session.userId = user.id;
       req.session.role = user.role;
-      
+
       // Set session duration based on rememberMe preference
       if (rememberMe) {
         req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
@@ -179,7 +181,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const user = await storage.getUserById(req.session.userId);
       const business = await storage.getBusinessById(req.session.businessId);
-      
+
       if (!user || !business) {
         return res.status(401).json({ error: "Authentication required" });
       }
@@ -200,7 +202,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.session.userId;
       const { firstName, lastName, pin } = req.body;
-      
+
       const user = await storage.getUserById(userId);
       if (!user) {
         return res.status(404).json({ error: "User not found" });
@@ -226,7 +228,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!business) {
         return res.status(404).json({ error: "Business not found" });
       }
-      
+
       const updatedBusiness = await storage.updateBusiness(req.session.businessId, req.body);
       res.json(updatedBusiness);
     } catch (error) {
@@ -240,7 +242,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!business) {
         return res.status(404).json({ error: "Business not found" });
       }
-      
+
       const updatedBusiness = await storage.updateBusiness(req.session.businessId, { logo: req.body.logo });
       res.json(updatedBusiness);
     } catch (error) {
@@ -355,7 +357,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!client || client.businessId !== req.session.businessId) {
         return res.status(404).json({ error: "Client not found" });
       }
-      
+
       const data = insertClientSchema.partial().parse(req.body);
       const updatedClient = await storage.updateClient(parseInt(req.params.id), data);
       res.json(updatedClient);
@@ -377,14 +379,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/services", authenticateSession, async (req, res) => {
     try {
       console.log("Service creation request body:", JSON.stringify(req.body, null, 2));
-      
+
       const requestData = {
         ...req.body,
         businessId: req.session.businessId,
       };
-      
+
       console.log("Data being validated:", JSON.stringify(requestData, null, 2));
-      
+
       const data = insertServiceSchema.parse(requestData);
       const service = await storage.createService(data);
       res.json(service);
@@ -415,7 +417,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!service || service.businessId !== req.session.businessId) {
         return res.status(404).json({ error: "Service not found" });
       }
-      
+
       const data = insertServiceSchema.partial().parse(req.body);
       const updatedService = await storage.updateService(parseInt(req.params.id), data);
       res.json(updatedService);
@@ -430,7 +432,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!service || service.businessId !== req.session.businessId) {
         return res.status(404).json({ error: "Service not found" });
       }
-      
+
       await storage.deleteService(parseInt(req.params.id));
       res.json({ success: true });
     } catch (error) {
@@ -468,7 +470,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         recurringFrequency: req.body.recurringFrequency || null,
         recurringEndDate: req.body.recurringEndDate || null,
       };
-      
+
       const job = await storage.createJob(jobData);
       res.json(job);
     } catch (error: any) {
@@ -494,10 +496,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!job || job.businessId !== req.session.businessId) {
         return res.status(404).json({ error: "Job not found" });
       }
-      
+
       // Process the request body to handle date conversions properly
       const updateData = { ...req.body };
-      
+
       // Convert date strings to Date objects if they exist
       if (updateData.scheduledStart && typeof updateData.scheduledStart === 'string') {
         updateData.scheduledStart = new Date(updateData.scheduledStart);
@@ -508,7 +510,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (updateData.recurringEndDate && typeof updateData.recurringEndDate === 'string') {
         updateData.recurringEndDate = new Date(updateData.recurringEndDate);
       }
-      
+
       // Convert numeric fields
       if (updateData.clientId) {
         updateData.clientId = parseInt(updateData.clientId);
@@ -519,7 +521,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (updateData.estimatedAmount) {
         updateData.estimatedAmount = parseFloat(updateData.estimatedAmount);
       }
-      
+
       const updatedJob = await storage.updateJob(parseInt(req.params.id), updateData);
       res.json(updatedJob);
     } catch (error) {
@@ -549,14 +551,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         businessId: req.session.businessId,
         invoiceNumber,
       });
-      
+
       const invoice = await storage.createInvoice(data);
-      
+
       // If this invoice is created from a job, mark the job as completed
       if (data.jobId) {
         await storage.updateJob(data.jobId, { status: "completed" });
       }
-      
+
       res.json(invoice);
     } catch (error) {
       res.status(400).json({ error: error.message });
@@ -581,7 +583,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!invoice || invoice.businessId !== req.session.businessId) {
         return res.status(404).json({ error: "Invoice not found" });
       }
-      
+
       const updatedInvoice = await storage.updateInvoice(parseInt(req.params.id), req.body);
       res.json(updatedInvoice);
     } catch (error) {
@@ -602,7 +604,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/estimates", authenticateSession, async (req, res) => {
     try {
       console.log("Estimate creation request body:", JSON.stringify(req.body, null, 2));
-      
+
       // Generate unique estimate number
       const now = new Date();
       const dateStr = now.toISOString().slice(2, 10).replace(/-/g, '');
@@ -614,11 +616,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         businessId: req.session.businessId,
         estimateNumber,
       };
-      
+
       console.log("Data being validated:", JSON.stringify(requestData, null, 2));
 
       const data = insertEstimateSchema.parse(requestData);
-      
+
       const estimate = await storage.createEstimate(data);
       res.json(estimate);
     } catch (error) {
@@ -648,13 +650,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!estimate || estimate.businessId !== req.session.businessId) {
         return res.status(404).json({ error: "Estimate not found" });
       }
-      
+
       // Handle validUntil date conversion safely
       const updateData = { ...req.body };
       if (updateData.validUntil && typeof updateData.validUntil === 'string') {
         updateData.validUntil = new Date(updateData.validUntil);
       }
-      
+
       const updatedEstimate = await storage.updateEstimate(parseInt(req.params.id), updateData);
       res.json(updatedEstimate);
     } catch (error: any) {
@@ -670,7 +672,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!estimate || estimate.businessId !== req.session.businessId) {
         return res.status(404).json({ error: "Estimate not found" });
       }
-      
+
       const shareToken = await storage.generateShareToken(estimateId);
       res.json({ shareToken });
     } catch (error) {
@@ -683,7 +685,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { shareToken } = req.params;
       const estimate = await storage.getEstimateByShareToken(shareToken);
-      
+
       if (!estimate) {
         return res.status(404).json({ error: "Estimate not found" });
       }
@@ -765,7 +767,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const currentAmountPaid = parseFloat(invoice.amountPaid || "0");
       const depositAmount = parseFloat(invoice.depositAmount || "0");
       const depositPaid = invoice.depositPaid ? depositAmount : 0;
-      
+
       const newAmountPaid = currentAmountPaid + paymentAmount;
       const remainingBalance = invoiceTotal - newAmountPaid;
 
@@ -824,7 +826,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const currentPhotos = invoice.photos ? JSON.parse(JSON.stringify(invoice.photos)) : [];
-      const newPhotos = [...currentPhotos, ...photos];
+      const newphotos = [...currentPhotos, ...photos];
 
       const updatedInvoice = await storage.updateInvoice(invoiceId, {
         photos: newPhotos
@@ -870,7 +872,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { shareToken } = req.params;
       const invoice = await storage.getInvoiceByShareToken(shareToken);
-      
+
       if (!invoice) {
         return res.status(404).json({ message: "Invoice not found" });
       }
@@ -878,7 +880,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Include client information for the public view
       const client = await storage.getClientById(invoice.clientId);
       const business = await storage.getBusinessById(invoice.businessId);
-      
+
       res.json({
         ...invoice,
         clientName: client?.name,
@@ -900,7 +902,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { shareToken } = req.params;
       const { status, response, signature } = req.body;
-      
+
       const estimate = await storage.getEstimateByShareToken(shareToken);
       if (!estimate) {
         return res.status(404).json({ error: "Estimate not found" });
@@ -923,7 +925,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/time/clock-in", authenticateSession, async (req, res) => {
     try {
       const { userId } = req.session;
-      
+
       // Check if user already has an active time entry
       const activeEntry = await storage.getActiveTimeEntry(userId);
       if (activeEntry) {
@@ -946,7 +948,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/time/clock-out", authenticateSession, async (req, res) => {
     try {
       const { userId } = req.session;
-      
+
       const activeEntry = await storage.getActiveTimeEntry(userId);
       if (!activeEntry) {
         return res.status(400).json({ error: "Not currently clocked in" });
@@ -970,13 +972,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { userId } = req.session;
       const activeEntry = await storage.getActiveTimeEntry(userId);
-      
+
       // Calculate today's hours
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const todayEntries = await storage.getTimeEntriesByUserAndDate(userId, today);
       const todayHours = todayEntries.reduce((total, entry) => total + (entry.totalHours || 0), 0);
-      
+
       res.json({ 
         activeEntry,
         todayHours: Math.round(todayHours * 100) / 100 
@@ -1015,7 +1017,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const entryId = parseInt(req.params.id);
       const { clockIn, clockOut, totalHours } = req.body;
-      
+
       const updatedEntry = await storage.updateTimeEntry(entryId, {
         clockIn: clockIn ? new Date(clockIn) : undefined,
         clockOut: clockOut ? new Date(clockOut) : undefined,
@@ -1075,7 +1077,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const entryId = parseInt(req.params.id);
       const updateData: any = {};
-      
+
       if (req.body.clockIn) {
         updateData.clockIn = new Date(req.body.clockIn);
       }
@@ -1085,7 +1087,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.body.totalHours !== undefined) {
         updateData.totalHours = req.body.totalHours;
       }
-      
+
       const updatedEntry = await storage.updateTimeEntry(entryId, updateData);
       res.json(updatedEntry);
     } catch (error) {
@@ -1103,7 +1105,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         businessId: req.session.businessId,
       });
-      
+
       const user = await storage.createUser(data);
       res.json(user);
     } catch (error) {
@@ -1173,7 +1175,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const currentAmountPaid = parseFloat(invoice.amountPaid || "0");
       const newAmountPaid = currentAmountPaid + depositAmount;
       const totalAmount = parseFloat(invoice.total);
-      
+
       // Determine new status based on amount paid
       let newStatus = invoice.status;
       if (newAmountPaid >= totalAmount) {
@@ -1267,7 +1269,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         endDate ? new Date(endDate as string) : undefined,
         userId && userId !== "all" ? parseInt(userId as string) : undefined
       );
-      
+
       res.json(entries);
     } catch (error: any) {
       res.status(500).json({ error: "Failed to get payroll data" });
@@ -1283,11 +1285,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const { totalHours } = req.body;
-      
+
       const updatedEntry = await storage.updateTimeEntry(parseInt(id), {
         totalHours: totalHours as string
       });
-      
+
       res.json(updatedEntry);
     } catch (error: any) {
       res.status(500).json({ error: "Failed to update time entry" });
@@ -1315,7 +1317,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const breakDuration = entry.breakStart && entry.breakEnd 
           ? Math.round((new Date(entry.breakEnd).getTime() - new Date(entry.breakStart).getTime()) / (1000 * 60))
           : 0;
-        
+
         return [
           `"${entry.user?.firstName || ''} ${entry.user?.lastName || ''}"`,
           new Date(entry.clockIn).toLocaleDateString(),
@@ -1327,7 +1329,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }).join("\n");
 
       const csvContent = csvHeader + csvRows;
-      
+
       res.setHeader('Content-Type', 'text/csv');
       res.setHeader('Content-Disposition', 'attachment; filename="payroll-export.csv"');
       res.send(csvContent);
@@ -1365,7 +1367,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // External API endpoints for n8n and other integrations
-  
+
+  // Download n8n workflow file
+  app.get("/api/download/n8n-workflow", (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const filePath = path.join(process.cwd(), "n8n-workflows", "bizworx-complete-workflow.json");
+    res.download(filePath, "bizworx-complete-workflow.json", (err) => {
+      if (err) {
+        res.status(404).json({ error: "Workflow file not found" });
+      }
+    });
+  });
+
+  // External API endpoints (protected by API key)
+  app.use("/api/external", apiKeyAuth);
+
   // Get all clients (external API)
   app.get("/api/external/clients", authenticateApiKey, async (req, res) => {
     try {
@@ -1418,7 +1437,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         estimatedAmount: req.body.estimatedAmount ? String(req.body.estimatedAmount) : null,
         notes: req.body.notes || null,
       };
-      
+
       const job = await storage.createJob(jobData);
       res.json(job);
     } catch (error) {
@@ -1433,7 +1452,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!job || job.businessId !== req.businessId) {
         return res.status(404).json({ error: "Job not found" });
       }
-      
+
       const updatedJob = await storage.updateJob(parseInt(req.params.id), {
         status: req.body.status
       });
@@ -1466,7 +1485,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         businessId: req.businessId,
         invoiceNumber,
       });
-      
+
       const invoice = await storage.createInvoice(data);
       res.json(invoice);
     } catch (error) {
@@ -1478,7 +1497,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/external/jobs/calendar", authenticateApiKey, async (req, res) => {
     try {
       const { startDate, endDate } = req.query;
-      
+
       if (!startDate || !endDate) {
         return res.status(400).json({ error: "startDate and endDate are required" });
       }
@@ -1509,16 +1528,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/external/jobs/:id/schedule", authenticateApiKey, async (req, res) => {
     try {
       const { scheduledStart, scheduledEnd } = req.body;
-      
+
       const job = await storage.getJobById(parseInt(req.params.id));
       if (!job || job.businessId !== req.businessId) {
         return res.status(404).json({ error: "Job not found" });
       }
-      
+
       const updateData: any = {};
       if (scheduledStart) updateData.scheduledStart = new Date(scheduledStart);
       if (scheduledEnd) updateData.scheduledEnd = new Date(scheduledEnd);
-      
+
       const updatedJob = await storage.updateJob(parseInt(req.params.id), updateData);
       res.json(updatedJob);
     } catch (error) {
@@ -1530,26 +1549,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/external/schedule/available-slots", authenticateApiKey, async (req, res) => {
     try {
       const { date, duration } = req.query;
-      
+
       if (!date || !duration) {
         return res.status(400).json({ error: "date and duration (in hours) are required" });
       }
 
       const requestedDate = new Date(date as string);
       const durationHours = parseFloat(duration as string);
-      
+
       // Get existing jobs for the date
       const existingJobs = await storage.getJobsByDate(req.businessId, requestedDate);
-      
+
       // Generate available time slots (8 AM to 6 PM)
       const availableSlots = [];
       for (let hour = 8; hour < 18 - durationHours; hour += 0.5) {
         const slotStart = new Date(requestedDate);
         slotStart.setHours(Math.floor(hour), (hour % 1) * 60, 0, 0);
-        
+
         const slotEnd = new Date(slotStart);
         slotEnd.setHours(slotEnd.getHours() + Math.floor(durationHours), slotEnd.getMinutes() + ((durationHours % 1) * 60));
-        
+
         // Check if this slot conflicts with existing jobs
         const hasConflict = existingJobs.some((job: any) => {
           if (!job.scheduledStart || !job.scheduledEnd) return false;
@@ -1557,7 +1576,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const jobEnd = new Date(job.scheduledEnd);
           return (slotStart < jobEnd && slotEnd > jobStart);
         });
-        
+
         if (!hasConflict) {
           availableSlots.push({
             start: slotStart.toISOString(),
@@ -1567,7 +1586,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
       }
-      
+
       res.json({ date: requestedDate.toISOString().split('T')[0], availableSlots });
     } catch (error) {
       res.status(500).json({ error: error.message });
@@ -1581,10 +1600,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!job || job.businessId !== req.businessId) {
         return res.status(404).json({ error: "Job not found" });
       }
-      
+
       // Process the request body to handle date conversions properly
       const updateData = { ...req.body };
-      
+
       // Convert date strings to Date objects if they exist
       if (updateData.scheduledStart && typeof updateData.scheduledStart === 'string') {
         updateData.scheduledStart = new Date(updateData.scheduledStart);
@@ -1595,7 +1614,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (updateData.recurringEndDate && typeof updateData.recurringEndDate === 'string') {
         updateData.recurringEndDate = new Date(updateData.recurringEndDate);
       }
-      
+
       // Convert numeric fields
       if (updateData.clientId) {
         updateData.clientId = parseInt(updateData.clientId);
@@ -1606,7 +1625,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (updateData.estimatedAmount) {
         updateData.estimatedAmount = parseFloat(updateData.estimatedAmount);
       }
-      
+
       const updatedJob = await storage.updateJob(parseInt(req.params.id), updateData);
       res.json(updatedJob);
     } catch (error) {
@@ -1621,7 +1640,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!job || job.businessId !== req.businessId) {
         return res.status(404).json({ error: "Job not found" });
       }
-      
+
       await storage.deleteJob(parseInt(req.params.id));
       res.json({ success: true });
     } catch (error) {
@@ -1639,7 +1658,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(job);
     } catch (error) {
       res.status(500).json({ error: error.message });
-    }
+    }}
   });
 
   // Get users/team members (external API)
@@ -1714,7 +1733,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         businessId: req.businessId,
         estimateNumber,
       });
-      
+
       const estimate = await storage.createEstimate(data);
       res.json(estimate);
     } catch (error) {
@@ -1729,12 +1748,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!estimate || estimate.businessId !== req.businessId) {
         return res.status(404).json({ error: "Estimate not found" });
       }
-      
+
       const updateData = { ...req.body };
       if (updateData.validUntil && typeof updateData.validUntil === 'string') {
         updateData.validUntil = new Date(updateData.validUntil);
       }
-      
+
       const updatedEstimate = await storage.updateEstimate(parseInt(req.params.id), updateData);
       res.json(updatedEstimate);
     } catch (error) {
@@ -1749,7 +1768,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!invoice || invoice.businessId !== req.businessId) {
         return res.status(404).json({ error: "Invoice not found" });
       }
-      
+
       const updatedInvoice = await storage.updateInvoice(parseInt(req.params.id), req.body);
       res.json(updatedInvoice);
     } catch (error) {
@@ -1761,7 +1780,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/external/jobs/bulk", authenticateApiKey, async (req, res) => {
     try {
       const { jobs } = req.body;
-      
+
       if (!Array.isArray(jobs)) {
         return res.status(400).json({ error: "Jobs must be an array" });
       }
@@ -1783,11 +1802,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           estimatedAmount: jobData.estimatedAmount ? String(jobData.estimatedAmount) : null,
           notes: jobData.notes || null,
         };
-        
+
         const createdJob = await storage.createJob(job);
         createdJobs.push(createdJob);
       }
-      
+
       res.json({ created: createdJobs.length, jobs: createdJobs });
     } catch (error) {
       res.status(400).json({ error: error.message });
@@ -1822,7 +1841,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Process webhook data from n8n
       const { event, data } = req.body;
-      
+
       // You can handle different events here
       switch (event) {
         case 'job_reminder':
@@ -1849,7 +1868,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               estimatedAmount: data.estimatedAmount || null,
               notes: data.notes || null,
             };
-            
+
             const job = await storage.createJob(jobData);
             return res.json({ success: true, event, job });
           }
@@ -1873,7 +1892,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 isRecurring: true,
                 recurringFrequency: data.template.frequency,
               };
-              
+
               const job = await storage.createJob(jobData);
               createdJobs.push(job);
             }
@@ -1883,7 +1902,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         default:
           console.log('Unknown webhook event:', event);
       }
-      
+
       res.json({ success: true, event, processed: true });
     } catch (error) {
       res.status(400).json({ error: error.message });
