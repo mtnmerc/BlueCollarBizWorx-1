@@ -56,6 +56,24 @@
       "name": "If Create Job Command",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
+      "position": [680, 100]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.message.text }}",
+              "operation": "contains",
+              "value2": "/schedule_job"
+            }
+          ]
+        }
+      },
+      "id": "if-schedule-job-1234-5678-90ab-cd",
+      "name": "If Schedule Job Command",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
       "position": [680, 200]
     },
     {
@@ -74,7 +92,79 @@
       "name": "If Create Client Command",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [680, 350]
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.message.text }}",
+              "operation": "contains",
+              "value2": "/create_invoice"
+            }
+          ]
+        }
+      },
+      "id": "if-create-invoice-1234-5678-90ab-cd",
+      "name": "If Create Invoice Command",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [680, 400]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.message.text }}",
+              "operation": "contains",
+              "value2": "/edit_invoice"
+            }
+          ]
+        }
+      },
+      "id": "if-edit-invoice-1234-5678-90ab-cd",
+      "name": "If Edit Invoice Command",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [680, 500]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.message.text }}",
+              "operation": "contains",
+              "value2": "/create_estimate"
+            }
+          ]
+        }
+      },
+      "id": "if-create-estimate-1234-5678-90ab-cd",
+      "name": "If Create Estimate Command",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [680, 600]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.message.text }}",
+              "operation": "contains",
+              "value2": "/edit_estimate"
+            }
+          ]
+        }
+      },
+      "id": "if-edit-estimate-1234-5678-90ab-cd",
+      "name": "If Edit Estimate Command",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [680, 700]
     },
     {
       "parameters": {
@@ -92,7 +182,61 @@
       "name": "If Get Stats Command",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [680, 500]
+      "position": [680, 800]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.message.text }}",
+              "operation": "contains",
+              "value2": "/get_jobs"
+            }
+          ]
+        }
+      },
+      "id": "if-get-jobs-1234-5678-90ab-cd",
+      "name": "If Get Jobs Command",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [680, 900]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.message.text }}",
+              "operation": "contains",
+              "value2": "/get_invoices"
+            }
+          ]
+        }
+      },
+      "id": "if-get-invoices-1234-5678-90ab-cd",
+      "name": "If Get Invoices Command",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [680, 1000]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.message.text }}",
+              "operation": "contains",
+              "value2": "/help"
+            }
+          ]
+        }
+      },
+      "id": "if-help-command-1234-5678-90ab-cd",
+      "name": "If Help Command",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [680, 1100]
     },
     {
       "parameters": {
@@ -118,6 +262,35 @@
       },
       "id": "create-job-api-1234-5678-90ab-cdef",
       "name": "Create Job via API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 100]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/external/jobs",
+        "options": {
+          "headers": {
+            "X-API-Key": "={{$node[\"Set BizWorx Config\"].json[\"apiKey\"]}}",
+            "Content-Type": "application/json"
+          },
+          "body": {
+            "bodyType": "json",
+            "value": {
+              "clientId": "={{ $json.clientId || 1 }}",
+              "title": "={{ $json.title || 'Scheduled Job from Telegram' }}",
+              "description": "={{ $json.description || 'Scheduled job created via Telegram bot' }}",
+              "scheduledStart": "={{ $json.scheduledStart }}",
+              "scheduledEnd": "={{ $json.scheduledEnd }}",
+              "status": "scheduled",
+              "priority": "={{ $json.priority || 'normal' }}"
+            }
+          }
+        }
+      },
+      "id": "schedule-job-api-1234-5678-90ab-cdef",
+      "name": "Schedule Job via API",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [900, 200]
@@ -146,7 +319,112 @@
       "name": "Create Client via API",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [900, 350]
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/external/invoices",
+        "options": {
+          "headers": {
+            "X-API-Key": "={{$node[\"Set BizWorx Config\"].json[\"apiKey\"]}}",
+            "Content-Type": "application/json"
+          },
+          "body": {
+            "bodyType": "json",
+            "value": {
+              "clientId": "={{ $json.clientId || 1 }}",
+              "jobId": "={{ $json.jobId }}",
+              "dueDate": "={{ $json.dueDate || new Date(Date.now() + 30*24*60*60*1000).toISOString() }}",
+              "items": "={{ $json.items || [] }}",
+              "status": "draft"
+            }
+          }
+        }
+      },
+      "id": "create-invoice-api-1234-5678-90ab-cdef",
+      "name": "Create Invoice via API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 400]
+    },
+    {
+      "parameters": {
+        "httpMethod": "PUT",
+        "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/external/invoices/{{ $json.invoiceId }}",
+        "options": {
+          "headers": {
+            "X-API-Key": "={{$node[\"Set BizWorx Config\"].json[\"apiKey\"]}}",
+            "Content-Type": "application/json"
+          },
+          "body": {
+            "bodyType": "json",
+            "value": {
+              "status": "={{ $json.status }}",
+              "dueDate": "={{ $json.dueDate }}",
+              "items": "={{ $json.items }}"
+            }
+          }
+        }
+      },
+      "id": "edit-invoice-api-1234-5678-90ab-cdef",
+      "name": "Edit Invoice via API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 500]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/external/estimates",
+        "options": {
+          "headers": {
+            "X-API-Key": "={{$node[\"Set BizWorx Config\"].json[\"apiKey\"]}}",
+            "Content-Type": "application/json"
+          },
+          "body": {
+            "bodyType": "json",
+            "value": {
+              "clientId": "={{ $json.clientId || 1 }}",
+              "title": "={{ $json.title || 'Estimate from Telegram' }}",
+              "description": "={{ $json.description || 'Estimate created via Telegram bot' }}",
+              "validUntil": "={{ $json.validUntil || new Date(Date.now() + 30*24*60*60*1000).toISOString() }}",
+              "items": "={{ $json.items || [] }}",
+              "status": "draft"
+            }
+          }
+        }
+      },
+      "id": "create-estimate-api-1234-5678-90ab-cdef",
+      "name": "Create Estimate via API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 600]
+    },
+    {
+      "parameters": {
+        "httpMethod": "PUT",
+        "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/external/estimates/{{ $json.estimateId }}",
+        "options": {
+          "headers": {
+            "X-API-Key": "={{$node[\"Set BizWorx Config\"].json[\"apiKey\"]}}",
+            "Content-Type": "application/json"
+          },
+          "body": {
+            "bodyType": "json",
+            "value": {
+              "status": "={{ $json.status }}",
+              "validUntil": "={{ $json.validUntil }}",
+              "items": "={{ $json.items }}"
+            }
+          }
+        }
+      },
+      "id": "edit-estimate-api-1234-5678-90ab-cdef",
+      "name": "Edit Estimate via API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 700]
     },
     {
       "parameters": {
@@ -162,7 +440,39 @@
       "name": "Get Dashboard Stats",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [900, 500]
+      "position": [900, 800]
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/external/jobs",
+        "options": {
+          "headers": {
+            "X-API-Key": "={{$node[\"Set BizWorx Config\"].json[\"apiKey\"]}}"
+          }
+        }
+      },
+      "id": "get-jobs-api-1234-5678-90ab-cdef",
+      "name": "Get Jobs List",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 900]
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/external/invoices",
+        "options": {
+          "headers": {
+            "X-API-Key": "={{$node[\"Set BizWorx Config\"].json[\"apiKey\"]}}"
+          }
+        }
+      },
+      "id": "get-invoices-api-1234-5678-90ab-cdef",
+      "name": "Get Invoices List",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 1000]
     },
     {
       "parameters": {
@@ -171,6 +481,23 @@
       },
       "id": "telegram-job-response-1234-5678-90ab",
       "name": "Send Job Creation Confirmation",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [1120, 100],
+      "credentials": {
+        "telegramApi": {
+          "id": "telegram-bot-credentials",
+          "name": "Telegram Bot API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $node[\"Telegram Bot Trigger\"].json[\"message\"][\"chat\"][\"id\"] }}",
+        "text": "📅 **Job Scheduled Successfully!**\n\n📋 **Schedule Details:**\n• Title: {{ $node[\"Schedule Job via API\"].json[\"title\"] }}\n• Start: {{ new Date($node[\"Schedule Job via API\"].json[\"scheduledStart\"]).toLocaleString() }}\n• Status: {{ $node[\"Schedule Job via API\"].json[\"status\"] }}\n• Priority: {{ $node[\"Schedule Job via API\"].json[\"priority\"] }}\n\n🔗 Job ID: {{ $node[\"Schedule Job via API\"].json[\"id\"] }}"
+      },
+      "id": "telegram-schedule-response-1234-5678-90ab",
+      "name": "Send Job Schedule Confirmation",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.1,
       "position": [1120, 200],
@@ -190,7 +517,75 @@
       "name": "Send Client Creation Confirmation",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.1,
-      "position": [1120, 350],
+      "position": [1120, 300],
+      "credentials": {
+        "telegramApi": {
+          "id": "telegram-bot-credentials",
+          "name": "Telegram Bot API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $node[\"Telegram Bot Trigger\"].json[\"message\"][\"chat\"][\"id\"] }}",
+        "text": "💰 **Invoice Created Successfully!**\n\n📄 **Invoice Details:**\n• Invoice ID: {{ $node[\"Create Invoice via API\"].json[\"id\"] }}\n• Client ID: {{ $node[\"Create Invoice via API\"].json[\"clientId\"] }}\n• Status: {{ $node[\"Create Invoice via API\"].json[\"status\"] }}\n• Due Date: {{ new Date($node[\"Create Invoice via API\"].json[\"dueDate\"]).toLocaleDateString() }}\n• Created: {{ new Date().toLocaleString() }}\n\n🔗 Invoice #{{ $node[\"Create Invoice via API\"].json[\"id\"] }}"
+      },
+      "id": "telegram-invoice-response-1234-5678-90ab",
+      "name": "Send Invoice Creation Confirmation",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [1120, 400],
+      "credentials": {
+        "telegramApi": {
+          "id": "telegram-bot-credentials",
+          "name": "Telegram Bot API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $node[\"Telegram Bot Trigger\"].json[\"message\"][\"chat\"][\"id\"] }}",
+        "text": "✏️ **Invoice Updated Successfully!**\n\n📄 **Updated Invoice:**\n• Invoice ID: {{ $json.invoiceId }}\n• Status: {{ $node[\"Edit Invoice via API\"].json[\"status\"] }}\n• Due Date: {{ new Date($node[\"Edit Invoice via API\"].json[\"dueDate\"]).toLocaleDateString() }}\n• Updated: {{ new Date().toLocaleString() }}\n\n✅ Changes saved successfully!"
+      },
+      "id": "telegram-invoice-edit-response-1234-5678-90ab",
+      "name": "Send Invoice Edit Confirmation",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [1120, 500],
+      "credentials": {
+        "telegramApi": {
+          "id": "telegram-bot-credentials",
+          "name": "Telegram Bot API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $node[\"Telegram Bot Trigger\"].json[\"message\"][\"chat\"][\"id\"] }}",
+        "text": "📊 **Estimate Created Successfully!**\n\n📋 **Estimate Details:**\n• Estimate ID: {{ $node[\"Create Estimate via API\"].json[\"id\"] }}\n• Title: {{ $node[\"Create Estimate via API\"].json[\"title\"] }}\n• Client ID: {{ $node[\"Create Estimate via API\"].json[\"clientId\"] }}\n• Status: {{ $node[\"Create Estimate via API\"].json[\"status\"] }}\n• Valid Until: {{ new Date($node[\"Create Estimate via API\"].json[\"validUntil\"]).toLocaleDateString() }}\n• Created: {{ new Date().toLocaleString() }}\n\n🔗 Estimate #{{ $node[\"Create Estimate via API\"].json[\"id\"] }}"
+      },
+      "id": "telegram-estimate-response-1234-5678-90ab",
+      "name": "Send Estimate Creation Confirmation",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [1120, 600],
+      "credentials": {
+        "telegramApi": {
+          "id": "telegram-bot-credentials",
+          "name": "Telegram Bot API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $node[\"Telegram Bot Trigger\"].json[\"message\"][\"chat\"][\"id\"] }}",
+        "text": "✏️ **Estimate Updated Successfully!**\n\n📋 **Updated Estimate:**\n• Estimate ID: {{ $json.estimateId }}\n• Status: {{ $node[\"Edit Estimate via API\"].json[\"status\"] }}\n• Valid Until: {{ new Date($node[\"Edit Estimate via API\"].json[\"validUntil\"]).toLocaleDateString() }}\n• Updated: {{ new Date().toLocaleString() }}\n\n✅ Changes saved successfully!"
+      },
+      "id": "telegram-estimate-edit-response-1234-5678-90ab",
+      "name": "Send Estimate Edit Confirmation",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [1120, 700],
       "credentials": {
         "telegramApi": {
           "id": "telegram-bot-credentials",
@@ -207,7 +602,7 @@
       "name": "Send Stats Response",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.1,
-      "position": [1120, 500],
+      "position": [1120, 800],
       "credentials": {
         "telegramApi": {
           "id": "telegram-bot-credentials",
@@ -218,13 +613,13 @@
     {
       "parameters": {
         "chatId": "={{ $node[\"Telegram Bot Trigger\"].json[\"message\"][\"chat\"][\"id\"] }}",
-        "text": "🤖 **BizWorx Bot Commands:**\n\n📋 `/create_job` - Create a new job\n👤 `/create_client` - Add a new client\n📊 `/get_stats` - View dashboard statistics\n📅 `/get_jobs` - List today's jobs\n💰 `/get_invoices` - View recent invoices\n\n💡 **Example:** \n`/create_job title:\"Fix plumbing\" client:1`\n\n❓ Need help? Just type your command!"
+        "text": "📋 **Current Jobs List**\n\n{{ $node[\"Get Jobs List\"].json.slice(0,10).map((job, index) => `${index + 1}. **${job.title}**\\n   Status: ${job.status}\\n   Client: ${job.clientId}\\n   Scheduled: ${job.scheduledStart ? new Date(job.scheduledStart).toLocaleDateString() : 'Not scheduled'}\\n`).join('\\n') || 'No jobs found' }}\n\n📊 Total Jobs: {{ $node[\"Get Jobs List\"].json.length || 0 }}\n📅 Updated: {{ new Date().toLocaleString() }}"
       },
-      "id": "telegram-help-response-1234-5678-90ab",
-      "name": "Send Help Response",
+      "id": "telegram-jobs-response-1234-5678-90ab",
+      "name": "Send Jobs List Response",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.1,
-      "position": [1120, 650],
+      "position": [1120, 900],
       "credentials": {
         "telegramApi": {
           "id": "telegram-bot-credentials",
@@ -234,21 +629,37 @@
     },
     {
       "parameters": {
-        "conditions": {
-          "string": [
-            {
-              "value1": "={{ $json.message.text }}",
-              "operation": "contains",
-              "value2": "/help"
-            }
-          ]
-        }
+        "chatId": "={{ $node[\"Telegram Bot Trigger\"].json[\"message\"][\"chat\"][\"id\"] }}",
+        "text": "💰 **Recent Invoices**\n\n{{ $node[\"Get Invoices List\"].json.slice(0,10).map((invoice, index) => `${index + 1}. **Invoice #${invoice.id}**\\n   Client: ${invoice.clientId}\\n   Status: ${invoice.status}\\n   Due: ${invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : 'No due date'}\\n   Amount: $${invoice.total || 0}\\n`).join('\\n') || 'No invoices found' }}\n\n📊 Total Invoices: {{ $node[\"Get Invoices List\"].json.length || 0 }}\n📅 Updated: {{ new Date().toLocaleString() }}"
       },
-      "id": "if-help-command-1234-5678-90ab-cd",
-      "name": "If Help Command",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
-      "position": [680, 650]
+      "id": "telegram-invoices-response-1234-5678-90ab",
+      "name": "Send Invoices List Response",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [1120, 1000],
+      "credentials": {
+        "telegramApi": {
+          "id": "telegram-bot-credentials",
+          "name": "Telegram Bot API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $node[\"Telegram Bot Trigger\"].json[\"message\"][\"chat\"][\"id\"] }}",
+        "text": "🤖 **BizWorx Bot - Complete Command List:**\n\n**📋 Job Management:**\n• `/create_job` - Create a new job\n• `/schedule_job` - Schedule a job with specific time\n• `/get_jobs` - List all jobs\n\n**👤 Client Management:**\n• `/create_client` - Add a new client\n\n**💰 Invoice Management:**\n• `/create_invoice` - Create a new invoice\n• `/edit_invoice` - Edit existing invoice\n• `/get_invoices` - List recent invoices\n\n**📊 Estimate Management:**\n• `/create_estimate` - Create a new estimate\n• `/edit_estimate` - Edit existing estimate\n\n**📈 Analytics:**\n• `/get_stats` - View dashboard statistics\n\n**❓ Help:**\n• `/help` - Show this command list\n\n💡 **Example Usage:**\n`/create_job title:\"Fix plumbing\" client:1`\n`/schedule_job title:\"Install AC\" start:\"2024-01-15 09:00\"`\n`/create_invoice client:1 due:\"2024-02-01\"`\n\n🚀 **Ready to automate your business!**"
+      },
+      "id": "telegram-help-response-1234-5678-90ab",
+      "name": "Send Help Response",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [1120, 1100],
+      "credentials": {
+        "telegramApi": {
+          "id": "telegram-bot-credentials",
+          "name": "Telegram Bot API"
+        }
+      }
     },
     {
       "parameters": {
@@ -259,7 +670,7 @@
       "name": "Telegram Webhook Receiver",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [240, 800],
+      "position": [240, 1300],
       "webhookId": "telegram-bizworx-webhook"
     },
     {
@@ -276,7 +687,7 @@
       "name": "Schedule Trigger",
       "type": "n8n-nodes-base.cron",
       "typeVersion": 1,
-      "position": [240, 950]
+      "position": [240, 1450]
     },
     {
       "parameters": {
@@ -292,7 +703,7 @@
       "name": "Get Today's Jobs",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [460, 950]
+      "position": [460, 1450]
     },
     {
       "parameters": {
@@ -303,7 +714,7 @@
       "name": "Send Daily Job Reminder",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.1,
-      "position": [680, 950],
+      "position": [680, 1450],
       "credentials": {
         "telegramApi": {
           "id": "telegram-bot-credentials",
@@ -333,12 +744,47 @@
             "index": 0
           },
           {
+            "node": "If Schedule Job Command",
+            "type": "main",
+            "index": 0
+          },
+          {
             "node": "If Create Client Command",
             "type": "main",
             "index": 0
           },
           {
+            "node": "If Create Invoice Command",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If Edit Invoice Command",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If Create Estimate Command",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If Edit Estimate Command",
+            "type": "main",
+            "index": 0
+          },
+          {
             "node": "If Get Stats Command",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If Get Jobs Command",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If Get Invoices Command",
             "type": "main",
             "index": 0
           },
@@ -361,6 +807,17 @@
         ]
       ]
     },
+    "If Schedule Job Command": {
+      "main": [
+        [
+          {
+            "node": "Schedule Job via API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "If Create Client Command": {
       "main": [
         [
@@ -372,11 +829,77 @@
         ]
       ]
     },
+    "If Create Invoice Command": {
+      "main": [
+        [
+          {
+            "node": "Create Invoice via API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Edit Invoice Command": {
+      "main": [
+        [
+          {
+            "node": "Edit Invoice via API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Create Estimate Command": {
+      "main": [
+        [
+          {
+            "node": "Create Estimate via API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Edit Estimate Command": {
+      "main": [
+        [
+          {
+            "node": "Edit Estimate via API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "If Get Stats Command": {
       "main": [
         [
           {
             "node": "Get Dashboard Stats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Get Jobs Command": {
+      "main": [
+        [
+          {
+            "node": "Get Jobs List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Get Invoices Command": {
+      "main": [
+        [
+          {
+            "node": "Get Invoices List",
             "type": "main",
             "index": 0
           }
@@ -405,6 +928,17 @@
         ]
       ]
     },
+    "Schedule Job via API": {
+      "main": [
+        [
+          {
+            "node": "Send Job Schedule Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Create Client via API": {
       "main": [
         [
@@ -416,11 +950,77 @@
         ]
       ]
     },
+    "Create Invoice via API": {
+      "main": [
+        [
+          {
+            "node": "Send Invoice Creation Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Invoice via API": {
+      "main": [
+        [
+          {
+            "node": "Send Invoice Edit Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Estimate via API": {
+      "main": [
+        [
+          {
+            "node": "Send Estimate Creation Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Estimate via API": {
+      "main": [
+        [
+          {
+            "node": "Send Estimate Edit Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Get Dashboard Stats": {
       "main": [
         [
           {
             "node": "Send Stats Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Jobs List": {
+      "main": [
+        [
+          {
+            "node": "Send Jobs List Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Invoices List": {
+      "main": [
+        [
+          {
+            "node": "Send Invoices List Response",
             "type": "main",
             "index": 0
           }
@@ -471,5 +1071,5 @@
   ],
   "triggerCount": 0,
   "updatedAt": "2024-01-07T12:00:00.000Z",
-  "versionId": "2"
+  "versionId": "3"
 }
