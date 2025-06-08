@@ -1660,7 +1660,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // AI Natural Language Processing endpoint for converting text to structured data
-  ```text
   app.post("/api/ai/process-command", authenticateApiKey, async (req, res) => {
     try {
       const { message, intent } = req.body;
