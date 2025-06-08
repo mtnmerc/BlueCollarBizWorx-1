@@ -826,10 +826,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const currentPhotos = invoice.photos ? JSON.parse(JSON.stringify(invoice.photos)) : [];
-      const newphotos = [...currentPhotos, ...photos];
+      const newphotos: any = [...currentPhotos, ...photos];
 
       const updatedInvoice = await storage.updateInvoice(invoiceId, {
-        photos: newPhotos
+        photos: newphotos
       });
 
       res.json(updatedInvoice);
@@ -1839,10 +1839,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Process webhook data from n8n
       const { event, data } = req.body;
-      
+
       // Log the webhook for debugging
       console.log('Received n8n webhook:', { event, data });
-      
+
       // Handle different webhook events
       switch (event) {
         case 'job_reminder':
