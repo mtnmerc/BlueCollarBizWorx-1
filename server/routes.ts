@@ -1388,7 +1388,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const clients = await storage.getClientsByBusiness(req.businessId);
       res.json(clients);
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
   });
@@ -1402,7 +1402,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       const client = await storage.createClient(data);
       res.json(client);
-    } catch (error) {
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Get all estimates (external API)
+  app.get("/api/external/estimates", authenticateApiKey, async (req, res) => {
+    try {
+      const estimates = await storage.getEstimatesByBusiness(req.businessId);
+      res.json(estimates);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Create estimate (external API)
+  app.post("/api/external/estimates", authenticateApiKey, async (req, res) => {
+    try {
+      // Generate estimate number
+      const now = new Date();
+      const dateStr = now.toISOString().slice(2, 10).replace(/-/g, '');
+      const estimateNumber = `EST-${dateStr}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+
+      const data = insertEstimateSchema.parse({
+        ...req.body,
+        businessId: req.businessId,
+        estimateNumber,
+        validUntil: req.body.validUntil ? new Date(req.body.validUntil) : null,
+      });
+
+      const estimate = await storage.createEstimate(data);
+      res.json(estimate);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Get all services (external API)
+  app.get("/api/external/services", authenticateApiKey, async (req, res) => {
+    try {
+      const services = await storage.getServicesByBusiness(req.businessId);
+      res.json(services);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get revenue statistics (external API)
+  app.get("/api/external/revenue", authenticateApiKey, async (req, res) => {
+    try {
+      const now = new Date();
+      const month = req.query.month ? parseInt(req.query.month as string) : now.getMonth() + 1;
+      const year = req.query.year ? parseInt(req.query.year as string) : now.getFullYear();
+      
+      const revenue = await storage.getRevenueStats(req.businessId, month, year);
+      res.json(revenue);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Update job status using PATCH method (external API)
+  app.patch("/api/external/jobs/:id", authenticateApiKey, async (req, res) => {
+    try {
+      const job = await storage.getJobById(parseInt(req.params.id));
+      if (!job || job.businessId !== req.businessId) {
+        return res.status(404).json({ error: "Job not found" });
+      }
+
+      const updatedJob = await storage.updateJob(parseInt(req.params.id), req.body);
+      res.json(updatedJob);
+    } catch (error: any) {
       res.status(400).json({ error: error.message });
     }
   });

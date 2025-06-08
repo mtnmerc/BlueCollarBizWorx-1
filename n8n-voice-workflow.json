@@ -1,0 +1,351 @@
+{
+  "name": "BizWorx Voice Commands via Telegram",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": ["message"],
+        "additionalFields": {}
+      },
+      "id": "telegram-trigger",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1,
+      "position": [140, 300],
+      "webhookId": "voice-commands"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.message.voice}}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "is-voice-message",
+      "name": "Is Voice Message?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [360, 300]
+    },
+    {
+      "parameters": {
+        "model": "whisper-1",
+        "inputType": "audioUrl",
+        "audioUrl": "={{$json.message.voice.file_url}}",
+        "options": {}
+      },
+      "id": "speech-to-text",
+      "name": "Speech to Text",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [580, 200]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4",
+        "messages": {
+          "messageValues": [
+            {
+              "role": "system",
+              "message": "You are a business management assistant. Analyze the user's voice command and determine the intent and extract relevant data.\n\nPossible intents:\n- create_client: Creating a new client\n- create_job: Scheduling a new job\n- create_invoice: Creating an invoice\n- create_estimate: Creating an estimate\n- get_jobs: Getting job information\n- get_clients: Getting client information\n- update_job_status: Updating job status\n- get_revenue: Getting revenue statistics\n\nRespond with a JSON object containing:\n{\n  \"intent\": \"the determined intent\",\n  \"confidence\": 0.95,\n  \"extractedData\": {\n    \"clientName\": \"if mentioned\",\n    \"jobTitle\": \"if mentioned\",\n    \"amount\": \"if mentioned\",\n    \"date\": \"if mentioned (YYYY-MM-DD format)\",\n    \"status\": \"if mentioned\",\n    \"description\": \"any additional details\"\n  },\n  \"needsConfirmation\": true/false,\n  \"response\": \"A helpful response to the user\"\n}"
+            },
+            {
+              "role": "user", 
+              "message": "={{$json.text}}"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.1,
+          "maxTokens": 500
+        }
+      },
+      "id": "analyze-intent",
+      "name": "Analyze Intent",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [800, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse the AI response to extract structured data\nconst aiResponse = JSON.parse($input.first().json.message.content);\nconst telegramData = $('Telegram Trigger').first().json;\n\n// Store the original message data\nconst result = {\n  chatId: telegramData.message.chat.id,\n  messageId: telegramData.message.message_id,\n  userId: telegramData.message.from.id,\n  username: telegramData.message.from.username,\n  originalText: $('Speech to Text').first().json.text,\n  intent: aiResponse.intent,\n  confidence: aiResponse.confidence,\n  extractedData: aiResponse.extractedData,\n  needsConfirmation: aiResponse.needsConfirmation,\n  aiResponse: aiResponse.response\n};\n\nreturn result;"
+      },
+      "id": "process-data",
+      "name": "Process Data", 
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1020, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.needsConfirmation}}",
+              "value2": "true"
+            }
+          ]
+        }
+      },
+      "id": "needs-confirmation",
+      "name": "Needs Confirmation?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1240, 200]
+    },
+    {
+      "parameters": {
+        "chatId": "={{$json.chatId}}",
+        "text": "={{$json.aiResponse}}\n\nReply with 'yes' to confirm or 'no' to cancel.",
+        "additionalFields": {
+          "reply_to_message_id": "={{$json.messageId}}"
+        }
+      },
+      "id": "ask-confirmation",
+      "name": "Ask Confirmation",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [1460, 100]
+    },
+    {
+      "parameters": {
+        "serverPath": "./mcp-server.js",
+        "serverArgs": [],
+        "tools": [
+          {
+            "name": "get_clients",
+            "parameters": {
+              "apiKey": "={{$vars.BIZWORX_API_KEY}}"
+            }
+          },
+          {
+            "name": "create_client", 
+            "parameters": {
+              "apiKey": "={{$vars.BIZWORX_API_KEY}}",
+              "name": "={{$json.extractedData.clientName}}",
+              "email": "={{$json.extractedData.email}}",
+              "phone": "={{$json.extractedData.phone}}",
+              "address": "={{$json.extractedData.address}}"
+            }
+          },
+          {
+            "name": "get_jobs",
+            "parameters": {
+              "apiKey": "={{$vars.BIZWORX_API_KEY}}",
+              "date": "={{$json.extractedData.date}}"
+            }
+          },
+          {
+            "name": "create_job",
+            "parameters": {
+              "apiKey": "={{$vars.BIZWORX_API_KEY}}",
+              "clientId": "={{$json.extractedData.clientId}}",
+              "title": "={{$json.extractedData.jobTitle}}",
+              "description": "={{$json.extractedData.description}}",
+              "address": "={{$json.extractedData.address}}",
+              "scheduledStart": "={{$json.extractedData.scheduledStart}}",
+              "scheduledEnd": "={{$json.extractedData.scheduledEnd}}"
+            }
+          },
+          {
+            "name": "create_invoice",
+            "parameters": {
+              "apiKey": "={{$vars.BIZWORX_API_KEY}}",
+              "clientId": "={{$json.extractedData.clientId}}",
+              "title": "={{$json.extractedData.title}}",
+              "description": "={{$json.extractedData.description}}",
+              "lineItems": "={{$json.extractedData.lineItems}}",
+              "total": "={{$json.extractedData.amount}}"
+            }
+          },
+          {
+            "name": "create_estimate",
+            "parameters": {
+              "apiKey": "={{$vars.BIZWORX_API_KEY}}",
+              "clientId": "={{$json.extractedData.clientId}}",
+              "title": "={{$json.extractedData.title}}",
+              "description": "={{$json.extractedData.description}}",
+              "lineItems": "={{$json.extractedData.lineItems}}",
+              "total": "={{$json.extractedData.amount}}",
+              "validUntil": "={{$json.extractedData.validUntil}}"
+            }
+          },
+          {
+            "name": "update_job_status",
+            "parameters": {
+              "apiKey": "={{$vars.BIZWORX_API_KEY}}",
+              "jobId": "={{$json.extractedData.jobId}}",
+              "status": "={{$json.extractedData.status}}"
+            }
+          },
+          {
+            "name": "get_revenue_stats",
+            "parameters": {
+              "apiKey": "={{$vars.BIZWORX_API_KEY}}",
+              "month": "={{$json.extractedData.month}}",
+              "year": "={{$json.extractedData.year}}"
+            }
+          }
+        ]
+      },
+      "id": "mcp-bizworx", 
+      "name": "BizWorx MCP",
+      "type": "n8n-nodes-base.mcp",
+      "typeVersion": 1,
+      "position": [1460, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format the MCP response for Telegram\nconst mcpResult = $input.first().json;\nconst processedData = $('Process Data').first().json;\n\nlet responseText = '';\n\ntry {\n  const result = JSON.parse(mcpResult.content[0].text);\n  \n  switch(processedData.intent) {\n    case 'create_client':\n      responseText = `✅ Client created successfully!\\n\\nName: ${result.name}\\nEmail: ${result.email || 'Not provided'}\\nPhone: ${result.phone || 'Not provided'}\\nID: ${result.id}`;\n      break;\n      \n    case 'create_job':\n      responseText = `✅ Job scheduled successfully!\\n\\nTitle: ${result.title}\\nClient: ${result.clientName || 'Client ID: ' + result.clientId}\\nScheduled: ${result.scheduledStart ? new Date(result.scheduledStart).toLocaleString() : 'Not scheduled'}\\nStatus: ${result.status}\\nJob ID: ${result.id}`;\n      break;\n      \n    case 'create_invoice':\n      responseText = `✅ Invoice created successfully!\\n\\nInvoice #: ${result.invoiceNumber}\\nClient: ${result.clientName || 'Client ID: ' + result.clientId}\\nTotal: $${result.total}\\nStatus: ${result.status}\\nInvoice ID: ${result.id}`;\n      break;\n      \n    case 'create_estimate':\n      responseText = `✅ Estimate created successfully!\\n\\nEstimate #: ${result.estimateNumber}\\nClient: ${result.clientName || 'Client ID: ' + result.clientId}\\nTotal: $${result.total}\\nValid Until: ${result.validUntil ? new Date(result.validUntil).toLocaleDateString() : 'No expiration'}\\nEstimate ID: ${result.id}`;\n      break;\n      \n    case 'get_jobs':\n      if (Array.isArray(result) && result.length > 0) {\n        responseText = `📅 Found ${result.length} job(s):\\n\\n`;\n        result.slice(0, 5).forEach((job, index) => {\n          responseText += `${index + 1}. ${job.title}\\n`;\n          responseText += `   Client: ${job.clientName || 'Client ID: ' + job.clientId}\\n`;\n          responseText += `   Status: ${job.status}\\n`;\n          responseText += `   Scheduled: ${job.scheduledStart ? new Date(job.scheduledStart).toLocaleString() : 'Not scheduled'}\\n\\n`;\n        });\n        if (result.length > 5) {\n          responseText += `...and ${result.length - 5} more jobs.`;\n        }\n      } else {\n        responseText = '📅 No jobs found for the specified criteria.';\n      }\n      break;\n      \n    case 'get_clients':\n      if (Array.isArray(result) && result.length > 0) {\n        responseText = `👥 Found ${result.length} client(s):\\n\\n`;\n        result.slice(0, 5).forEach((client, index) => {\n          responseText += `${index + 1}. ${client.name}\\n`;\n          responseText += `   Email: ${client.email || 'Not provided'}\\n`;\n          responseText += `   Phone: ${client.phone || 'Not provided'}\\n\\n`;\n        });\n        if (result.length > 5) {\n          responseText += `...and ${result.length - 5} more clients.`;\n        }\n      } else {\n        responseText = '👥 No clients found.';\n      }\n      break;\n      \n    case 'update_job_status':\n      responseText = `✅ Job status updated!\\n\\nJob: ${result.title}\\nNew Status: ${result.status}\\nUpdated: ${new Date().toLocaleString()}`;\n      break;\n      \n    case 'get_revenue':\n      responseText = `💰 Revenue Statistics\\n\\nTotal Revenue: $${result.total || 0}\\nNumber of Invoices: ${result.count || 0}\\nPeriod: ${processedData.extractedData.month || new Date().getMonth() + 1}/${processedData.extractedData.year || new Date().getFullYear()}`;\n      break;\n      \n    default:\n      responseText = `✅ Operation completed successfully!\\n\\nResult: ${JSON.stringify(result, null, 2)}`;\n  }\n} catch (error) {\n  responseText = `❌ Error processing request: ${error.message}\\n\\nRaw response: ${JSON.stringify(mcpResult, null, 2)}`;\n}\n\nreturn {\n  chatId: processedData.chatId,\n  messageId: processedData.messageId,\n  responseText: responseText\n};"
+      },
+      "id": "format-response",
+      "name": "Format Response",
+      "type": "n8n-nodes-base.code", 
+      "typeVersion": 2,
+      "position": [1680, 300]
+    },
+    {
+      "parameters": {
+        "chatId": "={{$json.chatId}}",
+        "text": "={{$json.responseText}}",
+        "additionalFields": {
+          "reply_to_message_id": "={{$json.messageId}}"
+        }
+      },
+      "id": "send-response",
+      "name": "Send Response",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [1900, 300]
+    },
+    {
+      "parameters": {
+        "chatId": "={{$json.chatId}}",
+        "text": "I can only process voice messages. Please send a voice message with your request.",
+        "additionalFields": {
+          "reply_to_message_id": "={{$json.messageId}}"
+        }
+      },
+      "id": "text-message-response",
+      "name": "Text Message Response",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [580, 400]
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Is Voice Message?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Voice Message?": {
+      "main": [
+        [
+          {
+            "node": "Speech to Text",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Text Message Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Speech to Text": {
+      "main": [
+        [
+          {
+            "node": "Analyze Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Intent": {
+      "main": [
+        [
+          {
+            "node": "Process Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Data": {
+      "main": [
+        [
+          {
+            "node": "Needs Confirmation?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Needs Confirmation?": {
+      "main": [
+        [
+          {
+            "node": "Ask Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "BizWorx MCP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BizWorx MCP": {
+      "main": [
+        [
+          {
+            "node": "Format Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Response": {
+      "main": [
+        [
+          {
+            "node": "Send Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2024-12-08T16:00:00.000Z",
+  "versionId": "1"
+}
