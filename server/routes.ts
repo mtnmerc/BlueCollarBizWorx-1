@@ -1841,6 +1841,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Process webhook data from n8n
       const { event, data } = req.body;
+      
+      // Log the webhook for debugging
+      console.log('Received n8n webhook:', { event, data });
+      
+      // Handle different webhook events
+      switch (event) {
+        case 'job_reminder':
+          // Process job reminder logic
+          break;
+        case 'create_recurring_jobs':
+          // Process recurring job creation
+          break;
+        default:
+          console.log('Unknown webhook event:', event);
+      }
+      
+      res.json({ success: true, message: 'Webhook processed' });
+    } catch (error) {
+      console.error('Webhook error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
 
       // You can handle different events here
       switch (event) {

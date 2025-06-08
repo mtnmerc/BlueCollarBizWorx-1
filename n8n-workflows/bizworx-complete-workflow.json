@@ -1,4 +1,3 @@
-
 {
   "name": "BizWorx Complete Business Automation",
   "nodes": [
@@ -9,22 +8,6 @@
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [240, 300]
-    },
-    {
-      "parameters": {
-        "httpMethod": "GET",
-        "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/external/clients",
-        "options": {
-          "headers": {
-            "X-API-Key": "={{$node[\"Set BizWorx Config\"].json[\"apiKey\"]}}"
-          }
-        }
-      },
-      "id": "a1b2c3d4-5678-90ef-1234-567890abcdef",
-      "name": "Get All Clients",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [680, 180]
     },
     {
       "parameters": {
@@ -47,6 +30,22 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.2,
       "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/external/clients",
+        "options": {
+          "headers": {
+            "X-API-Key": "={{$node[\"Set BizWorx Config\"].json[\"apiKey\"]}}"
+          }
+        }
+      },
+      "id": "a1b2c3d4-5678-90ef-1234-567890abcdef",
+      "name": "Get All Clients",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 180]
     },
     {
       "parameters": {
@@ -125,34 +124,6 @@
     },
     {
       "parameters": {
-        "httpMethod": "GET",
-        "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/external/schedule/available-slots",
-        "options": {
-          "headers": {
-            "X-API-Key": "={{$node[\"Set BizWorx Config\"].json[\"apiKey\"]}}"
-          },
-          "queryParameters": {
-            "parameters": [
-              {
-                "name": "date",
-                "value": "{{ $json.date }}"
-              },
-              {
-                "name": "duration",
-                "value": "{{ $json.duration }}"
-              }
-            ]
-          }
-        }
-      },
-      "id": "schedule-slots-1234-5678-90ab-cdef",
-      "name": "Get Available Time Slots",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [680, 740]
-    },
-    {
-      "parameters": {
         "httpMethod": "POST",
         "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/external/jobs/bulk",
         "options": {
@@ -172,7 +143,7 @@
       "name": "Create Bulk Jobs (Recurring)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [680, 880]
+      "position": [680, 740]
     },
     {
       "parameters": {
@@ -307,46 +278,6 @@
     },
     {
       "parameters": {
-        "triggerTimes": {
-          "item": [
-            {
-              "mode": "everyMinute"
-            }
-          ]
-        }
-      },
-      "id": "cron-trigger-1234-5678-90ab-cdef01",
-      "name": "Schedule Trigger",
-      "type": "n8n-nodes-base.cron",
-      "typeVersion": 1,
-      "position": [240, 580]
-    },
-    {
-      "parameters": {
-        "httpMethod": "POST",
-        "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/webhook/n8n",
-        "options": {
-          "headers": {
-            "X-API-Key": "={{$node[\"Set BizWorx Config\"].json[\"apiKey\"]}}",
-            "Content-Type": "application/json"
-          },
-          "body": {
-            "bodyType": "json",
-            "value": {
-              "event": "{{ $json.event }}",
-              "data": "{{ $json.data }}"
-            }
-          }
-        }
-      },
-      "id": "webhook-notify-1234-5678-90ab-cdef",
-      "name": "Send Webhook to BizWorx",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [680, 1020]
-    },
-    {
-      "parameters": {
         "path": "bizworx-webhook",
         "options": {}
       },
@@ -377,6 +308,22 @@
     },
     {
       "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyHour"
+            }
+          ]
+        }
+      },
+      "id": "cron-trigger-1234-5678-90ab-cdef01",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [240, 580]
+    },
+    {
+      "parameters": {
         "authentication": "generic",
         "genericAuthType": "httpHeaderAuth",
         "httpHeaderAuth": {
@@ -404,71 +351,6 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [680, 1160]
-    },
-    {
-      "parameters": {
-        "httpMethod": "PUT",
-        "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/external/jobs/{{ $json.jobId }}",
-        "options": {
-          "headers": {
-            "X-API-Key": "={{$node[\"Set BizWorx Config\"].json[\"apiKey\"]}}",
-            "Content-Type": "application/json"
-          },
-          "body": {
-            "bodyType": "json",
-            "value": {
-              "status": "{{ $json.newStatus }}",
-              "notes": "{{ $json.notes }}"
-            }
-          }
-        }
-      },
-      "id": "update-job-status-1234-5678-90ab",
-      "name": "Update Job Status",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [1120, 180]
-    },
-    {
-      "parameters": {
-        "values": {
-          "string": [
-            {
-              "name": "recurringJobTemplate",
-              "value": "{\n  \"template\": {\n    \"clientId\": 1,\n    \"title\": \"Weekly Maintenance\",\n    \"description\": \"Regular maintenance service\",\n    \"estimatedAmount\": \"150.00\",\n    \"priority\": \"normal\",\n    \"frequency\": \"weekly\"\n  },\n  \"dates\": [\n    {\n      \"start\": \"2024-01-08T09:00:00Z\",\n      \"end\": \"2024-01-08T11:00:00Z\"\n    },\n    {\n      \"start\": \"2024-01-15T09:00:00Z\",\n      \"end\": \"2024-01-15T11:00:00Z\"\n    }\n  ]\n}"
-            }
-          ]
-        }
-      },
-      "id": "recurring-job-template-1234-5678",
-      "name": "Recurring Job Template",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.2,
-      "position": [460, 1300]
-    },
-    {
-      "parameters": {
-        "httpMethod": "POST",
-        "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/webhook/n8n",
-        "options": {
-          "headers": {
-            "X-API-Key": "={{$node[\"Set BizWorx Config\"].json[\"apiKey\"]}}",
-            "Content-Type": "application/json"
-          },
-          "body": {
-            "bodyType": "json",
-            "value": {
-              "event": "create_recurring_jobs",
-              "data": "{{ JSON.parse($json.recurringJobTemplate) }}"
-            }
-          }
-        }
-      },
-      "id": "create-recurring-jobs-1234-5678",
-      "name": "Create Recurring Jobs",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [680, 1300]
     }
   ],
   "connections": {
@@ -507,11 +389,6 @@
             "index": 0
           },
           {
-            "node": "Get Available Time Slots",
-            "type": "main",
-            "index": 0
-          },
-          {
             "node": "Create Bulk Jobs (Recurring)",
             "type": "main",
             "index": 0
@@ -543,11 +420,6 @@
           },
           {
             "node": "Get Dashboard Stats",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Update Job Status",
             "type": "main",
             "index": 0
           }
@@ -586,17 +458,6 @@
           }
         ]
       ]
-    },
-    "Recurring Job Template": {
-      "main": [
-        [
-          {
-            "node": "Create Recurring Jobs",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
     }
   },
   "createdAt": "2024-01-07T12:00:00.000Z",
@@ -605,7 +466,6 @@
     "templateCredsSetupCompleted": true
   },
   "name": "BizWorx Complete Business Automation",
-  "nodes": [],
   "pinData": {},
   "settings": {
     "executionOrder": "v1"
