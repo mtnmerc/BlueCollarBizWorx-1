@@ -1,13 +1,22 @@
+
 {
-  "name": "BizWorx Complete Business Automation",
+  "name": "BizWorx Complete Business Automation with Telegram",
   "nodes": [
     {
-      "parameters": {},
-      "id": "b8c7d890-1234-5678-9abc-def012345678",
-      "name": "When clicking 'Test workflow'",
-      "type": "n8n-nodes-base.manualTrigger",
+      "parameters": {
+        "updates": ["message"]
+      },
+      "id": "telegram-trigger-1234-5678-90ab-cdef",
+      "name": "Telegram Bot Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1,
-      "position": [240, 300]
+      "position": [240, 300],
+      "credentials": {
+        "telegramApi": {
+          "id": "telegram-bot-credentials",
+          "name": "Telegram Bot API"
+        }
+      }
     },
     {
       "parameters": {
@@ -33,62 +42,57 @@
     },
     {
       "parameters": {
-        "httpMethod": "GET",
-        "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/external/clients",
-        "options": {
-          "headers": {
-            "X-API-Key": "={{$node[\"Set BizWorx Config\"].json[\"apiKey\"]}}"
-          }
-        }
-      },
-      "id": "a1b2c3d4-5678-90ef-1234-567890abcdef",
-      "name": "Get All Clients",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [680, 180]
-    },
-    {
-      "parameters": {
-        "httpMethod": "POST",
-        "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/external/clients",
-        "options": {
-          "headers": {
-            "X-API-Key": "={{$node[\"Set BizWorx Config\"].json[\"apiKey\"]}}",
-            "Content-Type": "application/json"
-          },
-          "body": {
-            "bodyType": "json",
-            "value": {
-              "name": "{{ $json.name }}",
-              "email": "{{ $json.email }}",
-              "phone": "{{ $json.phone }}",
-              "address": "{{ $json.address }}",
-              "notes": "{{ $json.notes }}"
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.message.text }}",
+              "operation": "contains",
+              "value2": "/create_job"
             }
-          }
+          ]
         }
       },
-      "id": "client-create-1234-5678-90ab-cdef0123",
-      "name": "Create New Client",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [680, 320]
+      "id": "if-create-job-1234-5678-90ab-cd",
+      "name": "If Create Job Command",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [680, 200]
     },
     {
       "parameters": {
-        "httpMethod": "GET",
-        "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/external/jobs",
-        "options": {
-          "headers": {
-            "X-API-Key": "={{$node[\"Set BizWorx Config\"].json[\"apiKey\"]}}"
-          }
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.message.text }}",
+              "operation": "contains",
+              "value2": "/create_client"
+            }
+          ]
         }
       },
-      "id": "jobs-get-1234-5678-90ab-cdef012345",
-      "name": "Get All Jobs",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [680, 460]
+      "id": "if-create-client-1234-5678-90ab-cd",
+      "name": "If Create Client Command",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [680, 350]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.message.text }}",
+              "operation": "contains",
+              "value2": "/get_stats"
+            }
+          ]
+        }
+      },
+      "id": "if-get-stats-1234-5678-90ab-cd",
+      "name": "If Get Stats Command",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [680, 500]
     },
     {
       "parameters": {
@@ -102,30 +106,26 @@
           "body": {
             "bodyType": "json",
             "value": {
-              "clientId": "{{ $json.clientId }}",
-              "title": "{{ $json.title }}",
-              "description": "{{ $json.description }}",
-              "address": "{{ $json.address }}",
-              "scheduledStart": "{{ $json.scheduledStart }}",
-              "scheduledEnd": "{{ $json.scheduledEnd }}",
-              "status": "{{ $json.status || 'scheduled' }}",
-              "priority": "{{ $json.priority || 'normal' }}",
-              "estimatedAmount": "{{ $json.estimatedAmount }}",
-              "notes": "{{ $json.notes }}"
+              "clientId": "={{ $json.clientId || 1 }}",
+              "title": "={{ $json.title || 'New Job from Telegram' }}",
+              "description": "={{ $json.description || 'Job created via Telegram bot' }}",
+              "scheduledStart": "={{ $json.scheduledStart || new Date().toISOString() }}",
+              "status": "scheduled",
+              "priority": "normal"
             }
           }
         }
       },
-      "id": "job-create-1234-5678-90ab-cdef01234",
-      "name": "Create New Job",
+      "id": "create-job-api-1234-5678-90ab-cdef",
+      "name": "Create Job via API",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [680, 600]
+      "position": [900, 200]
     },
     {
       "parameters": {
         "httpMethod": "POST",
-        "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/external/jobs/bulk",
+        "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/external/clients",
         "options": {
           "headers": {
             "X-API-Key": "={{$node[\"Set BizWorx Config\"].json[\"apiKey\"]}}",
@@ -134,131 +134,19 @@
           "body": {
             "bodyType": "json",
             "value": {
-              "jobs": "{{ $json.jobs }}"
+              "name": "={{ $json.name || 'New Client from Telegram' }}",
+              "email": "={{ $json.email || 'client@example.com' }}",
+              "phone": "={{ $json.phone || '' }}",
+              "address": "={{ $json.address || '' }}"
             }
           }
         }
       },
-      "id": "bulk-jobs-1234-5678-90ab-cdef0123",
-      "name": "Create Bulk Jobs (Recurring)",
+      "id": "create-client-api-1234-5678-90ab-cdef",
+      "name": "Create Client via API",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [680, 740]
-    },
-    {
-      "parameters": {
-        "httpMethod": "GET",
-        "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/external/invoices",
-        "options": {
-          "headers": {
-            "X-API-Key": "={{$node[\"Set BizWorx Config\"].json[\"apiKey\"]}}"
-          }
-        }
-      },
-      "id": "invoices-get-1234-5678-90ab-cdef",
-      "name": "Get All Invoices",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [900, 180]
-    },
-    {
-      "parameters": {
-        "httpMethod": "POST",
-        "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/external/invoices",
-        "options": {
-          "headers": {
-            "X-API-Key": "={{$node[\"Set BizWorx Config\"].json[\"apiKey\"]}}",
-            "Content-Type": "application/json"
-          },
-          "body": {
-            "bodyType": "json",
-            "value": {
-              "clientId": "{{ $json.clientId }}",
-              "jobId": "{{ $json.jobId }}",
-              "title": "{{ $json.title }}",
-              "description": "{{ $json.description }}",
-              "lineItems": "{{ $json.lineItems }}",
-              "subtotal": "{{ $json.subtotal }}",
-              "taxRate": "{{ $json.taxRate }}",
-              "taxAmount": "{{ $json.taxAmount }}",
-              "total": "{{ $json.total }}",
-              "dueDate": "{{ $json.dueDate }}",
-              "depositRequired": "{{ $json.depositRequired }}",
-              "depositAmount": "{{ $json.depositAmount }}"
-            }
-          }
-        }
-      },
-      "id": "invoice-create-1234-5678-90ab-cdef",
-      "name": "Create Invoice",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [900, 320]
-    },
-    {
-      "parameters": {
-        "httpMethod": "GET",
-        "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/external/estimates",
-        "options": {
-          "headers": {
-            "X-API-Key": "={{$node[\"Set BizWorx Config\"].json[\"apiKey\"]}}"
-          }
-        }
-      },
-      "id": "estimates-get-1234-5678-90ab-cdef",
-      "name": "Get All Estimates",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [900, 460]
-    },
-    {
-      "parameters": {
-        "httpMethod": "POST",
-        "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/external/estimates",
-        "options": {
-          "headers": {
-            "X-API-Key": "={{$node[\"Set BizWorx Config\"].json[\"apiKey\"]}}",
-            "Content-Type": "application/json"
-          },
-          "body": {
-            "bodyType": "json",
-            "value": {
-              "clientId": "{{ $json.clientId }}",
-              "title": "{{ $json.title }}",
-              "description": "{{ $json.description }}",
-              "lineItems": "{{ $json.lineItems }}",
-              "subtotal": "{{ $json.subtotal }}",
-              "taxRate": "{{ $json.taxRate }}",
-              "taxAmount": "{{ $json.taxAmount }}",
-              "total": "{{ $json.total }}",
-              "validUntil": "{{ $json.validUntil }}",
-              "depositRequired": "{{ $json.depositRequired }}",
-              "depositAmount": "{{ $json.depositAmount }}"
-            }
-          }
-        }
-      },
-      "id": "estimate-create-1234-5678-90ab-cdef",
-      "name": "Create Estimate",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [900, 600]
-    },
-    {
-      "parameters": {
-        "httpMethod": "GET",
-        "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/external/users",
-        "options": {
-          "headers": {
-            "X-API-Key": "={{$node[\"Set BizWorx Config\"].json[\"apiKey\"]}}"
-          }
-        }
-      },
-      "id": "users-get-1234-5678-90ab-cdef0123",
-      "name": "Get Team Members",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [900, 740]
+      "position": [900, 350]
     },
     {
       "parameters": {
@@ -270,41 +158,109 @@
           }
         }
       },
-      "id": "dashboard-stats-1234-5678-90ab-cdef",
+      "id": "get-stats-api-1234-5678-90ab-cdef",
       "name": "Get Dashboard Stats",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [900, 880]
+      "position": [900, 500]
     },
     {
       "parameters": {
-        "path": "bizworx-webhook",
-        "options": {}
+        "chatId": "={{ $node[\"Telegram Bot Trigger\"].json[\"message\"][\"chat\"][\"id\"] }}",
+        "text": "✅ **Job Created Successfully!**\n\n📋 **Job Details:**\n• Title: {{ $node[\"Create Job via API\"].json[\"title\"] }}\n• Status: {{ $node[\"Create Job via API\"].json[\"status\"] }}\n• Priority: {{ $node[\"Create Job via API\"].json[\"priority\"] }}\n• Created: {{ new Date().toLocaleString() }}\n\n🔗 Job ID: {{ $node[\"Create Job via API\"].json[\"id\"] }}"
       },
-      "id": "webhook-receive-1234-5678-90ab-cde",
-      "name": "Webhook Receiver",
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1,
-      "position": [240, 1020],
-      "webhookId": "bizworx-automation-webhook"
+      "id": "telegram-job-response-1234-5678-90ab",
+      "name": "Send Job Creation Confirmation",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [1120, 200],
+      "credentials": {
+        "telegramApi": {
+          "id": "telegram-bot-credentials",
+          "name": "Telegram Bot API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $node[\"Telegram Bot Trigger\"].json[\"message\"][\"chat\"][\"id\"] }}",
+        "text": "✅ **Client Created Successfully!**\n\n👤 **Client Details:**\n• Name: {{ $node[\"Create Client via API\"].json[\"name\"] }}\n• Email: {{ $node[\"Create Client via API\"].json[\"email\"] }}\n• Phone: {{ $node[\"Create Client via API\"].json[\"phone\"] }}\n• Created: {{ new Date().toLocaleString() }}\n\n🔗 Client ID: {{ $node[\"Create Client via API\"].json[\"id\"] }}"
+      },
+      "id": "telegram-client-response-1234-5678-90ab",
+      "name": "Send Client Creation Confirmation",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [1120, 350],
+      "credentials": {
+        "telegramApi": {
+          "id": "telegram-bot-credentials",
+          "name": "Telegram Bot API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $node[\"Telegram Bot Trigger\"].json[\"message\"][\"chat\"][\"id\"] }}",
+        "text": "📊 **Dashboard Statistics**\n\n💰 **Revenue:** ${{ $node[\"Get Dashboard Stats\"].json[\"revenue\"][\"total\"] || 0 }}\n📅 **Today's Jobs:** {{ $node[\"Get Dashboard Stats\"].json[\"todaysJobs\"].length || 0 }}\n📋 **Recent Invoices:** {{ $node[\"Get Dashboard Stats\"].json[\"recentInvoices\"].length || 0 }}\n👥 **Team Members:** {{ $node[\"Get Dashboard Stats\"].json[\"teamMembers\"].length || 0 }}\n\n📈 Updated: {{ new Date().toLocaleString() }}"
+      },
+      "id": "telegram-stats-response-1234-5678-90ab",
+      "name": "Send Stats Response",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [1120, 500],
+      "credentials": {
+        "telegramApi": {
+          "id": "telegram-bot-credentials",
+          "name": "Telegram Bot API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $node[\"Telegram Bot Trigger\"].json[\"message\"][\"chat\"][\"id\"] }}",
+        "text": "🤖 **BizWorx Bot Commands:**\n\n📋 `/create_job` - Create a new job\n👤 `/create_client` - Add a new client\n📊 `/get_stats` - View dashboard statistics\n📅 `/get_jobs` - List today's jobs\n💰 `/get_invoices` - View recent invoices\n\n💡 **Example:** \n`/create_job title:\"Fix plumbing\" client:1`\n\n❓ Need help? Just type your command!"
+      },
+      "id": "telegram-help-response-1234-5678-90ab",
+      "name": "Send Help Response",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [1120, 650],
+      "credentials": {
+        "telegramApi": {
+          "id": "telegram-bot-credentials",
+          "name": "Telegram Bot API"
+        }
+      }
     },
     {
       "parameters": {
         "conditions": {
           "string": [
             {
-              "value1": "={{ $json.body.event }}",
-              "operation": "equal",
-              "value2": "job_reminder"
+              "value1": "={{ $json.message.text }}",
+              "operation": "contains",
+              "value2": "/help"
             }
           ]
         }
       },
-      "id": "if-job-reminder-1234-5678-90ab-cd",
-      "name": "If Job Reminder",
+      "id": "if-help-command-1234-5678-90ab-cd",
+      "name": "If Help Command",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [460, 1020]
+      "position": [680, 650]
+    },
+    {
+      "parameters": {
+        "path": "telegram-webhook",
+        "options": {}
+      },
+      "id": "webhook-telegram-1234-5678-90ab-cde",
+      "name": "Telegram Webhook Receiver",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 800],
+      "webhookId": "telegram-bizworx-webhook"
     },
     {
       "parameters": {
@@ -320,41 +276,44 @@
       "name": "Schedule Trigger",
       "type": "n8n-nodes-base.cron",
       "typeVersion": 1,
-      "position": [240, 580]
+      "position": [240, 950]
     },
     {
       "parameters": {
-        "authentication": "generic",
-        "genericAuthType": "httpHeaderAuth",
-        "httpHeaderAuth": {
-          "name": "Authorization",
-          "value": "Bearer YOUR_EMAIL_SERVICE_API_KEY"
-        },
-        "requestMethod": "POST",
-        "url": "https://api.emailservice.com/send",
+        "httpMethod": "GET",
+        "url": "={{$node[\"Set BizWorx Config\"].json[\"baseUrl\"]}}/api/external/jobs/date/{{new Date().toISOString().split('T')[0]}}",
         "options": {
           "headers": {
-            "Content-Type": "application/json"
-          },
-          "body": {
-            "bodyType": "json",
-            "value": {
-              "to": "{{ $json.client.email }}",
-              "subject": "Job Reminder: {{ $json.job.title }}",
-              "html": "<p>Hello {{ $json.client.name }},</p><p>This is a reminder about your scheduled job: <strong>{{ $json.job.title }}</strong></p><p>Scheduled for: {{ $json.job.scheduledStart }}</p><p>Best regards,<br>Your BizWorx Team</p>"
-            }
+            "X-API-Key": "={{$node[\"Set BizWorx Config\"].json[\"apiKey\"]}}"
           }
         }
       },
-      "id": "send-email-reminder-1234-5678-90ab",
-      "name": "Send Email Reminder",
+      "id": "get-todays-jobs-1234-5678-90ab-cdef",
+      "name": "Get Today's Jobs",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [680, 1160]
+      "position": [460, 950]
+    },
+    {
+      "parameters": {
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "🌅 **Daily Job Reminder**\n\n📅 **Today's Schedule ({{ new Date().toLocaleDateString() }}):**\n\n{{ $node[\"Get Today's Jobs\"].json.map(job => `• ${job.title} - ${job.scheduledStart ? new Date(job.scheduledStart).toLocaleTimeString() : 'Time TBD'}`).join('\\n') || '• No jobs scheduled for today' }}\n\n✅ Have a productive day!"
+      },
+      "id": "telegram-daily-reminder-1234-5678-90ab",
+      "name": "Send Daily Job Reminder",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [680, 950],
+      "credentials": {
+        "telegramApi": {
+          "id": "telegram-bot-credentials",
+          "name": "Telegram Bot API"
+        }
+      }
     }
   ],
   "connections": {
-    "When clicking 'Test workflow'": {
+    "Telegram Bot Trigger": {
       "main": [
         [
           {
@@ -369,57 +328,99 @@
       "main": [
         [
           {
-            "node": "Get All Clients",
+            "node": "If Create Job Command",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Create New Client",
+            "node": "If Create Client Command",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Get All Jobs",
+            "node": "If Get Stats Command",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Create New Job",
+            "node": "If Help Command",
             "type": "main",
             "index": 0
-          },
+          }
+        ]
+      ]
+    },
+    "If Create Job Command": {
+      "main": [
+        [
           {
-            "node": "Create Bulk Jobs (Recurring)",
+            "node": "Create Job via API",
             "type": "main",
             "index": 0
-          },
+          }
+        ]
+      ]
+    },
+    "If Create Client Command": {
+      "main": [
+        [
           {
-            "node": "Get All Invoices",
+            "node": "Create Client via API",
             "type": "main",
             "index": 0
-          },
-          {
-            "node": "Create Invoice",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Get All Estimates",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Create Estimate",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Get Team Members",
-            "type": "main",
-            "index": 0
-          },
+          }
+        ]
+      ]
+    },
+    "If Get Stats Command": {
+      "main": [
+        [
           {
             "node": "Get Dashboard Stats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Help Command": {
+      "main": [
+        [
+          {
+            "node": "Send Help Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Job via API": {
+      "main": [
+        [
+          {
+            "node": "Send Job Creation Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Client via API": {
+      "main": [
+        [
+          {
+            "node": "Send Client Creation Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Dashboard Stats": {
+      "main": [
+        [
+          {
+            "node": "Send Stats Response",
             "type": "main",
             "index": 0
           }
@@ -430,29 +431,18 @@
       "main": [
         [
           {
-            "node": "Set BizWorx Config",
+            "node": "Get Today's Jobs",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Webhook Receiver": {
+    "Get Today's Jobs": {
       "main": [
         [
           {
-            "node": "If Job Reminder",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "If Job Reminder": {
-      "main": [
-        [
-          {
-            "node": "Send Email Reminder",
+            "node": "Send Daily Job Reminder",
             "type": "main",
             "index": 0
           }
@@ -461,11 +451,11 @@
     }
   },
   "createdAt": "2024-01-07T12:00:00.000Z",
-  "id": "bizworx-complete-workflow",
+  "id": "bizworx-telegram-workflow",
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "name": "BizWorx Complete Business Automation",
+  "name": "BizWorx Complete Business Automation with Telegram",
   "pinData": {},
   "settings": {
     "executionOrder": "v1"
@@ -474,12 +464,12 @@
   "tags": [
     {
       "createdAt": "2024-01-07T12:00:00.000Z",
-      "id": "bizworx-automation",
-      "name": "BizWorx Automation",
+      "id": "bizworx-telegram-automation",
+      "name": "BizWorx Telegram Automation",
       "updatedAt": "2024-01-07T12:00:00.000Z"
     }
   ],
   "triggerCount": 0,
   "updatedAt": "2024-01-07T12:00:00.000Z",
-  "versionId": "1"
+  "versionId": "2"
 }
