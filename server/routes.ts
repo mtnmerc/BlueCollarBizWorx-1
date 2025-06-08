@@ -1383,8 +1383,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // External API endpoints (protected by API key)
-  app.use("/api/external", apiKeyAuth);
-
   // Get all clients (external API)
   app.get("/api/external/clients", authenticateApiKey, async (req, res) => {
     try {
@@ -1658,7 +1656,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(job);
     } catch (error) {
       res.status(500).json({ error: error.message });
-    }}
+    }
   });
 
   // Get users/team members (external API)
@@ -1848,25 +1846,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Handle different webhook events
       switch (event) {
         case 'job_reminder':
-          // Process job reminder logic
-          break;
-        case 'create_recurring_jobs':
-          // Process recurring job creation
-          break;
-        default:
-          console.log('Unknown webhook event:', event);
-      }
-      
-      res.json({ success: true, message: 'Webhook processed' });
-    } catch (error) {
-      console.error('Webhook error:', error);
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-      // You can handle different events here
-      switch (event) {
-        case 'job_reminder':
           // Handle job reminder logic
           break;
         case 'payment_received':
@@ -1927,7 +1906,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ success: true, event, processed: true });
     } catch (error) {
-      res.status(400).json({ error: error.message });
+      console.error('Webhook error:', error);
+      res.status(500).json({ error: error.message });
     }
   });
 
