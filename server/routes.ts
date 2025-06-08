@@ -1660,6 +1660,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // AI Natural Language Processing endpoint for converting text to structured data
+  ```text
   app.post("/api/ai/process-command", authenticateApiKey, async (req, res) => {
     try {
       const { message, intent } = req.body;
@@ -1696,35 +1697,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   async function processNaturalLanguage(message: string, intent: string, context: any) {
     // This is a simplified AI processing function
     // In production, you'd integrate with OpenAI, Google AI, or similar service
-    
+
     const lowerMessage = message.toLowerCase();
-    
+
     // Extract common patterns using regex and keywords
     const patterns = {
       // Client patterns
       clientName: /(?:for|client|customer)\s+([a-zA-Z\s]+?)(?:\s|$|,|\.|phone|email|at)/i,
       clientEmail: /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i,
       clientPhone: /(?:phone|call|number)\s*:?\s*([0-9\-\(\)\s+]{10,})/i,
-      
+
       // Job/Service patterns
       jobTitle: /(?:job|work|service|task|project)\s+(?:for|on|called|titled)\s+([^,.\n]+)/i,
       serviceType: /(?:plumbing|electrical|hvac|cleaning|repair|install|maintenance|inspection)/i,
-      
+
       // Date/Time patterns
       datePattern: /(?:on|for|scheduled)\s+([a-zA-Z]+\s+\d{1,2}(?:st|nd|rd|th)?|tomorrow|today|next\s+\w+|\d{1,2}\/\d{1,2}\/?\d{0,4})/i,
       timePattern: /(?:at|around)\s+(\d{1,2}(?::\d{2})?\s*(?:am|pm|AM|PM))/i,
-      
+
       // Amount patterns
       amountPattern: /(?:\$|dollar|cost|charge|price|amount)\s*(\d+(?:\.\d{2})?)/i,
       hourlyRate: /(\d+(?:\.\d{2})?)\s*(?:per\s+hour|\/hour|hourly)/i,
-      
+
       // Address patterns
       addressPattern: /(?:at|address|location)\s+([^,.\n]+(?:street|st|avenue|ave|road|rd|drive|dr|lane|ln|way|circle|cir|court|ct|place|pl))/i,
-      
+
       // Status patterns
       urgentPattern: /(?:urgent|emergency|asap|rush|immediate)/i,
       priorityPattern: /(?:high|low|normal|medium)\s+priority/i,
-      
+
       // Description patterns
       descriptionPattern: /(?:description|details|about|regarding)\s*:?\s*([^.!?]+)/i
     };
@@ -1921,8 +1922,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     return null;
   }
-
-
 
   // Get users/team members (external API)
   app.get("/api/external/users", authenticateApiKey, async (req, res) => {
