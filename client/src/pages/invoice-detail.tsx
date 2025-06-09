@@ -83,13 +83,15 @@ export default function InvoiceDetail() {
 
   // Camera capture function
   const captureFromCamera = () => {
+    console.log('Camera capture clicked');
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
     input.capture = 'environment'; // Use rear camera
     input.onchange = async (e) => {
       const files = (e.target as HTMLInputElement).files;
-      if (files) {
+      if (files && files.length > 0) {
+        console.log('Camera files selected:', files.length);
         await processFiles(Array.from(files));
       }
     };
@@ -140,11 +142,27 @@ export default function InvoiceDetail() {
 
   // Handle photo upload
   const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('File upload triggered');
     const files = event.target.files;
-    if (!files || files.length === 0) return;
+    if (!files || files.length === 0) {
+      console.log('No files selected');
+      return;
+    }
+    console.log('Files selected:', files.length);
     await processFiles(Array.from(files));
     // Reset the input
     event.target.value = "";
+  };
+
+  // Trigger file upload
+  const triggerFileUpload = () => {
+    console.log('Upload button clicked');
+    const fileInput = document.getElementById('photo-upload') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.click();
+    } else {
+      console.error('File input not found');
+    }
   };
 
   // Remove photo
@@ -887,10 +905,11 @@ Thank you for your business!`;
               <div className="space-y-3">
                 <div className="flex gap-3">
                   <Button
-                    onClick={() => document.getElementById('photo-upload')?.click()}
+                    onClick={triggerFileUpload}
                     variant="outline"
                     className="flex-1"
                     disabled={uploadPhotoMutation.isPending}
+                    type="button"
                   >
                     📁 Upload Photos
                   </Button>
@@ -899,6 +918,7 @@ Thank you for your business!`;
                     variant="outline"
                     className="flex-1"
                     disabled={uploadPhotoMutation.isPending}
+                    type="button"
                   >
                     📷 Take Photo
                   </Button>
