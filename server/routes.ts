@@ -1338,6 +1338,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public invoice payment confirmation with optional signature
+  app.patch("/api/public/invoice/:shareToken/confirm-payment", async (req, res) => {
+    try {
+      const { shareToken } = req.params;
+      const { status, paidAt, paymentMethod, paymentNotes, clientSignature } = req.body;
+
+      const invoice = await storage.getInvoiceByShareToken(shareToken);
+      if (!invoice) {
+        return res.status(404).json({ error: "Invoice not found" });
+      }
+
+      const updateData: any = {
+        status: status || 'paid',
+        paidAt: paidAt ? new Date(paidAt) : new Date(),
+        paymentMethod: paymentMethod || 'other',
+        paymentNotes: paymentNotes || 'Payment confirmed by client'
+      };
+
+      if (clientSignature) {
+        updateData.clientSignature = clientSignature;
+      }
+
+      const updatedInvoice = await storage.updateInvoice(invoice.id, updateData);
+      res.json(updatedInvoice);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Get payroll settings
   app.get("/api/payroll/settings", async (req, res) => {
     if (!req.session.role || req.session.role !== "admin") {
