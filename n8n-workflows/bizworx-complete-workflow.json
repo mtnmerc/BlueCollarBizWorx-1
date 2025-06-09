@@ -23,11 +23,11 @@
           "string": [
             {
               "name": "baseUrl",
-              "value": "https://bluecollarbizworx.replit.app"
+              "value": "https://your-replit-app-name.replit.app"
             },
             {
               "name": "apiKey",
-              "value": "bw_7qtflgzvqmcmbmjhjdg"
+              "value": "your_actual_api_key_here"
             }
           ]
         },
