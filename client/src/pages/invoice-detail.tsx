@@ -48,147 +48,38 @@ export default function InvoiceDetail() {
     },
   });
 
-  // Helper function to compress image
-  const compressImage = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const img = new Image();
-      
-      img.onload = () => {
-        // Calculate new dimensions (max 1920x1080)
-        let { width, height } = img;
-        const maxWidth = 1920;
-        const maxHeight = 1080;
-        
-        if (width > maxWidth || height > maxHeight) {
-          const ratio = Math.min(maxWidth / width, maxHeight / height);
-          width *= ratio;
-          height *= ratio;
-        }
-        
-        canvas.width = width;
-        canvas.height = height;
-        
-        // Draw and compress
-        ctx?.drawImage(img, 0, 0, width, height);
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
-        resolve(compressedDataUrl);
-      };
-      
-      img.onerror = reject;
-      img.src = URL.createObjectURL(file);
-    });
-  };
-
-  // Camera capture function
-  const captureFromCamera = () => {
-    console.log('Camera capture clicked');
-    try {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = 'image/*';
-      input.capture = 'environment'; // Use rear camera
-      
-      // Add to DOM temporarily for better browser compatibility
-      input.style.position = 'absolute';
-      input.style.left = '-9999px';
-      input.style.opacity = '0';
-      document.body.appendChild(input);
-      
-      input.onchange = async (e) => {
-        const files = (e.target as HTMLInputElement).files;
-        if (files && files.length > 0) {
-          console.log('Camera files selected:', files.length);
-          await processFiles(Array.from(files));
-        }
-        // Clean up
-        document.body.removeChild(input);
-      };
-      
-      // Trigger click after a small delay
-      setTimeout(() => {
-        input.click();
-      }, 100);
-      
-    } catch (error) {
-      console.error('Camera capture error:', error);
-      toast({
-        title: "Camera Error",
-        description: "Unable to access camera. Please try uploading a photo instead.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Process files (upload or camera)
-  const processFiles = async (files: File[]) => {
-    try {
-      const compressedPhotos: string[] = [];
-      
-      for (const file of files) {
-        // Check file size (10MB limit before compression)
-        if (file.size > 10 * 1024 * 1024) {
-          toast({
-            title: "File Too Large",
-            description: `${file.name} is over 10MB. Please select a smaller image.`,
-            variant: "destructive",
-          });
-          continue;
-        }
-        
-        // Check file type
-        if (!file.type.startsWith('image/')) {
-          toast({
-            title: "Invalid File Type",
-            description: `${file.name} is not an image file.`,
-            variant: "destructive",
-          });
-          continue;
-        }
-        
-        const compressedImage = await compressImage(file);
-        compressedPhotos.push(compressedImage);
-      }
-      
-      if (compressedPhotos.length > 0) {
-        uploadPhotoMutation.mutate(compressedPhotos);
-      }
-    } catch (error) {
-      toast({
-        title: "Processing Error",
-        description: "Failed to process images. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
   // Handle photo upload
   const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('File upload triggered');
     const files = event.target.files;
-    if (!files || files.length === 0) {
-      console.log('No files selected');
-      return;
+    if (!files || files.length === 0) return;
+
+    const photoPromises = Array.from(files).map((file) => {
+      return new Promise<string>((resolve, reject) => {
+        if (file.size > 10 * 1024 * 1024) {
+          reject(new Error(`File ${file.name} is too large. Maximum size is 10MB.`));
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error(`Failed to read file ${file.name}`));
+        reader.readAsDataURL(file);
+      });
+    });
+
+    try {
+      const photoData = await Promise.all(photoPromises);
+      uploadPhotoMutation.mutate(photoData);
+    } catch (error: any) {
+      toast({
+        title: "Upload Error",
+        description: error.message,
+        variant: "destructive",
+      });
     }
-    console.log('Files selected:', files.length);
-    await processFiles(Array.from(files));
+
     // Reset the input
     event.target.value = "";
-  };
-
-  // Trigger file upload
-  const triggerFileUpload = () => {
-    console.log('Upload button clicked');
-    const fileInput = document.getElementById('photo-upload') as HTMLInputElement;
-    if (fileInput) {
-      console.log('File input found, triggering click');
-      // Force focus first, then click
-      fileInput.focus();
-      fileInput.click();
-    } else {
-      console.error('File input not found');
-    }
   };
 
   // Remove photo
@@ -927,43 +818,27 @@ Thank you for your business!`;
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {/* Photo Upload Options */}
-              <div className="space-y-3">
-                <div className="flex gap-3">
-                  <label htmlFor="photo-upload" className="flex-1">
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      disabled={uploadPhotoMutation.isPending}
-                      type="button"
-                      asChild
-                    >
-                      <span className="cursor-pointer">
-                        📁 Upload Photos
-                      </span>
-                    </Button>
-                  </label>
-                  <Button
-                    onClick={captureFromCamera}
-                    variant="outline"
-                    className="flex-1"
-                    disabled={uploadPhotoMutation.isPending}
-                    type="button"
-                  >
-                    📷 Take Photo
-                  </Button>
-                </div>
+              {/* Photo Upload */}
+              <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
                 <input
                   type="file"
                   id="photo-upload"
                   accept="image/*"
                   multiple
-                  className="sr-only"
+                  className="hidden"
                   onChange={handlePhotoUpload}
                 />
-                <p className="text-xs text-muted-foreground text-center">
-                  Images will be automatically compressed for optimal storage
-                </p>
+                <label htmlFor="photo-upload" className="cursor-pointer">
+                  <div className="space-y-2">
+                    <div className="mx-auto h-12 w-12 text-muted-foreground">
+                      📷
+                    </div>
+                    <div className="text-muted-foreground">
+                      <span className="font-medium text-primary">Click to upload photos</span> or drag and drop
+                    </div>
+                    <p className="text-xs text-muted-foreground">PNG, JPG up to 10MB each</p>
+                  </div>
+                </label>
               </div>
 
               {/* Display Photos */}
