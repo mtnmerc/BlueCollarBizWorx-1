@@ -89,44 +89,66 @@ app.get('/mcp/events', (req, res) => {
   });
 
   // Send initial connection event
-  res.write('data: {"type":"connection","status":"connected"}\n\n');
-
-  // Handle MCP protocol messages via SSE
-  const handleMCPMessage = async (data) => {
-    try {
-      const message = JSON.parse(data);
-      if (message.method === 'tools/call') {
-        const result = await callMCPTool(message.params.name, message.params.arguments);
-        const response = {
-          jsonrpc: '2.0',
-          id: message.id,
-          result: result
-        };
-        res.write(`data: ${JSON.stringify(response)}\n\n`);
-      }
-    } catch (error) {
-      const errorResponse = {
-        jsonrpc: '2.0',
-        id: message?.id || null,
-        error: { code: -32603, message: error.message }
-      };
-      res.write(`data: ${JSON.stringify(errorResponse)}\n\n`);
-    }
-  };
-
-  // Handle client disconnect
-  req.on('close', () => {
-    console.log('SSE client disconnected');
-  });
+  res.write('data: {"jsonrpc":"2.0","method":"server/ready","params":{}}\n\n');
 
   // Keep connection alive
   const keepAlive = setInterval(() => {
     res.write('data: {"type":"ping"}\n\n');
   }, 30000);
 
+  // Handle client disconnect
   req.on('close', () => {
+    console.log('SSE client disconnected');
     clearInterval(keepAlive);
   });
+});
+
+// POST endpoint for MCP protocol messages (used by N8N MCP node)
+app.post('/mcp/call', async (req, res) => {
+  try {
+    const { method, params, id } = req.body;
+    
+    if (method === 'tools/list') {
+      const tools = [
+        { name: 'get_clients', description: 'Get list of all clients' },
+        { name: 'create_client', description: 'Create a new client' },
+        { name: 'get_jobs', description: 'Get jobs for a specific date or all jobs' },
+        { name: 'create_job', description: 'Create a new job' },
+        { name: 'get_invoices', description: 'Get list of all invoices' },
+        { name: 'create_invoice', description: 'Create a new invoice' },
+        { name: 'get_estimates', description: 'Get list of all estimates' },
+        { name: 'create_estimate', description: 'Create a new estimate' },
+        { name: 'update_job_status', description: 'Update job status' },
+        { name: 'get_revenue_stats', description: 'Get revenue statistics' },
+        { name: 'get_services', description: 'Get list of all services' }
+      ];
+      
+      res.json({
+        jsonrpc: '2.0',
+        id: id,
+        result: { tools }
+      });
+    } else if (method === 'tools/call') {
+      const result = await callMCPTool(params.name, params.arguments);
+      res.json({
+        jsonrpc: '2.0',
+        id: id,
+        result: result
+      });
+    } else {
+      res.status(400).json({
+        jsonrpc: '2.0',
+        id: id,
+        error: { code: -32601, message: `Method not found: ${method}` }
+      });
+    }
+  } catch (error) {
+    res.status(500).json({
+      jsonrpc: '2.0',
+      id: req.body.id || null,
+      error: { code: -32603, message: error.message }
+    });
+  }
 });
 
 const PORT = process.env.MCP_HTTP_PORT || 3001;
