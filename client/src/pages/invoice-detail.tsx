@@ -84,18 +84,41 @@ export default function InvoiceDetail() {
   // Camera capture function
   const captureFromCamera = () => {
     console.log('Camera capture clicked');
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.capture = 'environment'; // Use rear camera
-    input.onchange = async (e) => {
-      const files = (e.target as HTMLInputElement).files;
-      if (files && files.length > 0) {
-        console.log('Camera files selected:', files.length);
-        await processFiles(Array.from(files));
-      }
-    };
-    input.click();
+    try {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.capture = 'environment'; // Use rear camera
+      
+      // Add to DOM temporarily for better browser compatibility
+      input.style.position = 'absolute';
+      input.style.left = '-9999px';
+      input.style.opacity = '0';
+      document.body.appendChild(input);
+      
+      input.onchange = async (e) => {
+        const files = (e.target as HTMLInputElement).files;
+        if (files && files.length > 0) {
+          console.log('Camera files selected:', files.length);
+          await processFiles(Array.from(files));
+        }
+        // Clean up
+        document.body.removeChild(input);
+      };
+      
+      // Trigger click after a small delay
+      setTimeout(() => {
+        input.click();
+      }, 100);
+      
+    } catch (error) {
+      console.error('Camera capture error:', error);
+      toast({
+        title: "Camera Error",
+        description: "Unable to access camera. Please try uploading a photo instead.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Process files (upload or camera)
@@ -159,6 +182,9 @@ export default function InvoiceDetail() {
     console.log('Upload button clicked');
     const fileInput = document.getElementById('photo-upload') as HTMLInputElement;
     if (fileInput) {
+      console.log('File input found, triggering click');
+      // Force focus first, then click
+      fileInput.focus();
       fileInput.click();
     } else {
       console.error('File input not found');
@@ -904,15 +930,19 @@ Thank you for your business!`;
               {/* Photo Upload Options */}
               <div className="space-y-3">
                 <div className="flex gap-3">
-                  <Button
-                    onClick={triggerFileUpload}
-                    variant="outline"
-                    className="flex-1"
-                    disabled={uploadPhotoMutation.isPending}
-                    type="button"
-                  >
-                    📁 Upload Photos
-                  </Button>
+                  <label htmlFor="photo-upload" className="flex-1">
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      disabled={uploadPhotoMutation.isPending}
+                      type="button"
+                      asChild
+                    >
+                      <span className="cursor-pointer">
+                        📁 Upload Photos
+                      </span>
+                    </Button>
+                  </label>
                   <Button
                     onClick={captureFromCamera}
                     variant="outline"
@@ -928,7 +958,7 @@ Thank you for your business!`;
                   id="photo-upload"
                   accept="image/*"
                   multiple
-                  className="hidden"
+                  className="sr-only"
                   onChange={handlePhotoUpload}
                 />
                 <p className="text-xs text-muted-foreground text-center">
