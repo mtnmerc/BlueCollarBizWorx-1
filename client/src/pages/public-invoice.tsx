@@ -1,18 +1,139 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState, useRef, useEffect } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { FileText, Calendar, User, DollarSign, Download } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { FileText, Calendar, User, DollarSign, Download, PenTool, Check } from "lucide-react";
 
 export default function PublicInvoice() {
   const [match, params] = useRoute("/invoice/:shareToken");
   const shareToken = params?.shareToken;
+  const { toast } = useToast();
+  const [showSignaturePad, setShowSignaturePad] = useState(false);
+  const [signature, setSignature] = useState<string | null>(null);
+  const [signatureRequired, setSignatureRequired] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
 
   const { data: invoice, isLoading, error } = useQuery({
     queryKey: [`/api/public/invoice/${shareToken}`],
     enabled: !!shareToken,
+  });
+
+  // Signature drawing functions
+  const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
+    setIsDrawing(true);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const x = 'touches' in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
+    const y = 'touches' in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
+    
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+    }
+    e.preventDefault();
+  };
+
+  const draw = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!isDrawing) return;
+    
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const x = 'touches' in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
+    const y = 'touches' in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
+    
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#000';
+      ctx.lineTo(x, y);
+      ctx.stroke();
+    }
+    e.preventDefault();
+  };
+
+  const stopDrawing = () => {
+    setIsDrawing(false);
+  };
+
+  const clearSignature = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  };
+
+  const saveSignature = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const dataURL = canvas.toDataURL();
+    setSignature(dataURL);
+    setShowSignaturePad(false);
+    
+    toast({
+      title: "Signature Saved",
+      description: "Your signature has been captured successfully.",
+    });
+  };
+
+  // Set canvas size when signature pad opens
+  useEffect(() => {
+    if (showSignaturePad && canvasRef.current) {
+      const canvas = canvasRef.current;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+    }
+  }, [showSignaturePad]);
+
+  // Payment confirmation mutation
+  const confirmPaymentMutation = useMutation({
+    mutationFn: async () => {
+      const payload: any = {
+        status: 'paid',
+        paidAt: new Date().toISOString(),
+        paymentMethod: 'other',
+        paymentNotes: 'Payment confirmed by client'
+      };
+      
+      if (signature) {
+        payload.clientSignature = signature;
+      }
+      
+      const response = await apiRequest("PATCH", `/api/public/invoice/${shareToken}/confirm-payment`, payload);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Payment Confirmed",
+        description: "Thank you! Your payment has been confirmed.",
+      });
+      // Refresh the invoice data
+      window.location.reload();
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to confirm payment. Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 
   if (isLoading) {
@@ -246,23 +367,115 @@ export default function PublicInvoice() {
             </Card>
           )}
 
-          {/* Actions */}
-          <Card>
-            <CardContent className="py-6">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button variant="outline" className="flex-1">
-                  <Download className="h-4 w-4 mr-2" />
-                  Download PDF
-                </Button>
-                {invoice.status !== "paid" && (
-                  <Button className="flex-1 bg-primary hover:bg-primary/90">
-                    <DollarSign className="h-4 w-4 mr-2" />
-                    Pay Invoice
+          {/* Payment Confirmation Section */}
+          {invoice.status !== "paid" && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <DollarSign className="h-5 w-5 mr-2" />
+                  Payment Confirmation
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-muted-foreground">
+                  Please confirm when payment has been made for this invoice.
+                </p>
+
+                {/* Signature Option */}
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="signature-required" 
+                      checked={signatureRequired}
+                      onCheckedChange={(checked) => setSignatureRequired(checked as boolean)}
+                    />
+                    <label htmlFor="signature-required" className="text-sm font-medium">
+                      Include digital signature
+                    </label>
+                  </div>
+                  
+                  {signatureRequired && (
+                    <div className="ml-6 space-y-2">
+                      {!signature ? (
+                        <Button
+                          onClick={() => setShowSignaturePad(true)}
+                          variant="outline"
+                          size="sm"
+                        >
+                          <PenTool className="h-4 w-4 mr-2" />
+                          Add Signature
+                        </Button>
+                      ) : (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">Signature captured</span>
+                            <Badge className="bg-green-600">
+                              <Check className="h-3 w-3 mr-1" />
+                              Signed
+                            </Badge>
+                          </div>
+                          <div className="border rounded-lg p-2 bg-muted max-w-sm">
+                            <img 
+                              src={signature} 
+                              alt="Client Signature" 
+                              className="w-full h-16 object-contain"
+                            />
+                          </div>
+                          <Button
+                            onClick={() => setSignature(null)}
+                            variant="outline"
+                            size="sm"
+                          >
+                            Clear Signature
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <Button variant="outline" className="flex-1">
+                    <Download className="h-4 w-4 mr-2" />
+                    Download PDF
                   </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                  <Button 
+                    onClick={() => confirmPaymentMutation.mutate()}
+                    disabled={confirmPaymentMutation.isPending || (signatureRequired && !signature)}
+                    className="flex-1 bg-green-600 hover:bg-green-700"
+                  >
+                    {confirmPaymentMutation.isPending ? (
+                      <>Processing...</>
+                    ) : (
+                      <>
+                        <Check className="h-4 w-4 mr-2" />
+                        Confirm Payment
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Paid Status */}
+          {invoice.status === "paid" && (
+            <Card>
+              <CardContent className="py-6 text-center">
+                <Badge className="bg-green-500 text-white text-lg px-4 py-2">
+                  <Check className="h-5 w-5 mr-2" />
+                  Payment Confirmed
+                </Badge>
+                <p className="text-muted-foreground mt-2">
+                  Thank you for your payment!
+                </p>
+                <Button variant="outline" className="mt-4">
+                  <Download className="h-4 w-4 mr-2" />
+                  Download Receipt
+                </Button>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Notes */}
           {invoice.notes && (
@@ -277,6 +490,55 @@ export default function PublicInvoice() {
           )}
         </div>
       </div>
+
+      {/* Signature Pad Modal */}
+      {showSignaturePad && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <Card className="w-full max-w-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <PenTool className="h-5 w-5 mr-2" />
+                Sign Invoice
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="mb-4">
+                <p className="text-sm text-muted-foreground mb-3">
+                  Please sign below to confirm payment. Use your finger or stylus on mobile devices.
+                </p>
+                <div className="border-2 border-dashed border-muted-foreground rounded-lg">
+                  <canvas
+                    ref={canvasRef}
+                    className="w-full h-48 cursor-crosshair touch-none"
+                    onMouseDown={startDrawing}
+                    onMouseMove={draw}
+                    onMouseUp={stopDrawing}
+                    onMouseLeave={stopDrawing}
+                    onTouchStart={startDrawing}
+                    onTouchMove={draw}
+                    onTouchEnd={stopDrawing}
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={saveSignature} className="flex-1 bg-green-600 hover:bg-green-700">
+                  <Check className="h-4 w-4 mr-2" />
+                  Save Signature
+                </Button>
+                <Button onClick={clearSignature} variant="outline">
+                  Clear
+                </Button>
+                <Button 
+                  onClick={() => setShowSignaturePad(false)} 
+                  variant="outline"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

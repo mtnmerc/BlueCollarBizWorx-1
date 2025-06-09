@@ -882,6 +882,27 @@ Thank you for your business!`;
             </CardContent>
           </Card>
         )}
+
+        {/* Client Signature */}
+        {invoice.clientSignature && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Client Signature</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="border rounded-lg p-3 bg-muted max-w-md">
+                <img 
+                  src={invoice.clientSignature} 
+                  alt="Client Digital Signature" 
+                  className="w-full h-20 object-contain"
+                />
+              </div>
+              <p className="text-sm text-muted-foreground mt-2">
+                Signed on: {invoice.paidAt ? new Date(invoice.paidAt).toLocaleString() : 'Date not available'}
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
