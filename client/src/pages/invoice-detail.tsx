@@ -48,36 +48,101 @@ export default function InvoiceDetail() {
     },
   });
 
+  // Helper function to compress image
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      img.onload = () => {
+        // Calculate new dimensions (max 1920x1080)
+        let { width, height } = img;
+        const maxWidth = 1920;
+        const maxHeight = 1080;
+        
+        if (width > maxWidth || height > maxHeight) {
+          const ratio = Math.min(maxWidth / width, maxHeight / height);
+          width *= ratio;
+          height *= ratio;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Draw and compress
+        ctx?.drawImage(img, 0, 0, width, height);
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        resolve(compressedDataUrl);
+      };
+      
+      img.onerror = reject;
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
+  // Camera capture function
+  const captureFromCamera = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.capture = 'environment'; // Use rear camera
+    input.onchange = async (e) => {
+      const files = (e.target as HTMLInputElement).files;
+      if (files) {
+        await processFiles(Array.from(files));
+      }
+    };
+    input.click();
+  };
+
+  // Process files (upload or camera)
+  const processFiles = async (files: File[]) => {
+    try {
+      const compressedPhotos: string[] = [];
+      
+      for (const file of files) {
+        // Check file size (10MB limit before compression)
+        if (file.size > 10 * 1024 * 1024) {
+          toast({
+            title: "File Too Large",
+            description: `${file.name} is over 10MB. Please select a smaller image.`,
+            variant: "destructive",
+          });
+          continue;
+        }
+        
+        // Check file type
+        if (!file.type.startsWith('image/')) {
+          toast({
+            title: "Invalid File Type",
+            description: `${file.name} is not an image file.`,
+            variant: "destructive",
+          });
+          continue;
+        }
+        
+        const compressedImage = await compressImage(file);
+        compressedPhotos.push(compressedImage);
+      }
+      
+      if (compressedPhotos.length > 0) {
+        uploadPhotoMutation.mutate(compressedPhotos);
+      }
+    } catch (error) {
+      toast({
+        title: "Processing Error",
+        description: "Failed to process images. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Handle photo upload
   const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
-
-    const photoPromises = Array.from(files).map((file) => {
-      return new Promise<string>((resolve, reject) => {
-        if (file.size > 10 * 1024 * 1024) {
-          reject(new Error(`File ${file.name} is too large. Maximum size is 10MB.`));
-          return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = () => reject(new Error(`Failed to read file ${file.name}`));
-        reader.readAsDataURL(file);
-      });
-    });
-
-    try {
-      const photoData = await Promise.all(photoPromises);
-      uploadPhotoMutation.mutate(photoData);
-    } catch (error: any) {
-      toast({
-        title: "Upload Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-
+    await processFiles(Array.from(files));
     // Reset the input
     event.target.value = "";
   };
@@ -818,8 +883,26 @@ Thank you for your business!`;
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {/* Photo Upload */}
-              <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+              {/* Photo Upload Options */}
+              <div className="space-y-3">
+                <div className="flex gap-3">
+                  <Button
+                    onClick={() => document.getElementById('photo-upload')?.click()}
+                    variant="outline"
+                    className="flex-1"
+                    disabled={uploadPhotoMutation.isPending}
+                  >
+                    📁 Upload Photos
+                  </Button>
+                  <Button
+                    onClick={captureFromCamera}
+                    variant="outline"
+                    className="flex-1"
+                    disabled={uploadPhotoMutation.isPending}
+                  >
+                    📷 Take Photo
+                  </Button>
+                </div>
                 <input
                   type="file"
                   id="photo-upload"
@@ -828,17 +911,9 @@ Thank you for your business!`;
                   className="hidden"
                   onChange={handlePhotoUpload}
                 />
-                <label htmlFor="photo-upload" className="cursor-pointer">
-                  <div className="space-y-2">
-                    <div className="mx-auto h-12 w-12 text-muted-foreground">
-                      📷
-                    </div>
-                    <div className="text-muted-foreground">
-                      <span className="font-medium text-primary">Click to upload photos</span> or drag and drop
-                    </div>
-                    <p className="text-xs text-muted-foreground">PNG, JPG up to 10MB each</p>
-                  </div>
-                </label>
+                <p className="text-xs text-muted-foreground text-center">
+                  Images will be automatically compressed for optimal storage
+                </p>
               </div>
 
               {/* Display Photos */}
