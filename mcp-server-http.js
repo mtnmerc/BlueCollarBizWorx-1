@@ -439,7 +439,7 @@ app.post('/mcp/call', async (req, res) => {
   return app._router.handle(req, res);
 });
 
-const PORT = process.env.MCP_HTTP_PORT || 5000;
+const PORT = process.env.MCP_HTTP_PORT || 8000;
 const HOST = '0.0.0.0';
 
 // Detect the correct external URL based on environment
