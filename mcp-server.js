@@ -1,14 +1,13 @@
-#!/usr/bin/env node
 
-const { Server } = require('@modelcontextprotocol/sdk/server/index.js');
-const { StdioServerTransport } = require('@modelcontextprotocol/sdk/server/stdio.js');
-const {
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import {
   CallToolRequestSchema,
   ErrorCode,
   ListToolsRequestSchema,
   McpError,
-} = require('@modelcontextprotocol/sdk/types.js');
-const fetch = require('node-fetch');
+} from '@modelcontextprotocol/sdk/types.js';
+import fetch from 'node-fetch';
 
 class BizWorxMCPServer {
   constructor() {
@@ -24,7 +23,7 @@ class BizWorxMCPServer {
       }
     );
 
-    this.baseUrl = process.env.BIZWORX_BASE_URL || 'http://localhost:5000';
+    this.baseUrl = process.env.BIZWORX_BASE_URL || 'https://BluecollarBizWorx.replit.app';
     this.setupToolHandlers();
   }
 
@@ -359,7 +358,6 @@ class BizWorxMCPServer {
           case 'get_jobs':
             let jobsEndpoint = '/api/external/jobs';
             if (args.date) {
-              // Use the date-specific endpoint if date is provided
               jobsEndpoint = `/api/external/jobs/date/${args.date}`;
             }
             return {

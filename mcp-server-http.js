@@ -227,7 +227,7 @@ const PORT = process.env.MCP_HTTP_PORT || 3001;
 const HOST = '0.0.0.0';
 app.listen(PORT, HOST, () => {
   console.log(`MCP HTTP server running on ${HOST}:${PORT}`);
-  console.log(`External URL: https://bluecollarbiznew.replit.app:${PORT}`);
+  console.log(`External URL: https://BluecollarBizWorx.replit.app:${PORT}`);
 });
 
 // Cleanup on exit
