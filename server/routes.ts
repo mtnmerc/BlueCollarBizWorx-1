@@ -44,18 +44,31 @@ const authenticateApiKey = async (req: any, res: any, next: any) => {
 
 // Helper function to extract API key from headers
 const getApiKey = (req: any): string | null => {
-  // Express converts headers to lowercase, so check lowercase variants
   const headers = req.headers;
-  const xApiKey = headers['x-api-key'];
   
-  if (xApiKey) {
-    return Array.isArray(xApiKey) ? xApiKey[0] : xApiKey;
+  // Try multiple possible header formats for X-API-Key
+  const possibleKeys = [
+    'x-api-key',
+    'X-API-Key', 
+    'X-Api-Key',
+    'xapikey',
+    'api-key'
+  ];
+  
+  for (const key of possibleKeys) {
+    const value = headers[key] || headers[key.toLowerCase()];
+    if (value && value !== 'undefined' && typeof value === 'string') {
+      return value;
+    }
   }
   
   // Fallback to Authorization Bearer
   const authHeader = headers.authorization;
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    return authHeader.replace('Bearer ', '');
+  if (authHeader && typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.replace('Bearer ', '');
+    if (token && token !== 'undefined') {
+      return token;
+    }
   }
   
   return null;
@@ -108,7 +121,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/gpt/clients', async (req, res) => {
     try {
+      console.log('DEBUG - Headers received:', req.headers);
       const apiKey = getApiKey(req);
+      console.log('DEBUG - Extracted API key:', apiKey);
       if (!apiKey || apiKey === 'undefined') {
         return res.status(200).json({ success: true, data: [], message: 'No API key provided' });
       }
