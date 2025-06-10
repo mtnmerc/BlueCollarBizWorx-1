@@ -88,7 +88,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/gpt/clients', authenticateApiKey, async (req, res) => {
+  app.post('/gpt/clients', authenticateGPT, async (req, res) => {
     try {
       const clientData = {
         businessId: req.businessId,
@@ -109,10 +109,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/gpt/jobs', authenticateApiKey, async (req, res) => {
+  app.get('/gpt/jobs', authenticateGPT, async (req, res) => {
     try {
       const { date } = req.query;
-      const jobs = await storage.getJobs(req.businessId, date as string);
+      const jobs = date ? 
+        await storage.getJobsByDate(req.businessId, new Date(date as string)) :
+        await storage.getJobsByBusiness(req.businessId);
       res.json({
         success: true,
         data: jobs.map(j => ({
@@ -131,7 +133,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/gpt/jobs', authenticateApiKey, async (req, res) => {
+  app.post('/gpt/jobs', authenticateGPT, async (req, res) => {
     try {
       const jobData = {
         businessId: req.businessId,
@@ -157,10 +159,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/gpt/revenue', authenticateApiKey, async (req, res) => {
+  app.get('/gpt/revenue', authenticateGPT, async (req, res) => {
     try {
       const { period = 'month' } = req.query;
-      const stats = await storage.getRevenueStats(req.businessId, period as string);
+      const now = new Date();
+      const month = now.getMonth() + 1;
+      const year = now.getFullYear();
+      const stats = await storage.getRevenueStats(req.businessId, month, year);
       res.json({
         success: true,
         data: stats,
@@ -171,15 +176,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/gpt/invoices', authenticateApiKey, async (req, res) => {
+  app.post('/gpt/invoices', authenticateGPT, async (req, res) => {
     try {
       const invoiceData = {
         businessId: req.businessId,
         clientId: req.body.clientId,
         title: req.body.title,
+        invoiceNumber: `INV-${Date.now()}`,
         lineItems: req.body.lineItems || [],
-        subtotal: req.body.subtotal,
-        total: req.body.total,
+        subtotal: req.body.subtotal || '0.00',
+        total: req.body.total || '0.00',
         status: req.body.status || 'draft',
         dueDate: req.body.dueDate ? new Date(req.body.dueDate) : null
       };
@@ -195,7 +201,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/gpt/estimates', authenticateApiKey, async (req, res) => {
+  app.post('/gpt/estimates', authenticateGPT, async (req, res) => {
     try {
       const estimateData = {
         businessId: req.businessId,
