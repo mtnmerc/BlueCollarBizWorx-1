@@ -1,7 +1,13 @@
 // Test script to verify external MCP server accessibility
-const fetch = require('node-fetch');
+import fetch from 'node-fetch';
 
-const baseUrl = 'https://bluecollar-bizworx.replit.app';
+// Test both the main domain and potential subdomain configurations
+const testUrls = [
+  'https://bluecollar-bizworx.replit.app',
+  'https://5000-bluecollar-bizworx.replit.app'
+];
+
+const baseUrl = testUrls[0];
 
 async function testEndpoint(endpoint, method = 'GET', headers = {}) {
   try {
@@ -61,8 +67,8 @@ async function testSSE(endpoint) {
   }
 }
 
-async function runTests() {
-  console.log('=== Testing External MCP Server Accessibility ===\n');
+async function testMultipleUrls() {
+  console.log('=== Testing Multiple URL Configurations ===\n');
   
   const endpoints = [
     '/mcp/health',
@@ -71,38 +77,66 @@ async function runTests() {
     '/mcp/tools'
   ];
   
-  const results = [];
-  
-  // Test regular endpoints
-  for (const endpoint of endpoints) {
-    const result = await testEndpoint(endpoint);
-    results.push({ endpoint, ...result });
-    console.log(''); // Add spacing
+  for (const testUrl of testUrls) {
+    console.log(`\n--- Testing ${testUrl} ---`);
+    let urlResults = [];
+    
+    for (const endpoint of endpoints) {
+      try {
+        const response = await fetch(`${testUrl}${endpoint}`, {
+          method: 'GET',
+          headers: { 'Accept': 'application/json' }
+        });
+        
+        const success = response.status === 200;
+        console.log(`${success ? '✓' : '✗'} ${endpoint} - Status: ${response.status}`);
+        
+        if (success) {
+          const data = await response.json();
+          console.log(`  Response: ${JSON.stringify(data).substring(0, 100)}...`);
+        }
+        
+        urlResults.push({ endpoint, success, status: response.status });
+      } catch (error) {
+        console.log(`✗ ${endpoint} - Error: ${error.message}`);
+        urlResults.push({ endpoint, success: false, error: error.message });
+      }
+    }
+    
+    const successful = urlResults.filter(r => r.success).length;
+    console.log(`\nResults for ${testUrl}: ${successful}/${endpoints.length} successful`);
+    
+    if (successful === endpoints.length) {
+      console.log(`\n✓ SUCCESS: All MCP endpoints accessible via ${testUrl}`);
+      console.log('\nFor N8N configuration:');
+      console.log(`Base URL: ${testUrl}/mcp`);
+      console.log(`SSE URL: ${testUrl}/mcp/sse`);
+      console.log('Authentication: X-API-Key header required');
+      return true;
+    }
   }
   
-  // Test SSE endpoint
-  const sseResult = await testSSE('/mcp/sse');
-  results.push({ endpoint: '/mcp/sse', success: sseResult });
+  return false;
+}
+
+async function runTests() {
+  console.log('=== Testing External MCP Server Accessibility ===\n');
   
-  // Summary
-  console.log('\n=== Test Summary ===');
-  const successful = results.filter(r => r.success).length;
-  const total = results.length;
+  const success = await testMultipleUrls();
   
-  console.log(`Successful: ${successful}/${total}`);
-  
-  results.forEach(result => {
-    const status = result.success ? '✓' : '✗';
-    console.log(`${status} ${result.endpoint}`);
-  });
-  
-  if (successful === total) {
-    console.log('\n🎉 All MCP endpoints are externally accessible!');
-    console.log('\nFor N8N configuration:');
-    console.log(`SSE URL: ${baseUrl}/mcp/sse`);
-    console.log('Authentication: X-API-Key header required');
-  } else {
-    console.log('\n⚠ Some endpoints may not be externally accessible');
+  if (!success) {
+    console.log('\n⚠ MCP endpoints may not be externally accessible through standard URLs');
+    console.log('\nTrying localhost test for comparison:');
+    
+    try {
+      const localResponse = await fetch('http://localhost:5000/mcp/health');
+      if (localResponse.status === 200) {
+        console.log('✓ Local access works - this confirms the server is running');
+        console.log('  Issue appears to be with external routing configuration');
+      }
+    } catch (error) {
+      console.log('✗ Local access also failed - server may not be running');
+    }
   }
 }
 
