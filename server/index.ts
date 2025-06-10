@@ -69,72 +69,270 @@ app.use((req, res, next) => {
     credentials: true
   }));
 
-  // MCP endpoints served directly through main app
-  app.post('/mcp/execute', async (req, res) => {
+  // Tool mapping for direct MCP integration
+  const toolMap = {
+    'get_clients': { endpoint: '/api/external/clients', method: 'GET' },
+    'create_client': { endpoint: '/api/external/clients', method: 'POST' },
+    'get_jobs': { endpoint: '/api/external/jobs', method: 'GET' },
+    'create_job': { endpoint: '/api/external/jobs', method: 'POST' },
+    'get_invoices': { endpoint: '/api/external/invoices', method: 'GET' },
+    'create_invoice': { endpoint: '/api/external/invoices', method: 'POST' },
+    'get_estimates': { endpoint: '/api/external/estimates', method: 'GET' },
+    'create_estimate': { endpoint: '/api/external/estimates', method: 'POST' },
+    'update_job_status': { endpoint: '/api/external/jobs/{id}', method: 'PATCH' },
+    'get_revenue_stats': { endpoint: '/api/external/revenue', method: 'GET' },
+    'get_services': { endpoint: '/api/external/services', method: 'GET' }
+  };
+
+  // Helper function for tool descriptions
+  const getToolDescription = (toolName: string) => {
+    const descriptions = {
+      'get_clients': 'Get list of all clients',
+      'create_client': 'Create a new client',
+      'get_jobs': 'Get jobs for a specific date or all jobs',
+      'create_job': 'Create a new job',
+      'get_invoices': 'Get list of all invoices',
+      'create_invoice': 'Create a new invoice',
+      'get_estimates': 'Get list of all estimates',
+      'create_estimate': 'Create a new estimate',
+      'update_job_status': 'Update job status',
+      'get_revenue_stats': 'Get revenue statistics',
+      'get_services': 'Get list of all services'
+    };
+    return descriptions[toolName] || 'Unknown tool';
+  };
+
+  // Direct API call function for MCP tools
+  const callBizWorxAPI = async (endpoint: string, options: any = {}) => {
+    const baseUrl = 'https://BluecollarBizWorx.replit.app';
+
     try {
-      const { tool, apiKey, ...params } = req.body;
-
-      if (!tool || !apiKey) {
-        return res.status(400).json({ error: 'Tool and API key required' });
-      }
-
-      // Forward to internal MCP server
-      const response = await fetch('http://localhost:3001/execute', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tool, apiKey, ...params })
+      const response = await fetch(`${baseUrl}${endpoint}`, {
+        method: options.method || 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': options.apiKey,
+          ...options.headers,
+        },
+        body: options.body ? JSON.stringify(options.body) : undefined,
       });
 
-      const data = await response.json();
-      res.json(data);
-    } catch (error) {
-      console.error('MCP Execute Error:', error);
-      res.status(500).json({ error: 'MCP server unavailable' });
-    }
-  });
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status} ${await response.text()}`);
+      }
 
-  // MCP health check
-  app.get('/mcp/health', async (req, res) => {
+      return await response.json();
+    } catch (error) {
+      console.error('BizWorx API Error:', error);
+      throw error;
+    }
+  };
+
+  // MCP tool execution endpoint
+  app.post('/mcp/:toolName', async (req, res) => {
     try {
-      const response = await fetch('http://localhost:3001/health');
-      const data = await response.json();
-      res.json(data);
+      const { toolName } = req.params;
+      const parameters = req.body;
+      const apiKey = req.headers['x-api-key'] || parameters.apiKey;
+
+      if (!apiKey) {
+        return res.status(401).json({ error: 'API key required' });
+      }
+
+      const tool = toolMap[toolName];
+      if (!tool) {
+        return res.status(404).json({ error: `Tool ${toolName} not found` });
+      }
+
+      let endpoint = tool.endpoint;
+      let body = parameters;
+
+      // Handle special cases
+      if (toolName === 'update_job_status' && parameters.jobId) {
+        endpoint = endpoint.replace('{id}', parameters.jobId);
+        body = { status: parameters.status };
+      }
+
+      const result = await callBizWorxAPI(endpoint, {
+        method: tool.method,
+        apiKey,
+        body: tool.method !== 'GET' ? body : undefined
+      });
+
+      res.json(result);
     } catch (error) {
-      res.status(502).json({ error: 'MCP server unavailable' });
+      console.error('Tool execution error:', error);
+      res.status(500).json({ error: error.message });
     }
   });
 
-  // MCP tools list
-  app.get('/mcp/tools', async (req, res) => {
-    try {
-      const response = await fetch('http://localhost:3001/tools');
-      const data = await response.json();
-      res.json(data);
-    } catch (error) {
-      res.status(502).json({ error: 'MCP server unavailable' });
-    }
-  });
-
-  // MCP configuration for N8N
+  // MCP Server configuration endpoint
   app.get('/mcp/config', (req, res) => {
     res.json({
       server: {
         name: "bizworx-mcp-server",
         version: "1.0.0",
-        protocolVersion: "2024-11-05"
+        protocolVersion: "2024-11-05",
+        capabilities: {
+          tools: {
+            listChanged: false
+          },
+          resources: {},
+          prompts: {},
+          experimental: {}
+        }
       },
       endpoints: {
-        execute: "/mcp/execute",
-        health: "/mcp/health",
-        tools: "/mcp/tools"
+        call: "/mcp/call",
+        tools: "/mcp/tools",
+        health: "/mcp/health"
       },
       authentication: {
         required: true,
-        method: "body",
-        field: "apiKey"
+        method: "X-API-Key",
+        description: "Business API key required in X-API-Key header"
       },
-      baseUrl: "https://BluecollarBizWorx.replit.app"
+      baseUrl: "https://BluecollarBizWorx.replit.app",
+      tools: Object.keys(toolMap).map(name => ({
+        name,
+        description: getToolDescription(name),
+        inputSchema: {
+          type: 'object',
+          properties: {
+            apiKey: { 
+              type: 'string', 
+              description: 'Business API key for authentication' 
+            }
+          },
+          required: ['apiKey']
+        }
+      }))
     });
+  });
+
+  // MCP health check
+  app.get('/mcp/health', (req, res) => {
+    res.json({ 
+      status: 'healthy', 
+      timestamp: new Date().toISOString(),
+      server: 'BizWorx MCP Server (Integrated)',
+      version: '1.0.0',
+      protocol: "2024-11-05",
+      tools_count: Object.keys(toolMap).length,
+      endpoints: ["/mcp/call", "/mcp/tools", "/mcp/config"]
+    });
+  });
+
+  // List available tools
+  app.get('/mcp/tools', (req, res) => {
+    const tools = Object.keys(toolMap).map(name => ({
+      name,
+      description: getToolDescription(name)
+    }));
+    res.json({ tools });
+  });
+
+  // MCP call endpoint for standard MCP protocol
+  app.post('/mcp/call', async (req, res) => {
+    try {
+      const { method, params, id } = req.body;
+      const apiKey = req.headers['x-api-key'] || params?.apiKey;
+
+      if (method === 'initialize') {
+        res.json({
+          jsonrpc: '2.0',
+          id: id,
+          result: {
+            protocolVersion: '2024-11-05',
+            capabilities: {
+              tools: {},
+              resources: {},
+              prompts: {}
+            },
+            serverInfo: {
+              name: 'bizworx-mcp-server',
+              version: '1.0.0'
+            }
+          }
+        });
+      } else if (method === 'tools/list') {
+        const tools = Object.keys(toolMap).map(name => ({
+          name,
+          description: getToolDescription(name),
+          inputSchema: {
+            type: 'object',
+            properties: {
+              apiKey: { type: 'string', description: 'Business API key' }
+            },
+            required: ['apiKey']
+          }
+        }));
+
+        res.json({
+          jsonrpc: '2.0',
+          id: id,
+          result: { tools }
+        });
+      } else if (method === 'tools/call') {
+        if (!apiKey) {
+          return res.status(401).json({
+            jsonrpc: '2.0',
+            id: id,
+            error: { code: -32603, message: 'API key required' }
+          });
+        }
+
+        const toolName = params.name;
+        const tool = toolMap[toolName];
+
+        if (!tool) {
+          return res.status(400).json({
+            jsonrpc: '2.0',
+            id: id,
+            error: { code: -32601, message: `Tool not found: ${toolName}` }
+          });
+        }
+
+        let endpoint = tool.endpoint;
+        let body = params.arguments;
+
+        // Handle special cases
+        if (toolName === 'update_job_status' && body.jobId) {
+          endpoint = endpoint.replace('{id}', body.jobId);
+          body = { status: body.status };
+        }
+
+        const result = await callBizWorxAPI(endpoint, {
+          method: tool.method,
+          apiKey,
+          body: tool.method !== 'GET' ? body : undefined
+        });
+
+        res.json({
+          jsonrpc: '2.0',
+          id: id,
+          result: {
+            content: [{
+              type: 'text',
+              text: JSON.stringify(result)
+            }]
+          }
+        });
+      } else {
+        res.status(400).json({
+          jsonrpc: '2.0',
+          id: id,
+          error: { code: -32601, message: `Method not found: ${method}` }
+        });
+      }
+    } catch (error) {
+      console.error('MCP request error:', error);
+      res.status(500).json({
+        jsonrpc: '2.0',
+        id: req.body.id || null,
+        error: { code: -32603, message: error.message }
+      });
+    }
   });
 
   // importantly only setup vite in development and after
