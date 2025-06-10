@@ -1,4 +1,3 @@
-
 import express from 'express';
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
@@ -16,7 +15,7 @@ app.use((req, res, next) => {
   res.header('Access-Control-Allow-Headers', 'Cache-Control, X-API-Key, Authorization, Content-Type');
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.header('Access-Control-Allow-Credentials', 'true');
-  
+
   if (req.method === 'OPTIONS') {
     res.sendStatus(200);
   } else {
@@ -64,7 +63,7 @@ app.post('/mcp/:toolName', async (req, res) => {
   try {
     const { toolName } = req.params;
     const parameters = req.body;
-    
+
     const result = await callMCPTool(toolName, parameters);
     res.json(result);
   } catch (error) {
@@ -131,7 +130,7 @@ app.get('/mcp/events', (req, res) => {
 app.post('/mcp/events', async (req, res) => {
   try {
     const { method, params, id } = req.body;
-    
+
     if (method === 'tools/list') {
       const tools = [
         { name: 'get_clients', description: 'Get list of all clients' },
@@ -146,7 +145,7 @@ app.post('/mcp/events', async (req, res) => {
         { name: 'get_revenue_stats', description: 'Get revenue statistics' },
         { name: 'get_services', description: 'Get list of all services' }
       ];
-      
+
       res.json({
         jsonrpc: '2.0',
         id: id,
@@ -179,7 +178,7 @@ app.post('/mcp/events', async (req, res) => {
 app.post('/mcp/call', async (req, res) => {
   try {
     const { method, params, id } = req.body;
-    
+
     if (method === 'tools/list') {
       const tools = [
         { name: 'get_clients', description: 'Get list of all clients' },
@@ -194,7 +193,7 @@ app.post('/mcp/call', async (req, res) => {
         { name: 'get_revenue_stats', description: 'Get revenue statistics' },
         { name: 'get_services', description: 'Get list of all services' }
       ];
-      
+
       res.json({
         jsonrpc: '2.0',
         id: id,
