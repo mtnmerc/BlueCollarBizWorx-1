@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, Edit, FileText, DollarSign, Calendar, User, CreditCard, CheckCircle, Mail, Copy, Share, MessageSquare, Trash2, PenTool, Check } from "lucide-react";
+import { ArrowLeft, Edit, FileText, DollarSign, Calendar, User, CreditCard, CheckCircle, Mail, Copy, Share, MessageSquare, Trash2, PenTool, Check, X } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
