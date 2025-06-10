@@ -1099,7 +1099,7 @@ Thank you for your business!`;
                 </div>
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-muted-foreground">
-                    Signed on: {invoice.paidAt ? new Date(invoice.paidAt).toLocaleString() : 'Date not available'}
+                    Signed on: {invoice.signedAt ? new Date(invoice.signedAt).toLocaleString() : 'Date not available'}
                   </p>
                   <Button
                     onClick={() => setShowSignaturePad(true)}
