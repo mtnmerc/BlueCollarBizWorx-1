@@ -141,7 +141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/gpt/jobs', async (req, res) => {
+  app.get('/api/gpt/jobs', async (req, res) => {
     try {
       const apiKey = req.headers.authorization?.replace('Bearer ', '');
       if (!apiKey || apiKey === 'undefined') {
