@@ -50,22 +50,24 @@ export default function InvoiceDetail() {
           // Keyboard is visible - position modal higher and smaller
           modal.style.position = 'fixed';
           modal.style.top = '1vh';
-          modal.style.left = '5vw';
-          modal.style.right = '5vw';
+          modal.style.left = '50%';
+          modal.style.right = 'auto';
           modal.style.width = '90vw';
+          modal.style.maxWidth = '400px';
           modal.style.maxHeight = '35vh';
-          modal.style.transform = 'none';
+          modal.style.transform = 'translateX(-50%)';
           modal.style.zIndex = '9999';
           modal.style.overflowY = 'auto';
         } else {
           // Keyboard is hidden - normal positioning
           modal.style.position = 'fixed';
           modal.style.top = '5vh';
-          modal.style.left = '5vw';
-          modal.style.right = '5vw';
+          modal.style.left = '50%';
+          modal.style.right = 'auto';
           modal.style.width = '90vw';
+          modal.style.maxWidth = '400px';
           modal.style.maxHeight = '60vh';
-          modal.style.transform = 'none';
+          modal.style.transform = 'translateX(-50%)';
           modal.style.zIndex = '9999';
           modal.style.overflowY = 'auto';
         }
