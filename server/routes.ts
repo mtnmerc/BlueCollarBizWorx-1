@@ -53,22 +53,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // ChatGPT Custom GPT endpoints - simplified authentication
+  // ChatGPT Custom GPT endpoints - using storage methods
   app.get('/gpt/clients', async (req, res) => {
     try {
       const apiKey = req.headers.authorization?.replace('Bearer ', '');
-      if (!apiKey) {
+      if (!apiKey || apiKey === 'undefined') {
         return res.status(200).json({ success: true, data: [], message: 'No API key provided' });
       }
 
-      // Direct database query for business lookup
-      const [business] = await db.select().from(businesses).where(eq(businesses.apiKey, apiKey));
+      // Use existing storage method for business lookup
+      const business = await storage.getBusinessByApiKey(apiKey);
       if (!business) {
         return res.status(200).json({ success: true, data: [], message: 'Invalid API key' });
       }
 
-      // Direct database query for clients
-      const clientResults = await db.select().from(clients).where(eq(clients.businessId, business.id));
+      // Use existing storage method for clients
+      const clientResults = await storage.getClientsByBusiness(business.id);
       
       res.json({
         success: true,
@@ -82,7 +82,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: `Found ${clientResults.length} clients`
       });
     } catch (error: any) {
-      console.error('GPT clients error:', error);
+      console.error('GPT clients error details:', error.message, error.stack);
       res.status(200).json({ success: true, data: [], message: 'Error retrieving clients' });
     }
   });
@@ -111,23 +111,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/gpt/jobs', async (req, res) => {
     try {
       const apiKey = req.headers.authorization?.replace('Bearer ', '');
-      if (!apiKey) {
-        return res.status(401).json({ success: false, error: 'API key required' });
+      if (!apiKey || apiKey === 'undefined') {
+        return res.status(200).json({ success: true, data: [], message: 'No API key provided' });
       }
 
+      // Use existing storage method for business lookup
       const business = await storage.getBusinessByApiKey(apiKey);
       if (!business) {
-        return res.status(401).json({ success: false, error: 'Invalid API key' });
+        return res.status(200).json({ success: true, data: [], message: 'Invalid API key' });
       }
       
+      // Use existing storage method for jobs
       const { date } = req.query;
-      const result = date ? 
+      const jobResults = date ? 
         await storage.getJobsByDate(business.id, new Date(date as string)) :
         await storage.getJobsByBusiness(business.id);
       
       res.json({
         success: true,
-        data: result.map((j: any) => ({
+        data: jobResults.map((j: any) => ({
           id: j.id,
           title: j.title,
           client: j.client?.name,
@@ -136,11 +138,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           scheduledEnd: j.scheduledEnd,
           address: j.address
         })),
-        message: `Found ${result.length} jobs${date ? ` for ${date}` : ''}`
+        message: `Found ${jobResults.length} jobs${date ? ` for ${date}` : ''}`
       });
     } catch (error: any) {
-      console.error('GPT jobs error:', error);
-      res.status(200).json({ success: true, data: [], message: 'No jobs found' });
+      console.error('GPT jobs error details:', error.message, error.stack);
+      res.status(200).json({ success: true, data: [], message: 'Error retrieving jobs' });
     }
   });
 
