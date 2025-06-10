@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { FileText, Calendar, User, DollarSign, Download, PenTool, Check } from "lucide-react";
+import { FileText, Calendar, User, DollarSign, Download, PenTool, Check, X } from "lucide-react";
 
 export default function PublicInvoice() {
   const [match, params] = useRoute("/invoice/:shareToken");
@@ -491,53 +491,60 @@ export default function PublicInvoice() {
         </div>
       </div>
 
-      {/* Signature Pad Modal */}
+      {/* Signature Collection Inline Section */}
       {showSignaturePad && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <Card className="w-full max-w-lg">
-            <CardHeader>
+        <Card className="mb-6">
+          <CardHeader>
+            <div className="flex items-center justify-between">
               <CardTitle className="flex items-center">
                 <PenTool className="h-5 w-5 mr-2" />
                 Sign Invoice
               </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="mb-4">
-                <p className="text-sm text-muted-foreground mb-3">
-                  Please sign below to confirm payment. Use your finger or stylus on mobile devices.
-                </p>
-                <div className="border-2 border-dashed border-muted-foreground rounded-lg">
-                  <canvas
-                    ref={canvasRef}
-                    className="w-full h-48 cursor-crosshair touch-none"
-                    onMouseDown={startDrawing}
-                    onMouseMove={draw}
-                    onMouseUp={stopDrawing}
-                    onMouseLeave={stopDrawing}
-                    onTouchStart={startDrawing}
-                    onTouchMove={draw}
-                    onTouchEnd={stopDrawing}
-                  />
-                </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowSignaturePad(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-4">
+              <p className="text-sm text-muted-foreground mb-3">
+                Please sign below to confirm payment. Use your finger or stylus on mobile devices.
+              </p>
+              <div className="border-2 border-dashed border-muted-foreground rounded-lg">
+                <canvas
+                  ref={canvasRef}
+                  className="w-full h-48 cursor-crosshair touch-none"
+                  onMouseDown={startDrawing}
+                  onMouseMove={draw}
+                  onMouseUp={stopDrawing}
+                  onMouseLeave={stopDrawing}
+                  onTouchStart={startDrawing}
+                  onTouchMove={draw}
+                  onTouchEnd={stopDrawing}
+                />
               </div>
-              <div className="flex gap-2">
-                <Button onClick={saveSignature} className="flex-1 bg-green-600 hover:bg-green-700">
-                  <Check className="h-4 w-4 mr-2" />
-                  Save Signature
-                </Button>
-                <Button onClick={clearSignature} variant="outline">
-                  Clear
-                </Button>
-                <Button 
-                  onClick={() => setShowSignaturePad(false)} 
-                  variant="outline"
-                >
-                  Cancel
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={saveSignature} className="flex-1 bg-green-600 hover:bg-green-700">
+                <Check className="h-4 w-4 mr-2" />
+                Save Signature
+              </Button>
+              <Button onClick={clearSignature} variant="outline">
+                Clear
+              </Button>
+              <Button 
+                onClick={() => setShowSignaturePad(false)} 
+                variant="outline"
+              >
+                Cancel
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
