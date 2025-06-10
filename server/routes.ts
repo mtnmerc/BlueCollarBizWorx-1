@@ -111,18 +111,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/gpt/clients', async (req, res) => {
     try {
-      // Debug headers being received
-      console.log('=== DEBUG HEADERS ===');
-      console.log('All headers:', JSON.stringify(req.headers, null, 2));
-      console.log('x-api-key header:', req.headers['x-api-key']);
-      console.log('authorization header:', req.headers.authorization);
-      console.log('==================');
-      
       const apiKey = getApiKey(req);
-      console.log('Extracted API key:', apiKey);
-      
       if (!apiKey || apiKey === 'undefined') {
-        return res.status(200).json({ success: true, data: [], message: 'No API key provided' });
+        return res.status(401).json({ success: false, error: 'API key required' });
       }
 
       // Use existing storage method for business lookup
