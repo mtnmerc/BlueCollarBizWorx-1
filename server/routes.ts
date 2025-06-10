@@ -122,8 +122,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/gpt/clients', async (req, res) => {
     try {
+      const apiKey = req.headers.authorization?.replace('Bearer ', '');
+      if (!apiKey || apiKey === 'undefined') {
+        return res.status(401).json({ success: false, error: 'API key required' });
+      }
+
+      const business = await storage.getBusinessByApiKey(apiKey);
+      if (!business) {
+        return res.status(401).json({ success: false, error: 'Invalid API key' });
+      }
+
       const clientData = {
-        businessId: req.businessId,
+        businessId: business.id,
         name: req.body.name,
         email: req.body.email || null,
         phone: req.body.phone || null,
