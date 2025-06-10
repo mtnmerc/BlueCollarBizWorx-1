@@ -42,32 +42,25 @@ const authenticateApiKey = async (req: any, res: any, next: any) => {
 
 
 
-// Helper function to extract API key from headers
+// Helper function to extract API key from headers for ChatGPT Custom GPT integration
 const getApiKey = (req: any): string | null => {
   const headers = req.headers;
   
-  // Debug logging - remove after fixing
-  console.log('DEBUG - Raw headers object:', JSON.stringify(headers, null, 2));
-  
-  // Express.js normalizes headers to lowercase
-  // Check for x-api-key in various formats
+  // ChatGPT Custom GPT sends X-API-Key which Express normalizes to x-api-key
   const xApiKey = headers['x-api-key'];
-  if (xApiKey && typeof xApiKey === 'string' && xApiKey !== 'undefined') {
-    console.log('DEBUG - Found x-api-key:', xApiKey);
-    return xApiKey;
+  if (xApiKey && typeof xApiKey === 'string' && xApiKey.trim() && xApiKey !== 'undefined') {
+    return xApiKey.trim();
   }
   
-  // Fallback to Authorization Bearer
+  // Fallback to Authorization Bearer for other clients
   const authHeader = headers.authorization;
   if (authHeader && typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
-    const token = authHeader.replace('Bearer ', '');
+    const token = authHeader.replace('Bearer ', '').trim();
     if (token && token !== 'undefined') {
-      console.log('DEBUG - Found Bearer token:', token);
       return token;
     }
   }
   
-  console.log('DEBUG - No valid API key found in headers');
   return null;
 };
 
@@ -118,9 +111,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/gpt/clients', async (req, res) => {
     try {
-      console.log('DEBUG - Headers received:', req.headers);
+      // Debug headers being received
+      console.log('=== DEBUG HEADERS ===');
+      console.log('All headers:', JSON.stringify(req.headers, null, 2));
+      console.log('x-api-key header:', req.headers['x-api-key']);
+      console.log('authorization header:', req.headers.authorization);
+      console.log('==================');
+      
       const apiKey = getApiKey(req);
-      console.log('DEBUG - Extracted API key:', apiKey);
+      console.log('Extracted API key:', apiKey);
+      
       if (!apiKey || apiKey === 'undefined') {
         return res.status(200).json({ success: true, data: [], message: 'No API key provided' });
       }
