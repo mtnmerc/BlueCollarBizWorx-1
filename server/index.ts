@@ -66,7 +66,7 @@ app.use((req, res, next) => {
       server: 'BizWorx MCP Server (Integrated)',
       version: '1.0.0',
       protocol: "2024-11-05",
-      tools_count: 11,
+      tools_count: 12,
       endpoints: ["/mcp/call", "/mcp/tools", "/mcp/config", "/mcp/:toolName", "/mcp/sse"],
       external_url: "https://bluecollar-bizworx.replit.app/mcp",
       note: "MCP server running on main port 5000, externally accessible"
@@ -102,7 +102,7 @@ app.use((req, res, next) => {
       message: 'MCP SSE connection established',
       timestamp: new Date().toISOString(),
       server: 'BizWorx MCP Server',
-      tools_available: 11
+      tools_available: 12
     })}\n\n`);
 
     const heartbeat = setInterval(() => {
@@ -136,7 +136,8 @@ app.use((req, res, next) => {
     'create_estimate': { endpoint: '/api/external/estimates', method: 'POST' },
     'update_job_status': { endpoint: '/api/external/jobs/{id}', method: 'PATCH' },
     'get_revenue_stats': { endpoint: '/api/external/revenue', method: 'GET' },
-    'get_services': { endpoint: '/api/external/services', method: 'GET' }
+    'get_services': { endpoint: '/api/external/services', method: 'GET' },
+    'create_service': { endpoint: '/api/external/services', method: 'POST' }
   };
 
   // Helper function for tool descriptions
@@ -152,7 +153,8 @@ app.use((req, res, next) => {
       'create_estimate': 'Create a new estimate',
       'update_job_status': 'Update job status',
       'get_revenue_stats': 'Get revenue statistics',
-      'get_services': 'Get list of all services'
+      'get_services': 'Get list of all services',
+      'create_service': 'Create a new service or product'
     };
     return descriptions[toolName] || 'Unknown tool';
   };

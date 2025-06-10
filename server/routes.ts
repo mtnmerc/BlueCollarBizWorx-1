@@ -63,7 +63,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     'create_estimate': { endpoint: '/api/external/estimates', method: 'POST' },
     'update_job_status': { endpoint: '/api/external/jobs', method: 'PATCH' },
     'get_revenue_stats': { endpoint: '/api/external/revenue', method: 'GET' },
-    'get_services': { endpoint: '/api/external/services', method: 'GET' }
+    'get_services': { endpoint: '/api/external/services', method: 'GET' },
+    'create_service': { endpoint: '/api/external/services', method: 'POST' }
   };
 
   // Tool descriptions
@@ -79,7 +80,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       'create_estimate': 'Create a new estimate',
       'update_job_status': 'Update the status of a job',
       'get_revenue_stats': 'Get revenue statistics for a business',
-      'get_services': 'Retrieve all services for a business'
+      'get_services': 'Retrieve all services for a business',
+      'create_service': 'Create a new service or product'
     };
     return descriptions[toolName] || 'Unknown tool';
   };
