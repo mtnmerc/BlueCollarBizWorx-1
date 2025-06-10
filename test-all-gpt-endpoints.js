@@ -54,27 +54,27 @@ async function runAllTests() {
     phone: '555-000-0000'
   });
   
-  // Test other POST endpoints that might have the same issue
-  await testEndpoint('/gpt/jobs', 'POST', {
+  // Test other POST endpoints - now using correct /api/gpt/ paths
+  await testEndpoint('/api/gpt/jobs', 'POST', {
     clientId: 1,
-    title: 'Test Job Auth Check',
-    description: 'Testing authentication',
+    title: 'Test Job Auth Check Fixed',
+    description: 'Testing authentication after fix',
     scheduledStart: '2025-06-11T10:00:00Z'
   });
   
-  await testEndpoint('/gpt/invoices', 'POST', {
+  await testEndpoint('/api/gpt/invoices', 'POST', {
     clientId: 1,
-    title: 'Test Invoice Auth Check',
+    title: 'Test Invoice Auth Check Fixed',
     total: '100.00'
   });
   
-  await testEndpoint('/gpt/estimates', 'POST', {
+  await testEndpoint('/api/gpt/estimates', 'POST', {
     clientId: 1,
-    title: 'Test Estimate Auth Check',
+    title: 'Test Estimate Auth Check Fixed',
     total: '150.00'
   });
   
-  await testEndpoint('/gpt/revenue');
+  await testEndpoint('/api/gpt/revenue');
   
   console.log('\n=== Test Summary ===');
   console.log('Look for:');

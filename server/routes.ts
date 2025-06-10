@@ -189,10 +189,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/gpt/jobs', authenticateApiKey, async (req, res) => {
+  app.post('/api/gpt/jobs', async (req, res) => {
     try {
+      const apiKey = req.headers.authorization?.replace('Bearer ', '');
+      if (!apiKey || apiKey === 'undefined') {
+        return res.status(401).json({ success: false, error: 'API key required' });
+      }
+
+      const business = await storage.getBusinessByApiKey(apiKey);
+      if (!business) {
+        return res.status(401).json({ success: false, error: 'Invalid API key' });
+      }
+
       const jobData = {
-        businessId: req.businessId,
+        businessId: business.id,
         clientId: req.body.clientId,
         title: req.body.title,
         description: req.body.description || null,
@@ -215,13 +225,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/gpt/revenue', authenticateApiKey, async (req, res) => {
+  app.get('/api/gpt/revenue', async (req, res) => {
     try {
+      const apiKey = req.headers.authorization?.replace('Bearer ', '');
+      if (!apiKey || apiKey === 'undefined') {
+        return res.status(401).json({ success: false, error: 'API key required' });
+      }
+
+      const business = await storage.getBusinessByApiKey(apiKey);
+      if (!business) {
+        return res.status(401).json({ success: false, error: 'Invalid API key' });
+      }
+
       const { period = 'month' } = req.query;
       const now = new Date();
       const month = now.getMonth() + 1;
       const year = now.getFullYear();
-      const stats = await storage.getRevenueStats(req.businessId, month, year);
+      const stats = await storage.getRevenueStats(business.id, month, year);
       res.json({
         success: true,
         data: stats,
@@ -232,10 +252,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/gpt/invoices', authenticateApiKey, async (req, res) => {
+  app.post('/api/gpt/invoices', async (req, res) => {
     try {
+      const apiKey = req.headers.authorization?.replace('Bearer ', '');
+      if (!apiKey || apiKey === 'undefined') {
+        return res.status(401).json({ success: false, error: 'API key required' });
+      }
+
+      const business = await storage.getBusinessByApiKey(apiKey);
+      if (!business) {
+        return res.status(401).json({ success: false, error: 'Invalid API key' });
+      }
+
       const invoiceData = {
-        businessId: req.businessId,
+        businessId: business.id,
         clientId: req.body.clientId,
         title: req.body.title,
         invoiceNumber: `INV-${Date.now()}`,
@@ -257,10 +287,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/gpt/estimates', authenticateApiKey, async (req, res) => {
+  app.post('/api/gpt/estimates', async (req, res) => {
     try {
+      const apiKey = req.headers.authorization?.replace('Bearer ', '');
+      if (!apiKey || apiKey === 'undefined') {
+        return res.status(401).json({ success: false, error: 'API key required' });
+      }
+
+      const business = await storage.getBusinessByApiKey(apiKey);
+      if (!business) {
+        return res.status(401).json({ success: false, error: 'Invalid API key' });
+      }
+
       const estimateData = {
-        businessId: req.businessId,
+        businessId: business.id,
         clientId: req.body.clientId,
         title: req.body.title,
         estimateNumber: `EST-${Date.now()}`,
