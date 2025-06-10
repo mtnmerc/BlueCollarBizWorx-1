@@ -1,0 +1,201 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "BizWorx API",
+    "description": "Business management for blue-collar services",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://bluecollar-bizworx.replit.app"
+    }
+  ],
+  "paths": {
+    "/gpt/clients": {
+      "get": {
+        "operationId": "getClients",
+        "summary": "Get all clients",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createClient",
+        "summary": "Create new client",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": {"type": "string"},
+                  "phone": {"type": "string"},
+                  "email": {"type": "string"},
+                  "address": {"type": "string"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Client created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/gpt/jobs": {
+      "get": {
+        "operationId": "getJobs",
+        "summary": "Get jobs",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "schema": {"type": "string"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createJob",
+        "summary": "Create new job",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["clientId", "title"],
+                "properties": {
+                  "clientId": {"type": "integer"},
+                  "title": {"type": "string"},
+                  "description": {"type": "string"},
+                  "address": {"type": "string"},
+                  "scheduledStart": {"type": "string"},
+                  "scheduledEnd": {"type": "string"},
+                  "estimatedAmount": {"type": "string"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Job created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/gpt/revenue": {
+      "get": {
+        "operationId": "getRevenue",
+        "summary": "Get revenue stats",
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "schema": {"type": "string"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Revenue data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/gpt/invoices": {
+      "post": {
+        "operationId": "createInvoice",
+        "summary": "Create invoice",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["clientId", "title", "total"],
+                "properties": {
+                  "clientId": {"type": "integer"},
+                  "title": {"type": "string"},
+                  "total": {"type": "string"},
+                  "subtotal": {"type": "string"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Invoice created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  },
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ]
+}
