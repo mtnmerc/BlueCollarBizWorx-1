@@ -112,7 +112,7 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     server: 'BizWorx MCP HTTP Server',
     version: '1.0.0',
-    url: 'https://BluecollarBizWorx.replit.app:3002'
+    url: 'https://BluecollarBizWorx.replit.app:8000'
   });
 });
 
@@ -124,7 +124,7 @@ app.get('/test', (req, res) => {
     endpoint: '/mcp/events',
     protocol: 'MCP 2024-11-05',
     tools_available: Object.keys(toolMap).length,
-    correct_url: 'https://BluecollarBizWorx.replit.app:3002'
+    correct_url: 'https://BluecollarBizWorx.replit.app:8000'
   });
 });
 
