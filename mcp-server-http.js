@@ -444,7 +444,7 @@ const HOST = '0.0.0.0';
 app.listen(PORT, HOST, () => {
   console.log('🚀 BizWorx MCP Server Started');
   console.log(`📡 Server: ${HOST}:${PORT}`);
-  console.log(`🌐 External URL: https://BluecollarBizWorx.replit.app:8000`);
+  console.log(`🌐 External URL: https://${process.env.REPL_SLUG || 'BluecollarBizWorx'}.${process.env.REPL_OWNER || 'replit'}.repl.co:8000`);
   console.log(`🔧 MCP Protocol: 2024-11-05`);
   console.log(`📋 Available Tools: ${Object.keys(toolMap).length}`);
   console.log('\n📌 MCP Endpoints:');
