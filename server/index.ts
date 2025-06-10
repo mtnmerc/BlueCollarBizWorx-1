@@ -68,6 +68,49 @@ app.use((req, res, next) => {
     origin: true,
     credentials: true
   }));
+
+  // Proxy MCP server endpoints to internal port 8000
+  app.use('/mcp', createProxyMiddleware({
+    target: 'http://localhost:8000',
+    changeOrigin: true,
+    pathRewrite: {
+      '^/mcp': ''
+    },
+    on: {
+      error: (err, req, res) => {
+        console.error('MCP Proxy Error:', err.message);
+        res.status(502).json({ error: 'MCP server unavailable' });
+      }
+    }
+  }));
+
+  // Proxy SSE endpoint
+  app.use('/sse', createProxyMiddleware({
+    target: 'http://localhost:8000',
+    changeOrigin: true,
+    ws: true,
+    pathRewrite: {
+      '^/sse': '/sse'
+    }
+  }));
+
+  // Proxy health and test endpoints
+  app.use('/health-mcp', createProxyMiddleware({
+    target: 'http://localhost:8000',
+    changeOrigin: true,
+    pathRewrite: {
+      '^/health-mcp': '/health'
+    }
+  }));
+
+  app.use('/test-mcp', createProxyMiddleware({
+    target: 'http://localhost:8000',
+    changeOrigin: true,
+    pathRewrite: {
+      '^/test-mcp': '/test'
+    }
+  }));
+
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
