@@ -1,5 +1,5 @@
 {
-  "openapi": "3.0.0",
+  "openapi": "3.1.0",
   "info": {
     "title": "BizWorx Business Management API",
     "description": "Voice and text commands for managing blue-collar business operations including clients, jobs, invoices, estimates, and revenue tracking.",
@@ -7,7 +7,8 @@
   },
   "servers": [
     {
-      "url": "http://localhost:5000"
+      "url": "http://localhost:5000",
+      "description": "Local development server"
     }
   ],
   "security": [
