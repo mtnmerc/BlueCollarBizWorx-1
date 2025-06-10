@@ -212,6 +212,41 @@ app.get('/tools', (req, res) => {
         month: 'number (optional)',
         year: 'number (optional)'
       }
+    },
+    {
+      name: 'get_estimates',
+      description: 'Get list of estimates',
+      parameters: {
+        apiKey: 'string (required)'
+      }
+    },
+    {
+      name: 'create_estimate',
+      description: 'Create a new estimate',
+      parameters: {
+        apiKey: 'string (required)',
+        clientId: 'number (required)',
+        title: 'string (required)',
+        description: 'string (optional)',
+        lineItems: 'array (required)',
+        total: 'string (required)',
+        validUntil: 'string (optional) - ISO format'
+      }
+    },
+    {
+      name: 'schedule_job',
+      description: 'Schedule a job with specific date and time',
+      parameters: {
+        apiKey: 'string (required)',
+        clientId: 'number (required)',
+        title: 'string (required)',
+        description: 'string (optional)',
+        scheduledDate: 'string (required) - YYYY-MM-DD format',
+        scheduledTime: 'string (required) - HH:MM format',
+        duration: 'number (optional) - duration in hours',
+        address: 'string (optional)',
+        priority: 'string (optional) - low, normal, high, urgent'
+      }
     }
   ];
 
@@ -303,6 +338,54 @@ app.post('/execute/:toolName', async (req, res) => {
         const month = params.month || now.getMonth() + 1;
         const year = params.year || now.getFullYear();
         result = await callBizWorxAPI(`/api/external/revenue?month=${month}&year=${year}`, { apiKey });
+        break;
+
+      case 'get_estimates':
+        result = await callBizWorxAPI('/api/external/estimates', { apiKey });
+        break;
+
+      case 'create_estimate':
+        result = await callBizWorxAPI('/api/external/estimates', {
+          method: 'POST',
+          apiKey,
+          body: {
+            clientId: params.clientId,
+            title: params.title,
+            description: params.description,
+            lineItems: params.lineItems,
+            subtotal: params.total,
+            total: params.total,
+            validUntil: params.validUntil
+          }
+        });
+        break;
+
+      case 'schedule_job':
+        // Parse the date and time to create ISO datetime
+        const scheduleDate = new Date(params.scheduledDate);
+        const [hours, minutes] = params.scheduledTime.split(':');
+        scheduleDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+        
+        let scheduledEnd = null;
+        if (params.duration) {
+          scheduledEnd = new Date(scheduleDate);
+          scheduledEnd.setHours(scheduledEnd.getHours() + params.duration);
+        }
+
+        result = await callBizWorxAPI('/api/external/jobs', {
+          method: 'POST',
+          apiKey,
+          body: {
+            clientId: params.clientId,
+            title: params.title,
+            description: params.description,
+            address: params.address,
+            scheduledStart: scheduleDate.toISOString(),
+            scheduledEnd: scheduledEnd ? scheduledEnd.toISOString() : null,
+            priority: params.priority || 'normal',
+            status: 'scheduled'
+          }
+        });
         break;
 
       default:
