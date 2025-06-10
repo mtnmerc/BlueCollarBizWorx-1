@@ -19,6 +19,85 @@ app.use((req, res, next) => {
 });
 
 // Base URL for BizWorx API
+const BIZWORX_BASE_URL = process.env.BIZWORX_BASE_URL || 'http://localhost:5000';
+
+// Available tools mapping
+const TOOL_ENDPOINTS = {
+  get_clients: '/api/external/clients',
+  create_client: '/api/external/clients',
+  get_estimates: '/api/external/estimates', 
+  create_estimate: '/api/external/estimates',
+  get_jobs: '/api/external/jobs',
+  create_job: '/api/external/jobs',
+  update_job_status: '/api/external/jobs',
+  get_revenue_stats: '/api/external/revenue',
+  create_invoice: '/api/external/invoices',
+  get_invoices: '/api/external/invoices'
+};
+
+// Webhook endpoint for N8N
+app.post('/webhook', async (req, res) => {
+  try {
+    const { tool, apiKey, ...params } = req.body;
+    
+    if (!tool || !apiKey) {
+      return res.status(400).json({ 
+        error: 'Missing required parameters: tool and apiKey' 
+      });
+    }
+
+    const endpoint = TOOL_ENDPOINTS[tool];
+    if (!endpoint) {
+      return res.status(400).json({ 
+        error: `Unknown tool: ${tool}. Available tools: ${Object.keys(TOOL_ENDPOINTS).join(', ')}` 
+      });
+    }
+
+    // Determine HTTP method based on tool
+    let method = 'GET';
+    let body = null;
+    
+    if (tool.startsWith('create_') || tool.startsWith('update_')) {
+      method = 'POST';
+      if (tool === 'update_job_status') {
+        method = 'PATCH';
+        endpoint = `/api/external/jobs/${params.jobId}`;
+        body = { status: params.status };
+      } else {
+        body = params;
+      }
+    }
+
+    // Make request to BizWorx API
+    const response = await fetch(`${BIZWORX_BASE_URL}${endpoint}`, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': apiKey
+      },
+      body: body ? JSON.stringify(body) : null
+    });
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || `HTTP ${response.status}`);
+    }
+
+    res.json({
+      success: true,
+      tool,
+      data
+    });
+
+  } catch (error) {
+    console.error('Webhook error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
 const BIZWORX_BASE_URL = 'https://BluecollarBizWorx.replit.app';
 
 // Helper function to make requests to BizWorx API
