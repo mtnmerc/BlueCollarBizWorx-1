@@ -45,7 +45,7 @@ export default function InvoiceDetail() {
         const viewportHeight = window.visualViewport?.height || window.innerHeight;
         const documentHeight = window.innerHeight;
         const keyboardHeight = documentHeight - viewportHeight;
-        
+
         if (keyboardHeight > 100) {
           // Keyboard is visible - position modal higher and smaller
           modal.style.position = 'fixed';
@@ -77,17 +77,17 @@ export default function InvoiceDetail() {
     if (paymentDialogOpen || showSignaturePad) {
       // Initial positioning
       setTimeout(adjustModalPosition, 100);
-      
+
       // Listen for viewport changes (keyboard show/hide)
       const handleResize = () => {
         setTimeout(adjustModalPosition, 150);
       };
-      
+
       window.addEventListener('resize', handleResize);
       if (window.visualViewport) {
         window.visualViewport.addEventListener('resize', handleResize);
       }
-      
+
       return () => {
         window.removeEventListener('resize', handleResize);
         if (window.visualViewport) {
@@ -101,11 +101,11 @@ export default function InvoiceDetail() {
   const setupCanvas = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
+
     const rect = canvas.getBoundingClientRect();
     canvas.width = rect.width * 2;
     canvas.height = rect.height * 2;
-    
+
     const ctx = canvas.getContext('2d');
     if (ctx) {
       ctx.scale(2, 2);
@@ -125,11 +125,11 @@ export default function InvoiceDetail() {
   const getEventPos = (e: any) => {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
-    
+
     const rect = canvas.getBoundingClientRect();
     const clientX = e.clientX || (e.touches && e.touches[0]?.clientX) || 0;
     const clientY = e.clientY || (e.touches && e.touches[0]?.clientY) || 0;
-    
+
     return {
       x: clientX - rect.left,
       y: clientY - rect.top
@@ -175,7 +175,7 @@ export default function InvoiceDetail() {
     const canvas = canvasRef.current;
     if (canvas) {
       const dataURL = canvas.toDataURL();
-      
+
       // If we're in payment recording mode, just set the signature for later use
       if (paymentDialogOpen) {
         setSignature(dataURL);
@@ -454,17 +454,17 @@ Thank you for your business!`;
 
     // Fallback to copying link and showing instructions
     await navigator.clipboard.writeText(shareUrl);
-    
+
     // Create Gmail link
     const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(client.email)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(messageText)}`;
-    
+
     // Update invoice status to sent
     await fetch(`/api/invoices/${invoiceId}/send-email`, { method: "POST" });
     queryClient.invalidateQueries({ queryKey: [`/api/invoices/${invoiceId}`] });
-    
+
     // Open Gmail
     window.open(gmailUrl, '_blank');
-    
+
     toast({
       title: "Invoice Ready to Send",
       description: "Link copied and Gmail opened. Send when ready!",
@@ -496,14 +496,14 @@ Thank you for your business!`;
 
     const shareUrl = `${window.location.origin}/invoice/${token}`;
     const messageText = `Hi ${client.name}, please review your invoice for ${invoice?.title}: ${shareUrl}`;
-    
+
     // Update invoice status to sent
     await fetch(`/api/invoices/${invoiceId}/send-email`, { method: "POST" });
     queryClient.invalidateQueries({ queryKey: [`/api/invoices/${invoiceId}`] });
-    
+
     const smsUrl = `sms:${client.phone}?body=${encodeURIComponent(messageText)}`;
     window.location.href = smsUrl;
-    
+
     toast({
       title: "SMS App Opened",
       description: "Your SMS app should open with the invoice link ready to send.",
@@ -525,7 +525,7 @@ Thank you for your business!`;
 
     const shareUrl = `${window.location.origin}/invoice/${token}`;
     await navigator.clipboard.writeText(shareUrl);
-    
+
     toast({
       title: "Link Copied",
       description: "Invoice link copied to clipboard.",
@@ -710,7 +710,7 @@ Thank you for your business!`;
             {invoice.description && (
               <p className="text-muted-foreground mb-4">{invoice.description}</p>
             )}
-            
+
             {/* Client Information */}
             <div className="bg-muted/30 rounded-lg p-4 mb-4">
               <h4 className="font-medium mb-3 flex items-center">
@@ -840,7 +840,7 @@ Thank you for your business!`;
                   <span className="text-muted-foreground">Deposit Amount:</span>
                   <span className="font-semibold text-lg">${parseFloat(invoice.depositAmount || "0").toFixed(2)}</span>
                 </div>
-                
+
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Status:</span>
                   <Badge variant={invoice.depositPaid ? "default" : "outline"}>
@@ -867,7 +867,7 @@ Thank you for your business!`;
                     <p className="text-xs text-muted-foreground text-center">
                       Creates a secure payment link for the client
                     </p>
-                    
+
                     <div className="relative">
                       <div className="absolute inset-0 flex items-center">
                         <span className="w-full border-t" />
@@ -876,7 +876,7 @@ Thank you for your business!`;
                         <span className="bg-background px-2 text-muted-foreground">Or</span>
                       </div>
                     </div>
-                    
+
                     <Button 
                       onClick={() => markDepositCollectedMutation.mutate()}
                       disabled={markDepositCollectedMutation.isPending}
@@ -922,17 +922,7 @@ Thank you for your business!`;
 
         {/* Payment Recording Dialog */}
         <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
-          <DialogTrigger asChild>
-            <Button 
-              variant="outline" 
-              className="w-full mb-6"
-              disabled={invoice?.status === "paid"}
-            >
-              <CreditCard className="h-4 w-4 mr-2" />
-              Record Payment
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-sm w-[95vw] max-h-[85vh] overflow-y-auto p-4 sm:max-h-[60vh]">
+          <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] w-[calc(100vw-32px)] sm:w-full">
             <DialogHeader>
               <DialogTitle>Record Payment</DialogTitle>
             </DialogHeader>
@@ -953,7 +943,7 @@ Thank you for your business!`;
                   Invoice total: ${parseFloat(invoice?.total || "0").toFixed(2)}
                 </p>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="payment-method">Payment Method</Label>
                 <Select value={paymentMethod} onValueChange={setPaymentMethod}>
@@ -969,7 +959,7 @@ Thank you for your business!`;
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="payment-notes">Notes (Optional)</Label>
                 <Input
@@ -992,7 +982,7 @@ Thank you for your business!`;
                     Collect client signature
                   </label>
                 </div>
-                
+
                 {signatureRequired && (
                   <div className="ml-6 space-y-2">
                     {!signature ? (
@@ -1034,7 +1024,7 @@ Thank you for your business!`;
                   </div>
                 )}
               </div>
-              
+
               <div className="flex gap-3 pt-4">
                 <Button
                   variant="outline"
