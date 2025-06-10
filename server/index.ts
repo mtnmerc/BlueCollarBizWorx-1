@@ -4,6 +4,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import cors from 'cors';
 import { createProxyMiddleware } from 'http-proxy-middleware';
+import path from 'path';
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
@@ -93,7 +94,20 @@ app.use((req, res, next) => {
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
-    serveStatic(app);
+    // Custom static serving that preserves API routes
+    const distPath = path.resolve(import.meta.dirname, "public");
+    app.use(express.static(distPath));
+    
+    // Only serve index.html for non-API routes
+    app.use("*", (req, res, next) => {
+      if (req.originalUrl.startsWith('/api/') || 
+          req.originalUrl.startsWith('/gpt/') || 
+          req.originalUrl.startsWith('/health') || 
+          req.originalUrl.startsWith('/mcp/')) {
+        return next();
+      }
+      res.sendFile(path.resolve(distPath, "index.html"));
+    });
   }
 
   // ALWAYS serve the app on port 5000
