@@ -102,9 +102,9 @@ app.use((req, res, next) => {
     return descriptions[toolName] || 'Unknown tool';
   };
 
-  // Direct API call function for MCP tools
+  // Direct API call function for MCP tools - use localhost for internal calls
   const callBizWorxAPI = async (endpoint: string, options: any = {}) => {
-    const baseUrl = 'https://BluecollarBizWorx.replit.app';
+    const baseUrl = 'http://localhost:5000'; // Use internal localhost for better performance
 
     try {
       const response = await fetch(`${baseUrl}${endpoint}`, {
@@ -192,7 +192,7 @@ app.use((req, res, next) => {
         method: "X-API-Key",
         description: "Business API key required in X-API-Key header"
       },
-      baseUrl: "https://BluecollarBizWorx.replit.app",
+      baseUrl: "https://bluecollar-bizworx.replit.app",
       tools: Object.keys(toolMap).map(name => ({
         name,
         description: getToolDescription(name),
@@ -219,7 +219,30 @@ app.use((req, res, next) => {
       version: '1.0.0',
       protocol: "2024-11-05",
       tools_count: Object.keys(toolMap).length,
-      endpoints: ["/mcp/call", "/mcp/tools", "/mcp/config"]
+      endpoints: ["/mcp/call", "/mcp/tools", "/mcp/config", "/mcp/:toolName"],
+      external_url: "https://bluecollar-bizworx.replit.app/mcp",
+      note: "MCP server running on main port 5000, externally accessible"
+    });
+  });
+
+  // Simple MCP test endpoint
+  app.get('/mcp/test', (req, res) => {
+    res.json({
+      message: 'MCP server is externally accessible',
+      timestamp: new Date().toISOString(),
+      available_endpoints: [
+        'GET /mcp/health - Server health check',
+        'GET /mcp/config - Server configuration',
+        'GET /mcp/tools - List available tools', 
+        'POST /mcp/call - Standard MCP protocol calls',
+        'POST /mcp/:toolName - Direct tool execution'
+      ],
+      example_tool_call: {
+        method: 'POST',
+        url: 'https://bluecollar-bizworx.replit.app/mcp/get_clients',
+        headers: { 'X-API-Key': 'your-api-key' },
+        body: { apiKey: 'your-api-key' }
+      }
     });
   });
 
