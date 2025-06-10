@@ -46,20 +46,15 @@ const authenticateApiKey = async (req: any, res: any, next: any) => {
 const getApiKey = (req: any): string | null => {
   const headers = req.headers;
   
-  // Try multiple possible header formats for X-API-Key
-  const possibleKeys = [
-    'x-api-key',
-    'X-API-Key', 
-    'X-Api-Key',
-    'xapikey',
-    'api-key'
-  ];
+  // Debug logging - remove after fixing
+  console.log('DEBUG - Raw headers object:', JSON.stringify(headers, null, 2));
   
-  for (const key of possibleKeys) {
-    const value = headers[key] || headers[key.toLowerCase()];
-    if (value && value !== 'undefined' && typeof value === 'string') {
-      return value;
-    }
+  // Express.js normalizes headers to lowercase
+  // Check for x-api-key in various formats
+  const xApiKey = headers['x-api-key'];
+  if (xApiKey && typeof xApiKey === 'string' && xApiKey !== 'undefined') {
+    console.log('DEBUG - Found x-api-key:', xApiKey);
+    return xApiKey;
   }
   
   // Fallback to Authorization Bearer
@@ -67,10 +62,12 @@ const getApiKey = (req: any): string | null => {
   if (authHeader && typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
     const token = authHeader.replace('Bearer ', '');
     if (token && token !== 'undefined') {
+      console.log('DEBUG - Found Bearer token:', token);
       return token;
     }
   }
   
+  console.log('DEBUG - No valid API key found in headers');
   return null;
 };
 
