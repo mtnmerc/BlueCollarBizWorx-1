@@ -42,6 +42,13 @@ const authenticateApiKey = async (req: any, res: any, next: any) => {
 
 
 
+// Helper function to extract API key from headers
+const getApiKey = (req: any): string | null => {
+  const xApiKey = req.headers['x-api-key'];
+  const apiKey = Array.isArray(xApiKey) ? xApiKey[0] : xApiKey;
+  return apiKey || req.headers.authorization?.replace('Bearer ', '') || null;
+};
+
 export async function registerRoutes(app: Express): Promise<Server> {
 
   // Simple connectivity test endpoint
@@ -56,7 +63,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ChatGPT Custom GPT endpoints - moved to /api/gpt/ to bypass Vite middleware
   app.get('/api/gpt/dashboard/stats', async (req, res) => {
     try {
-      const apiKey = req.headers.authorization?.replace('Bearer ', '');
+      const apiKey = getApiKey(req);
       if (!apiKey || apiKey === 'undefined') {
         return res.status(200).json({ success: true, data: { totalClients: 0, totalJobs: 0, revenue: 0 }, message: 'No API key provided' });
       }
@@ -89,7 +96,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/gpt/clients', async (req, res) => {
     try {
-      const apiKey = req.headers.authorization?.replace('Bearer ', '');
+      const apiKey = req.headers['x-api-key'] || req.headers.authorization?.replace('Bearer ', '');
       if (!apiKey || apiKey === 'undefined') {
         return res.status(200).json({ success: true, data: [], message: 'No API key provided' });
       }
