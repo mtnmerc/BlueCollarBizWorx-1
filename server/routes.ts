@@ -141,7 +141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/gpt/clients', async (req, res) => {
     try {
-      const apiKey = req.headers.authorization?.replace('Bearer ', '');
+      const apiKey = getApiKey(req);
       if (!apiKey || apiKey === 'undefined') {
         return res.status(401).json({ success: false, error: 'API key required' });
       }
@@ -172,7 +172,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/gpt/jobs', async (req, res) => {
     try {
-      const apiKey = req.headers.authorization?.replace('Bearer ', '');
+      const apiKey = getApiKey(req);
       if (!apiKey || apiKey === 'undefined') {
         return res.status(200).json({ success: true, data: [], message: 'No API key provided' });
       }
