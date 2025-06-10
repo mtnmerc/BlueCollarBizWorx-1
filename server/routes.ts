@@ -1,10 +1,12 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertBusinessSchema, insertUserSchema, insertClientSchema, insertServiceSchema, insertJobSchema, insertInvoiceSchema, insertEstimateSchema, insertTimeEntrySchema } from "@shared/schema";
+import { db } from "./db";
+import { insertBusinessSchema, insertUserSchema, insertClientSchema, insertServiceSchema, insertJobSchema, insertInvoiceSchema, insertEstimateSchema, insertTimeEntrySchema, clients, jobs, businesses } from "@shared/schema";
 import { z } from "zod";
 import express from "express";
 import path from "path";
+import { eq } from "drizzle-orm";
 
 // Authentication middleware
 const authenticateSession = (req: any, res: any, next: any) => {
@@ -51,25 +53,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // ChatGPT Custom GPT endpoints - use existing API key authentication
-  app.get('/gpt/clients', authenticateApiKey, async (req, res) => {
+  // ChatGPT Custom GPT endpoints - simplified authentication
+  app.get('/gpt/clients', async (req, res) => {
     try {
-      // Direct database query to avoid middleware issues
-      const result = await db.select().from(clients).where(eq(clients.businessId, (req as any).businessId));
+      const apiKey = req.headers.authorization?.replace('Bearer ', '');
+      if (!apiKey) {
+        return res.status(200).json({ success: true, data: [], message: 'No API key provided' });
+      }
+
+      // Direct database query for business lookup
+      const [business] = await db.select().from(businesses).where(eq(businesses.apiKey, apiKey));
+      if (!business) {
+        return res.status(200).json({ success: true, data: [], message: 'Invalid API key' });
+      }
+
+      // Direct database query for clients
+      const clientResults = await db.select().from(clients).where(eq(clients.businessId, business.id));
+      
       res.json({
         success: true,
-        data: result.map(c => ({
+        data: clientResults.map((c: any) => ({
           id: c.id,
           name: c.name,
           email: c.email,
           phone: c.phone,
           address: c.address
         })),
-        message: `Found ${result.length} clients`
+        message: `Found ${clientResults.length} clients`
       });
     } catch (error: any) {
       console.error('GPT clients error:', error);
-      res.status(200).json({ success: true, data: [], message: 'No clients found' });
+      res.status(200).json({ success: true, data: [], message: 'Error retrieving clients' });
     }
   });
 
@@ -94,29 +108,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/gpt/jobs', authenticateApiKey, async (req, res) => {
+  app.get('/gpt/jobs', async (req, res) => {
     try {
+      const apiKey = req.headers.authorization?.replace('Bearer ', '');
+      if (!apiKey) {
+        return res.status(401).json({ success: false, error: 'API key required' });
+      }
+
+      const business = await storage.getBusinessByApiKey(apiKey);
+      if (!business) {
+        return res.status(401).json({ success: false, error: 'Invalid API key' });
+      }
+      
       const { date } = req.query;
-      // Direct database query to avoid middleware issues
-      const result = await db.select({
-        id: jobs.id,
-        title: jobs.title,
-        status: jobs.status,
-        scheduledStart: jobs.scheduledStart,
-        scheduledEnd: jobs.scheduledEnd,
-        address: jobs.address,
-        clientName: clients.name
-      })
-      .from(jobs)
-      .leftJoin(clients, eq(jobs.clientId, clients.id))
-      .where(eq(jobs.businessId, (req as any).businessId));
+      const result = date ? 
+        await storage.getJobsByDate(business.id, new Date(date as string)) :
+        await storage.getJobsByBusiness(business.id);
       
       res.json({
         success: true,
-        data: result.map(j => ({
+        data: result.map((j: any) => ({
           id: j.id,
           title: j.title,
-          client: j.clientName,
+          client: j.client?.name,
           status: j.status,
           scheduledStart: j.scheduledStart,
           scheduledEnd: j.scheduledEnd,
