@@ -34,31 +34,7 @@ export default function InvoiceDetail() {
   const [isDrawing, setIsDrawing] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Force center modal on open
-  useEffect(() => {
-    if (paymentDialogOpen) {
-      const timer = setTimeout(() => {
-        const modal = document.querySelector('[data-radix-dialog-content]') as HTMLElement;
-        if (modal) {
-          // Completely override all positioning
-          modal.style.cssText = `
-            position: fixed !important;
-            left: 50% !important;
-            top: 50% !important;
-            transform: translate(-50%, -50%) !important;
-            width: min(90vw, 400px) !important;
-            max-height: 80vh !important;
-            margin: 0 !important;
-            z-index: 9999 !important;
-            right: auto !important;
-            bottom: auto !important;
-            max-width: 400px !important;
-          `;
-        }
-      }, 10);
-      return () => clearTimeout(timer);
-    }
-  }, [paymentDialogOpen]);
+
 
 
 
@@ -885,142 +861,154 @@ Thank you for your business!`;
           </Card>
         )}
 
-        {/* Payment Recording Dialog */}
-        <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
-          <DialogTrigger asChild>
-            <Button 
-              variant="outline" 
-              className="w-full mb-6"
-              disabled={invoice?.status === "paid"}
-            >
-              <CreditCard className="h-4 w-4 mr-2" />
-              Record Payment
-            </Button>
-          </DialogTrigger>
-          <DialogContent 
-            className="overflow-y-auto p-4"
+        {/* Payment Recording Section */}
+        {!paymentDialogOpen ? (
+          <Button 
+            variant="outline" 
+            className="w-full mb-6"
+            disabled={invoice?.status === "paid"}
+            onClick={() => setPaymentDialogOpen(true)}
           >
-            <DialogHeader>
-              <DialogTitle>Record Payment</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="payment-amount">Payment Amount ($)</Label>
-                <Input
-                  id="payment-amount"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max={parseFloat(invoice?.total || "0")}
-                  placeholder="0.00"
-                  value={paymentAmount}
-                  onChange={(e) => setPaymentAmount(e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Invoice total: ${parseFloat(invoice?.total || "0").toFixed(2)}
-                </p>
+            <CreditCard className="h-4 w-4 mr-2" />
+            Record Payment
+          </Button>
+        ) : (
+          <Card className="mb-6">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center">
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Record Payment
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setPaymentDialogOpen(false)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="payment-method">Payment Method</Label>
-                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select payment method" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="cash">Cash</SelectItem>
-                    <SelectItem value="check">Check</SelectItem>
-                    <SelectItem value="credit_card">Credit Card</SelectItem>
-                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="payment-notes">Notes (Optional)</Label>
-                <Input
-                  id="payment-notes"
-                  placeholder="Payment reference, check number, etc."
-                  value={paymentNotes}
-                  onChange={(e) => setPaymentNotes(e.target.value)}
-                />
-              </div>
-
-              {/* Signature Collection */}
-              <div className="space-y-3">
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="signature-required" 
-                    checked={signatureRequired}
-                    onCheckedChange={(checked) => setSignatureRequired(checked as boolean)}
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="payment-amount">Payment Amount ($)</Label>
+                  <Input
+                    id="payment-amount"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max={parseFloat(invoice?.total || "0")}
+                    placeholder="0.00"
+                    value={paymentAmount}
+                    onChange={(e) => setPaymentAmount(e.target.value)}
                   />
-                  <label htmlFor="signature-required" className="text-sm font-medium">
-                    Collect client signature
-                  </label>
+                  <p className="text-xs text-muted-foreground">
+                    Invoice total: ${parseFloat(invoice?.total || "0").toFixed(2)}
+                  </p>
                 </div>
                 
-                {signatureRequired && (
-                  <div className="ml-6 space-y-2">
-                    {!signature ? (
-                      <Button
-                        onClick={() => setShowSignaturePad(true)}
-                        variant="outline"
-                        size="sm"
-                        type="button"
-                      >
-                        <PenTool className="h-4 w-4 mr-2" />
-                        Add Signature
-                      </Button>
-                    ) : (
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">Signature captured</span>
-                          <Badge className="bg-green-600">
-                            <Check className="h-3 w-3 mr-1" />
-                            Signed
-                          </Badge>
-                        </div>
-                        <div className="border rounded-lg p-2 bg-muted max-w-sm">
-                          <img 
-                            src={signature} 
-                            alt="Client Signature" 
-                            className="w-full h-16 object-contain"
-                          />
-                        </div>
+                <div className="space-y-2">
+                  <Label htmlFor="payment-method">Payment Method</Label>
+                  <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select payment method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">Cash</SelectItem>
+                      <SelectItem value="check">Check</SelectItem>
+                      <SelectItem value="credit_card">Credit Card</SelectItem>
+                      <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="payment-notes">Notes (Optional)</Label>
+                  <Input
+                    id="payment-notes"
+                    placeholder="Payment reference, check number, etc."
+                    value={paymentNotes}
+                    onChange={(e) => setPaymentNotes(e.target.value)}
+                  />
+                </div>
+
+                {/* Signature Collection */}
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="signature-required" 
+                      checked={signatureRequired}
+                      onCheckedChange={(checked) => setSignatureRequired(checked as boolean)}
+                    />
+                    <label htmlFor="signature-required" className="text-sm font-medium">
+                      Collect client signature
+                    </label>
+                  </div>
+                  
+                  {signatureRequired && (
+                    <div className="ml-6 space-y-2">
+                      {!signature ? (
                         <Button
-                          onClick={() => setSignature(null)}
+                          onClick={() => setShowSignaturePad(true)}
                           variant="outline"
                           size="sm"
                           type="button"
                         >
-                          Clear Signature
+                          <PenTool className="h-4 w-4 mr-2" />
+                          Add Signature
                         </Button>
-                      </div>
-                    )}
-                  </div>
-                )}
+                      ) : (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">Signature captured</span>
+                            <Badge className="bg-green-600">
+                              <Check className="h-3 w-3 mr-1" />
+                              Signed
+                            </Badge>
+                          </div>
+                          <div className="border rounded-lg p-2 bg-muted max-w-sm">
+                            <img 
+                              src={signature} 
+                              alt="Client Signature" 
+                              className="w-full h-16 object-contain"
+                            />
+                          </div>
+                          <Button
+                            onClick={() => setSignature(null)}
+                            variant="outline"
+                            size="sm"
+                            type="button"
+                          >
+                            Clear Signature
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => setPaymentDialogOpen(false)}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleRecordPayment}
+                    disabled={recordPaymentMutation.isPending}
+                    className="flex-1 gradient-primary"
+                  >
+                    {recordPaymentMutation.isPending ? "Recording..." : "Record Payment"}
+                  </Button>
+                </div>
               </div>
-              
-              <div className="flex gap-3 pt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setPaymentDialogOpen(false)}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleRecordPayment}
-                  disabled={recordPaymentMutation.isPending}
-                  className="flex-1 gradient-primary"
-                >
-                  {recordPaymentMutation.isPending ? "Recording..." : "Record Payment"}
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Job Photos Section */}
         <Card>
