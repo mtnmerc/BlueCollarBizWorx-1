@@ -40,6 +40,15 @@ const authenticateApiKey = async (req: any, res: any, next: any) => {
 
 export async function registerRoutes(app: Express): Promise<Server> {
 
+  // Priority middleware to handle MCP routes before any other middleware
+  app.use('/mcp/*', (req, res, next) => {
+    // Set headers to prevent caching and ensure proper response
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    next();
+  });
+
   // MCP Server endpoints - must be first to avoid frontend routing conflicts
   
   // Tool mapping for MCP integration
@@ -99,6 +108,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'GET /mcp/health - Server health check',
         'GET /mcp/config - Server configuration',
         'GET /mcp/tools - List available tools', 
+        'GET /mcp/sse - Server-Sent Events endpoint',
         'POST /mcp/call - Standard MCP protocol calls',
         'POST /mcp/:toolName - Direct tool execution'
       ],
@@ -108,6 +118,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
         headers: { 'X-API-Key': 'your-api-key' },
         body: { apiKey: 'your-api-key' }
       }
+    });
+  });
+
+  // MCP Server-Sent Events endpoint for N8N integration
+  app.get('/mcp/sse', (req, res) => {
+    // Set SSE headers
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'Cache-Control'
+    });
+
+    // Send initial connection message
+    res.write(`data: ${JSON.stringify({
+      type: 'connection',
+      message: 'MCP SSE connection established',
+      timestamp: new Date().toISOString(),
+      server: 'BizWorx MCP Server',
+      tools_available: Object.keys(toolMap).length
+    })}\n\n`);
+
+    // Send periodic heartbeat
+    const heartbeat = setInterval(() => {
+      res.write(`data: ${JSON.stringify({
+        type: 'heartbeat',
+        timestamp: new Date().toISOString(),
+        status: 'alive'
+      })}\n\n`);
+    }, 30000); // Every 30 seconds
+
+    // Send available tools information
+    res.write(`data: ${JSON.stringify({
+      type: 'tools',
+      tools: Object.keys(toolMap).map(name => ({
+        name,
+        description: getToolDescription(name),
+        endpoint: `/mcp/${name}`,
+        method: 'POST'
+      })),
+      timestamp: new Date().toISOString()
+    })}\n\n`);
+
+    // Clean up on client disconnect
+    req.on('close', () => {
+      clearInterval(heartbeat);
+      res.end();
+    });
+
+    req.on('error', () => {
+      clearInterval(heartbeat);
+      res.end();
     });
   });
 
