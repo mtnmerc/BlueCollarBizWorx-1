@@ -12,6 +12,20 @@ const __dirname = dirname(__filename);
 const app = express();
 app.use(express.json());
 
+// Add CORS middleware
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Cache-Control, X-API-Key, Authorization, Content-Type');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+});
+
 // Start MCP server process
 const mcpServer = spawn('node', [join(__dirname, 'mcp-server.js')], {
   stdio: ['pipe', 'pipe', 'pipe']
@@ -85,7 +99,9 @@ app.get('/mcp/events', (req, res) => {
     'Cache-Control': 'no-cache',
     'Connection': 'keep-alive',
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Cache-Control, X-API-Key'
+    'Access-Control-Allow-Headers': 'Cache-Control, X-API-Key, Authorization, Content-Type',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Credentials': 'true'
   });
 
   // Send initial connection event with proper MCP protocol
