@@ -40,6 +40,288 @@ const authenticateApiKey = async (req: any, res: any, next: any) => {
 
 export async function registerRoutes(app: Express): Promise<Server> {
 
+  // MCP Server endpoints - must be first to avoid frontend routing conflicts
+  
+  // Tool mapping for MCP integration
+  const toolMap: Record<string, { endpoint: string; method: string }> = {
+    'get_clients': { endpoint: '/api/external/clients', method: 'GET' },
+    'create_client': { endpoint: '/api/external/clients', method: 'POST' },
+    'get_jobs': { endpoint: '/api/external/jobs', method: 'GET' },
+    'create_job': { endpoint: '/api/external/jobs', method: 'POST' },
+    'get_invoices': { endpoint: '/api/external/invoices', method: 'GET' },
+    'create_invoice': { endpoint: '/api/external/invoices', method: 'POST' },
+    'get_estimates': { endpoint: '/api/external/estimates', method: 'GET' },
+    'create_estimate': { endpoint: '/api/external/estimates', method: 'POST' },
+    'update_job_status': { endpoint: '/api/external/jobs', method: 'PATCH' },
+    'get_revenue_stats': { endpoint: '/api/external/revenue', method: 'GET' },
+    'get_services': { endpoint: '/api/external/services', method: 'GET' }
+  };
+
+  // Tool descriptions
+  const getToolDescription = (toolName: string): string => {
+    const descriptions: Record<string, string> = {
+      'get_clients': 'Retrieve all clients for a business',
+      'create_client': 'Create a new client',
+      'get_jobs': 'Retrieve all jobs for a business',
+      'create_job': 'Create a new job/appointment',
+      'get_invoices': 'Retrieve all invoices for a business',
+      'create_invoice': 'Create a new invoice',
+      'get_estimates': 'Retrieve all estimates for a business',
+      'create_estimate': 'Create a new estimate',
+      'update_job_status': 'Update the status of a job',
+      'get_revenue_stats': 'Get revenue statistics for a business',
+      'get_services': 'Retrieve all services for a business'
+    };
+    return descriptions[toolName] || 'Unknown tool';
+  };
+
+  // MCP health check
+  app.get('/mcp/health', (req, res) => {
+    res.json({ 
+      status: 'healthy', 
+      timestamp: new Date().toISOString(),
+      server: 'BizWorx MCP Server (Integrated)',
+      version: '1.0.0',
+      protocol: "2024-11-05",
+      tools_count: Object.keys(toolMap).length,
+      endpoints: ["/mcp/call", "/mcp/tools", "/mcp/config", "/mcp/:toolName"],
+      external_url: "https://bluecollar-bizworx.replit.app/mcp",
+      note: "MCP server running on main port 5000, externally accessible"
+    });
+  });
+
+  // Simple MCP test endpoint
+  app.get('/mcp/test', (req, res) => {
+    res.json({
+      message: 'MCP server is externally accessible',
+      timestamp: new Date().toISOString(),
+      available_endpoints: [
+        'GET /mcp/health - Server health check',
+        'GET /mcp/config - Server configuration',
+        'GET /mcp/tools - List available tools', 
+        'POST /mcp/call - Standard MCP protocol calls',
+        'POST /mcp/:toolName - Direct tool execution'
+      ],
+      example_tool_call: {
+        method: 'POST',
+        url: 'https://bluecollar-bizworx.replit.app/mcp/get_clients',
+        headers: { 'X-API-Key': 'your-api-key' },
+        body: { apiKey: 'your-api-key' }
+      }
+    });
+  });
+
+  // MCP configuration endpoint
+  app.get('/mcp/config', (req, res) => {
+    res.json({
+      name: "BizWorx MCP Server",
+      version: "1.0.0",
+      protocol: "2024-11-05",
+      endpoints: {
+        call: "/mcp/call",
+        tools: "/mcp/tools",
+        health: "/mcp/health"
+      },
+      authentication: {
+        required: true,
+        method: "X-API-Key",
+        description: "Business API key required in X-API-Key header"
+      },
+      baseUrl: "https://bluecollar-bizworx.replit.app",
+      tools: Object.keys(toolMap).map(name => ({
+        name,
+        description: getToolDescription(name),
+        inputSchema: {
+          type: "object",
+          properties: {
+            apiKey: { type: "string", description: "Business API key" }
+          },
+          required: ["apiKey"]
+        }
+      }))
+    });
+  });
+
+  // List available tools
+  app.get('/mcp/tools', (req, res) => {
+    const tools = Object.keys(toolMap).map(name => ({
+      name,
+      description: getToolDescription(name),
+      inputSchema: {
+        type: "object",
+        properties: {
+          apiKey: { type: "string", description: "Business API key" }
+        },
+        required: ["apiKey"]
+      }
+    }));
+
+    res.json({ tools });
+  });
+
+  // Direct API call function for MCP tools
+  const callBizWorxAPI = async (endpoint: string, options: any = {}) => {
+    const baseUrl = 'http://localhost:5000';
+
+    try {
+      const response = await fetch(`${baseUrl}${endpoint}`, {
+        method: options.method || 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': options.apiKey,
+          ...options.headers,
+        },
+        body: options.body ? JSON.stringify(options.body) : undefined,
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status} ${await response.text()}`);
+      }
+
+      return await response.json();
+    } catch (error: any) {
+      console.error('BizWorx API Error:', error);
+      throw error;
+    }
+  };
+
+  // MCP tool execution endpoint
+  app.post('/mcp/:toolName', async (req, res) => {
+    try {
+      const { toolName } = req.params;
+      const { apiKey, ...params } = req.body;
+
+      if (!apiKey) {
+        return res.status(400).json({ 
+          error: 'API key is required',
+          example: { apiKey: 'your-business-api-key' }
+        });
+      }
+
+      const tool = toolMap[toolName];
+      if (!tool) {
+        return res.status(404).json({ 
+          error: `Tool '${toolName}' not found`,
+          available_tools: Object.keys(toolMap)
+        });
+      }
+
+      const result = await callBizWorxAPI(tool.endpoint, {
+        method: tool.method,
+        apiKey,
+        body: params
+      });
+
+      res.json({
+        tool: toolName,
+        result,
+        timestamp: new Date().toISOString()
+      });
+
+    } catch (error: any) {
+      console.error(`MCP Tool Error [${req.params.toolName}]:`, error);
+      res.status(500).json({ 
+        error: error.message || 'Internal server error',
+        tool: req.params.toolName,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
+  // Standard MCP call endpoint
+  app.post('/mcp/call', async (req, res) => {
+    try {
+      const { method, params } = req.body;
+
+      if (method === 'tools/list') {
+        const tools = Object.keys(toolMap).map(name => ({
+          name,
+          description: getToolDescription(name),
+          inputSchema: {
+            type: "object",
+            properties: {
+              apiKey: { type: "string", description: "Business API key" }
+            },
+            required: ["apiKey"]
+          }
+        }));
+
+        return res.json({
+          jsonrpc: "2.0",
+          id: req.body.id || 1,
+          result: { tools }
+        });
+      }
+
+      if (method === 'tools/call') {
+        const { name: toolName, arguments: args } = params;
+        const { apiKey, ...toolParams } = args || {};
+
+        if (!apiKey) {
+          return res.status(400).json({
+            jsonrpc: "2.0",
+            id: req.body.id || 1,
+            error: {
+              code: -32602,
+              message: "API key is required"
+            }
+          });
+        }
+
+        const tool = toolMap[toolName as keyof typeof toolMap];
+        if (!tool) {
+          return res.status(404).json({
+            jsonrpc: "2.0",
+            id: req.body.id || 1,
+            error: {
+              code: -32601,
+              message: `Tool '${toolName}' not found`
+            }
+          });
+        }
+
+        const result = await callBizWorxAPI(tool.endpoint, {
+          method: tool.method,
+          apiKey,
+          body: toolParams
+        });
+
+        return res.json({
+          jsonrpc: "2.0",
+          id: req.body.id || 1,
+          result: {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(result, null, 2)
+              }
+            ]
+          }
+        });
+      }
+
+      res.status(400).json({
+        jsonrpc: "2.0",
+        id: req.body.id || 1,
+        error: {
+          code: -32601,
+          message: "Method not found"
+        }
+      });
+
+    } catch (error: any) {
+      console.error('MCP Call Error:', error);
+      res.status(500).json({
+        jsonrpc: "2.0",
+        id: req.body.id || 1,
+        error: {
+          code: -32603,
+          message: error.message || "Internal error"
+        }
+      });
+    }
+  });
+
   // Business authentication
   app.post("/api/auth/business/register", async (req, res) => {
     try {
