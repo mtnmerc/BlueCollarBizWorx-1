@@ -39,6 +39,15 @@ mode = "parallel"
 task = "shell.exec"
 args = "node mcp-server-http.js"
 
+[[workflows.workflow]]
+name = "Start REST MCP Server"
+author = 42121209
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node mcp-server-rest.js"
+
 [[ports]]
 localPort = 3001
 externalPort = 3001
