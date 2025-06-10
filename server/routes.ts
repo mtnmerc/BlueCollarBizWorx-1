@@ -49,6 +49,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Generate API key for ChatGPT integration
+  app.post('/api/generate-api-key', authenticateSession, async (req, res) => {
+    try {
+      const businessId = req.session.businessId;
+      const apiKey = 'bw_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      
+      await storage.updateBusiness(businessId, { apiKey });
+      
+      res.json({
+        success: true,
+        apiKey: apiKey,
+        message: 'API key generated successfully. Use this key in your ChatGPT Custom GPT configuration.'
+      });
+    } catch (error) {
+      res.status(500).json({ success: false, error: 'Failed to generate API key' });
+    }
+  });
+
+  // Get current API key
+  app.get('/api/get-api-key', authenticateSession, async (req, res) => {
+    try {
+      const business = await storage.getBusinessById(req.session.businessId);
+      res.json({
+        success: true,
+        apiKey: business?.apiKey || null,
+        hasKey: !!business?.apiKey
+      });
+    } catch (error) {
+      res.status(500).json({ success: false, error: 'Failed to get API key' });
+    }
+  });
+
   // ChatGPT Custom GPT endpoints - simplified for AI conversation
   app.get('/gpt/clients', authenticateApiKey, async (req, res) => {
     try {
