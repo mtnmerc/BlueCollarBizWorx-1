@@ -72,6 +72,16 @@ app.post('/mcp/:toolName', async (req, res) => {
   }
 });
 
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'healthy', 
+    timestamp: new Date().toISOString(),
+    server: 'BizWorx MCP HTTP Server',
+    version: '1.0.0'
+  });
+});
+
 // List available tools
 app.get('/mcp/tools', (req, res) => {
   const tools = [
@@ -214,8 +224,10 @@ app.post('/mcp/call', async (req, res) => {
 });
 
 const PORT = process.env.MCP_HTTP_PORT || 3001;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`MCP HTTP server running on port ${PORT}`);
+const HOST = '0.0.0.0';
+app.listen(PORT, HOST, () => {
+  console.log(`MCP HTTP server running on ${HOST}:${PORT}`);
+  console.log(`External URL: https://bluecollarbiznew.replit.app:${PORT}`);
 });
 
 // Cleanup on exit
