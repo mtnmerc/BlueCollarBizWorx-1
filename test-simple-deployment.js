@@ -1,24 +1,29 @@
-// Simple deployment test
-console.log('Testing deployment accessibility...');
+// Test basic connectivity and MCP endpoints
+console.log('Testing Replit deployment connectivity...');
 
-const testUrl = 'https://bluecollar-bizworx.replit.app/api/mcp/health';
+const baseUrl = 'https://bluecollar-bizworx.replit.app';
+const tests = [
+  { url: `${baseUrl}/health`, name: 'Basic Health Check' },
+  { url: `${baseUrl}/api/mcp/health`, name: 'MCP Health Check' },
+  { url: `${baseUrl}/api/mcp/test`, name: 'MCP Test Endpoint' }
+];
 
-fetch(testUrl)
-  .then(response => {
-    console.log(`Status: ${response.status}`);
-    if (response.ok) {
-      return response.json();
-    } else {
-      throw new Error(`HTTP ${response.status}`);
+async function runTests() {
+  for (const test of tests) {
+    try {
+      const response = await fetch(test.url);
+      console.log(`${test.name}: ${response.status}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log(`✓ ${test.name} working:`, data.status || data.message);
+      } else {
+        console.log(`✗ ${test.name} failed: HTTP ${response.status}`);
+      }
+    } catch (error) {
+      console.log(`✗ ${test.name} error:`, error.message);
     }
-  })
-  .then(data => {
-    console.log('✓ MCP Server External Access Working!');
-    console.log(`- Status: ${data.status}`);
-    console.log(`- Tools: ${data.tools_count}`);
-    console.log(`- Server: ${data.server}`);
-  })
-  .catch(error => {
-    console.log('✗ External access still blocked:', error.message);
-    console.log('Issue: Deployment configuration needs manual intervention');
-  });
+  }
+}
+
+runTests();

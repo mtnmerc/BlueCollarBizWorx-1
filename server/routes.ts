@@ -40,6 +40,15 @@ const authenticateApiKey = async (req: any, res: any, next: any) => {
 
 export async function registerRoutes(app: Express): Promise<Server> {
 
+  // Simple connectivity test endpoint
+  app.get('/health', (req, res) => {
+    res.json({ 
+      status: 'ok', 
+      timestamp: new Date().toISOString(),
+      message: 'BizWorx server is accessible'
+    });
+  });
+
   // Priority middleware to handle MCP routes before any other middleware
   app.use('/mcp/*', (req, res, next) => {
     // Set headers to prevent caching and ensure proper response
