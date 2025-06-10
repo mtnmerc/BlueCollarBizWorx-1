@@ -93,7 +93,7 @@ Once configured, test with these voice/text commands:
 Your API key will be generated when you create your first business account in BizWorx. 
 
 For production:
-- Use: `https://bluecollar-bizworx.replit.app` as base URL
+- Use: `https://bluecollarbizworx.replit.app` as base URL
 - Get your API key from business settings after creating your account
 
 For local testing:
