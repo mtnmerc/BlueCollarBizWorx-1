@@ -251,7 +251,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
 
   // MCP tool execution endpoint
-  app.post('/mcp/:toolName', async (req, res) => {
+  app.post('/api/mcp/:toolName', async (req, res) => {
     try {
       const { toolName } = req.params;
       const { apiKey, ...params } = req.body;
@@ -294,7 +294,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Standard MCP call endpoint
-  app.post('/mcp/call', async (req, res) => {
+  app.post('/api/mcp/call', async (req, res) => {
     try {
       const { method, params } = req.body;
 
