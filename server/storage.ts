@@ -18,6 +18,7 @@ export interface IStorage {
   createBusiness(business: InsertBusiness): Promise<Business>;
   getBusinessByEmail(email: string): Promise<Business | undefined>;
   getBusinessById(id: number): Promise<Business | undefined>;
+  getAllBusinesses(): Promise<Business[]>;
   updateBusiness(id: number, business: Partial<InsertBusiness>): Promise<Business>;
 
   // User methods
@@ -110,6 +111,10 @@ export class DatabaseStorage implements IStorage {
   async getBusinessById(id: number): Promise<Business | undefined> {
     const [business] = await this.db.select().from(businesses).where(eq(businesses.id, id));
     return business || undefined;
+  }
+
+  async getAllBusinesses(): Promise<Business[]> {
+    return await this.db.select().from(businesses);
   }
 
   async updateBusiness(id: number, business: Partial<InsertBusiness>): Promise<Business> {
