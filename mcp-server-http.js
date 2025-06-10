@@ -1,19 +1,15 @@
 
 #!/usr/bin/env node
 
-import express from 'express';
-import { spawn } from 'child_process';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const express = require('express');
+const { spawn } = require('child_process');
+const path = require('path');
 
 const app = express();
 app.use(express.json());
 
 // Start MCP server process
-const mcpServer = spawn('node', [join(__dirname, 'mcp-server.js')], {
+const mcpServer = spawn('node', [path.join(__dirname, 'mcp-server.js')], {
   stdio: ['pipe', 'pipe', 'pipe']
 });
 
@@ -153,7 +149,7 @@ app.post('/mcp/call', async (req, res) => {
 
 const PORT = process.env.MCP_HTTP_PORT || 3001;
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`MCP HTTP server running on port ${PORT}`);
+  console.log(`MCP HTTP server running on http://0.0.0.0:${PORT}`);
 });
 
 // Cleanup on exit
