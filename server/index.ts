@@ -58,10 +58,10 @@ app.use((req, res, next) => {
     credentials: true
   }));
 
-  // Add debug middleware to log all MCP API requests
+  // Add debug middleware to log all API requests
   app.use((req, res, next) => {
-    if (req.path.startsWith('/api/mcp/')) {
-      console.log(`MCP API Request: ${req.method} ${req.path} from ${req.ip || req.connection.remoteAddress}`);
+    if (req.path.startsWith('/api/') || req.path.startsWith('/gpt/')) {
+      console.log(`API Request: ${req.method} ${req.path} from ${req.ip || req.connection.remoteAddress}`);
     }
     next();
   });
@@ -78,6 +78,17 @@ app.use((req, res, next) => {
 
   // Register main API routes first (includes MCP endpoints)
   const server = await registerRoutes(app);
+
+  // Add middleware to ensure API routes are handled before catch-all
+  app.use('/gpt/*', (req, res, next) => {
+    // If we reach here, the route wasn't handled by registerRoutes
+    res.status(404).json({ success: false, error: 'GPT endpoint not found' });
+  });
+
+  app.use('/api/*', (req, res, next) => {
+    // If we reach here, the route wasn't handled by registerRoutes
+    res.status(404).json({ success: false, error: 'API endpoint not found' });
+  });
 
   // Add error handler after routes
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
