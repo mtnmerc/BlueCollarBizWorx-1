@@ -34,68 +34,7 @@ export default function InvoiceDetail() {
   const [isDrawing, setIsDrawing] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Mobile modal positioning fix
-  useEffect(() => {
-    const adjustModalPosition = () => {
-      const isMobile = window.innerWidth <= 768;
-      if (!isMobile) return;
 
-      const modal = document.querySelector('[data-radix-dialog-content]') as HTMLElement;
-      if (modal) {
-        const viewportHeight = window.visualViewport?.height || window.innerHeight;
-        const documentHeight = window.innerHeight;
-        const keyboardHeight = documentHeight - viewportHeight;
-        
-        if (keyboardHeight > 100) {
-          // Keyboard is visible - position modal higher and smaller
-          modal.style.position = 'fixed';
-          modal.style.top = '1vh';
-          modal.style.left = '50%';
-          modal.style.right = 'auto';
-          modal.style.width = '90vw';
-          modal.style.maxWidth = '400px';
-          modal.style.maxHeight = '35vh';
-          modal.style.transform = 'translateX(-50%)';
-          modal.style.zIndex = '9999';
-          modal.style.overflowY = 'auto';
-        } else {
-          // Keyboard is hidden - normal positioning
-          modal.style.position = 'fixed';
-          modal.style.top = '5vh';
-          modal.style.left = '50%';
-          modal.style.right = 'auto';
-          modal.style.width = '90vw';
-          modal.style.maxWidth = '400px';
-          modal.style.maxHeight = '60vh';
-          modal.style.transform = 'translateX(-50%)';
-          modal.style.zIndex = '9999';
-          modal.style.overflowY = 'auto';
-        }
-      }
-    };
-
-    if (paymentDialogOpen || showSignaturePad) {
-      // Initial positioning
-      setTimeout(adjustModalPosition, 100);
-      
-      // Listen for viewport changes (keyboard show/hide)
-      const handleResize = () => {
-        setTimeout(adjustModalPosition, 150);
-      };
-      
-      window.addEventListener('resize', handleResize);
-      if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', handleResize);
-      }
-      
-      return () => {
-        window.removeEventListener('resize', handleResize);
-        if (window.visualViewport) {
-          window.visualViewport.removeEventListener('resize', handleResize);
-        }
-      };
-    }
-  }, [paymentDialogOpen, showSignaturePad]);
 
   // Signature drawing functions
   const setupCanvas = () => {
@@ -933,17 +872,7 @@ Thank you for your business!`;
             </Button>
           </DialogTrigger>
           <DialogContent 
-            className="max-w-sm w-[95vw] max-h-[85vh] overflow-y-auto p-4 sm:max-h-[60vh]"
-            style={{
-              position: 'fixed',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              margin: 0,
-              maxWidth: '90vw',
-              width: '90vw',
-              maxHeight: '70vh'
-            }}
+            className="!fixed !left-1/2 !top-1/2 !-translate-x-1/2 !-translate-y-1/2 !w-[90vw] !max-w-[400px] !max-h-[70vh] overflow-y-auto p-4 !m-0"
           >
             <DialogHeader>
               <DialogTitle>Record Payment</DialogTitle>
