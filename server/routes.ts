@@ -44,9 +44,21 @@ const authenticateApiKey = async (req: any, res: any, next: any) => {
 
 // Helper function to extract API key from headers
 const getApiKey = (req: any): string | null => {
-  const xApiKey = req.headers['x-api-key'];
-  const apiKey = Array.isArray(xApiKey) ? xApiKey[0] : xApiKey;
-  return apiKey || req.headers.authorization?.replace('Bearer ', '') || null;
+  // Express converts headers to lowercase, so check lowercase variants
+  const headers = req.headers;
+  const xApiKey = headers['x-api-key'];
+  
+  if (xApiKey) {
+    return Array.isArray(xApiKey) ? xApiKey[0] : xApiKey;
+  }
+  
+  // Fallback to Authorization Bearer
+  const authHeader = headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    return authHeader.replace('Bearer ', '');
+  }
+  
+  return null;
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -96,7 +108,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/gpt/clients', async (req, res) => {
     try {
-      const apiKey = req.headers['x-api-key'] || req.headers.authorization?.replace('Bearer ', '');
+      const apiKey = getApiKey(req);
       if (!apiKey || apiKey === 'undefined') {
         return res.status(200).json({ success: true, data: [], message: 'No API key provided' });
       }
