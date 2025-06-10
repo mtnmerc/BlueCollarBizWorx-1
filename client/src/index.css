@@ -98,6 +98,26 @@
   .status-completed {
     @apply bg-green-500 text-white;
   }
+}
+
+/* Fix modal positioning on mobile devices */
+@media (max-width: 768px) {
+  [data-radix-dialog-content] {
+    position: fixed !important;
+    top: 10vh !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    max-height: 80vh !important;
+    overflow-y: auto !important;
+  }
+  
+  /* Ensure modal stays above mobile keyboard */
+  @supports (-webkit-touch-callout: none) {
+    [data-radix-dialog-content] {
+      top: 5vh !important;
+      max-height: 85vh !important;
+    }
+  }
 
   .status-on-job {
     @apply bg-accent text-accent-foreground;
