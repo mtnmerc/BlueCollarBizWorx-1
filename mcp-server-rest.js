@@ -19,7 +19,7 @@ app.use((req, res, next) => {
 });
 
 // Base URL for BizWorx API
-const BIZWORX_BASE_URL = process.env.BIZWORX_BASE_URL || 'http://localhost:5000';
+const BIZWORX_BASE_URL = 'https://BluecollarBizWorx.replit.app';
 
 // Available tools mapping
 const TOOL_ENDPOINTS = {
@@ -98,7 +98,6 @@ app.post('/webhook', async (req, res) => {
     });
   }
 });
-const BIZWORX_BASE_URL = 'https://BluecollarBizWorx.replit.app';
 
 // Helper function to make requests to BizWorx API
 async function callBizWorxAPI(endpoint, options = {}) {
