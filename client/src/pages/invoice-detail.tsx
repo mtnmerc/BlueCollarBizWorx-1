@@ -34,6 +34,67 @@ export default function InvoiceDetail() {
   const [isDrawing, setIsDrawing] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  // Mobile modal positioning fix
+  useEffect(() => {
+    const adjustModalPosition = () => {
+      const isMobile = window.innerWidth <= 768;
+      if (!isMobile) return;
+
+      const modal = document.querySelector('[data-radix-dialog-content]') as HTMLElement;
+      if (modal) {
+        const viewportHeight = window.visualViewport?.height || window.innerHeight;
+        const documentHeight = window.innerHeight;
+        const keyboardHeight = documentHeight - viewportHeight;
+        
+        if (keyboardHeight > 100) {
+          // Keyboard is visible - position modal higher and smaller
+          modal.style.position = 'fixed';
+          modal.style.top = '1vh';
+          modal.style.left = '5vw';
+          modal.style.right = '5vw';
+          modal.style.width = '90vw';
+          modal.style.maxHeight = '35vh';
+          modal.style.transform = 'none';
+          modal.style.zIndex = '9999';
+          modal.style.overflowY = 'auto';
+        } else {
+          // Keyboard is hidden - normal positioning
+          modal.style.position = 'fixed';
+          modal.style.top = '5vh';
+          modal.style.left = '5vw';
+          modal.style.right = '5vw';
+          modal.style.width = '90vw';
+          modal.style.maxHeight = '60vh';
+          modal.style.transform = 'none';
+          modal.style.zIndex = '9999';
+          modal.style.overflowY = 'auto';
+        }
+      }
+    };
+
+    if (paymentDialogOpen || showSignaturePad) {
+      // Initial positioning
+      setTimeout(adjustModalPosition, 100);
+      
+      // Listen for viewport changes (keyboard show/hide)
+      const handleResize = () => {
+        setTimeout(adjustModalPosition, 150);
+      };
+      
+      window.addEventListener('resize', handleResize);
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', handleResize);
+      }
+      
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        if (window.visualViewport) {
+          window.visualViewport.removeEventListener('resize', handleResize);
+        }
+      };
+    }
+  }, [paymentDialogOpen, showSignaturePad]);
+
   // Signature drawing functions
   const setupCanvas = () => {
     const canvas = canvasRef.current;
