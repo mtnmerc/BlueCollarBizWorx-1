@@ -2,6 +2,8 @@ import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import cors from 'cors';
+import { createProxyMiddleware } from 'http-proxy-middleware';
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
@@ -61,6 +63,53 @@ app.use((req, res, next) => {
     console.error("Error:", err);
   });
 
+    // Add CORS middleware
+  app.use(cors({
+    origin: true,
+    credentials: true
+  }));
+
+  // Proxy MCP server endpoints to localhost:8000
+  app.use('/mcp', createProxyMiddleware({
+    target: 'http://localhost:8000',
+    changeOrigin: true,
+    pathRewrite: {
+      '^/mcp': '/mcp'
+    },
+    on: {
+      error: (err, req, res) => {
+        console.error('MCP Proxy Error:', err.message);
+        res.status(502).json({ error: 'MCP server unavailable' });
+      }
+    }
+  }));
+
+  // Proxy SSE endpoint specifically  
+  app.use('/sse', createProxyMiddleware({
+    target: 'http://localhost:8000',
+    changeOrigin: true,
+    ws: true,
+    pathRewrite: {
+      '^/sse': '/sse'
+    }
+  }));
+
+  // Proxy health and test endpoints
+  app.use('/health', createProxyMiddleware({
+    target: 'http://localhost:8000',
+    changeOrigin: true,
+    pathRewrite: {
+      '^/health': '/health'
+    }
+  }));
+
+  app.use('/test', createProxyMiddleware({
+    target: 'http://localhost:8000', 
+    changeOrigin: true,
+    pathRewrite: {
+      '^/test': '/test'
+    }
+  }));
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
