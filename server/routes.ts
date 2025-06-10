@@ -634,6 +634,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Clear setup mode and login
       delete req.session.setupMode;
       req.session.userId = adminUser.id;
+      req.session.businessId = businessId;
       req.session.role = "admin";
 
       res.json({ user: adminUser });
@@ -657,6 +658,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       req.session.userId = user.id;
+      req.session.businessId = businessId;
       req.session.role = user.role;
 
       // Set session duration based on rememberMe preference
