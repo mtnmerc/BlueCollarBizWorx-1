@@ -1367,6 +1367,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Collect client signature on invoice (staff endpoint)
+  app.patch("/api/invoices/:id/signature", authenticateSession, async (req, res) => {
+    try {
+      const invoiceId = parseInt(req.params.id);
+      const { businessId } = req.session;
+      const { clientSignature } = req.body;
+
+      if (!clientSignature) {
+        return res.status(400).json({ error: "Client signature is required" });
+      }
+
+      const invoice = await storage.getInvoiceById(invoiceId);
+      if (!invoice || invoice.businessId !== businessId) {
+        return res.status(404).json({ error: "Invoice not found" });
+      }
+
+      const updatedInvoice = await storage.updateInvoice(invoiceId, {
+        clientSignature,
+        signedAt: new Date()
+      });
+
+      res.json(updatedInvoice);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Get payroll settings
   app.get("/api/payroll/settings", async (req, res) => {
     if (!req.session.role || req.session.role !== "admin") {

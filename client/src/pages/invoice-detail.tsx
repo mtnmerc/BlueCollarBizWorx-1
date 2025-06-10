@@ -112,8 +112,15 @@ export default function InvoiceDetail() {
     const canvas = canvasRef.current;
     if (canvas) {
       const dataURL = canvas.toDataURL();
-      setSignature(dataURL);
-      setShowSignaturePad(false);
+      
+      // If we're in payment recording mode, just set the signature for later use
+      if (paymentDialogOpen) {
+        setSignature(dataURL);
+        setShowSignaturePad(false);
+      } else {
+        // If standalone signature collection, save directly to invoice
+        collectSignatureMutation.mutate({ clientSignature: dataURL });
+      }
     }
   };
 
@@ -265,6 +272,27 @@ export default function InvoiceDetail() {
       toast({
         title: "Error",
         description: "Failed to record payment. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const collectSignatureMutation = useMutation({
+    mutationFn: (signatureData: { clientSignature: string }) => 
+      apiRequest("PATCH", `/api/invoices/${invoiceId}/signature`, signatureData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/${invoiceId}`] });
+      setShowSignaturePad(false);
+      setSignature(null);
+      toast({
+        title: "Signature Collected",
+        description: "Client signature has been successfully saved.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to save signature. Please try again.",
         variant: "destructive",
       });
     }
@@ -1040,26 +1068,115 @@ Thank you for your business!`;
         )}
 
         {/* Client Signature */}
-        {invoice.clientSignature && (
-          <Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span className="flex items-center">
+                <PenTool className="h-4 w-4 mr-2" />
+                Client Signature
+              </span>
+              {!invoice.clientSignature && (
+                <Button
+                  onClick={() => setShowSignaturePad(true)}
+                  variant="outline"
+                  size="sm"
+                >
+                  <PenTool className="h-4 w-4 mr-2" />
+                  Collect Signature
+                </Button>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {invoice.clientSignature ? (
+              <div className="space-y-3">
+                <div className="border rounded-lg p-3 bg-muted max-w-md">
+                  <img 
+                    src={invoice.clientSignature} 
+                    alt="Client Digital Signature" 
+                    className="w-full h-20 object-contain"
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">
+                    Signed on: {invoice.paidAt ? new Date(invoice.paidAt).toLocaleString() : 'Date not available'}
+                  </p>
+                  <Button
+                    onClick={() => setShowSignaturePad(true)}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Update Signature
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <PenTool className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+                <p className="text-muted-foreground mb-4">
+                  No signature collected yet. Signatures serve as proof of job completion and service delivery.
+                </p>
+                <Button
+                  onClick={() => setShowSignaturePad(true)}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <PenTool className="h-4 w-4 mr-2" />
+                  Collect Client Signature
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Signature Pad Modal for Staff Payment Recording */}
+      {showSignaturePad && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <Card className="w-full max-w-lg">
             <CardHeader>
-              <CardTitle>Client Signature</CardTitle>
+              <CardTitle className="flex items-center">
+                <PenTool className="h-5 w-5 mr-2" />
+                Collect Client Signature
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="border rounded-lg p-3 bg-muted max-w-md">
-                <img 
-                  src={invoice.clientSignature} 
-                  alt="Client Digital Signature" 
-                  className="w-full h-20 object-contain"
-                />
+              <div className="mb-4">
+                <p className="text-sm text-muted-foreground mb-3">
+                  Have the client sign below to confirm payment. Use finger or stylus on mobile devices.
+                </p>
+                <div className="border-2 border-dashed border-muted-foreground rounded-lg">
+                  <canvas
+                    ref={canvasRef}
+                    className="w-full h-48 cursor-crosshair touch-none"
+                    onMouseDown={startDrawing}
+                    onMouseMove={draw}
+                    onMouseUp={stopDrawing}
+                    onMouseLeave={stopDrawing}
+                    onTouchStart={startDrawing}
+                    onTouchMove={draw}
+                    onTouchEnd={stopDrawing}
+                  />
+                </div>
               </div>
-              <p className="text-sm text-muted-foreground mt-2">
-                Signed on: {invoice.paidAt ? new Date(invoice.paidAt).toLocaleString() : 'Date not available'}
-              </p>
+              <div className="flex gap-2">
+                <Button onClick={saveSignature} className="flex-1 bg-green-600 hover:bg-green-700">
+                  <Check className="h-4 w-4 mr-2" />
+                  Save Signature
+                </Button>
+                <Button onClick={clearSignature} variant="outline">
+                  Clear
+                </Button>
+                <Button 
+                  onClick={() => setShowSignaturePad(false)} 
+                  variant="outline"
+                >
+                  Cancel
+                </Button>
+              </div>
             </CardContent>
           </Card>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

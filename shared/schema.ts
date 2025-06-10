@@ -131,6 +131,7 @@ export const invoices = pgTable("invoices", {
   paymentMethod: text("payment_method"), // cash, check, zelle, paypal, etc.
   paymentNotes: text("payment_notes"),
   clientSignature: text("client_signature"), // base64 image
+  signedAt: timestamp("signed_at"), // when signature was collected
   shareToken: text("share_token").unique(), // unique token for public sharing
   photos: jsonb("photos"), // Array of base64 images
   dueDate: timestamp("due_date"),
