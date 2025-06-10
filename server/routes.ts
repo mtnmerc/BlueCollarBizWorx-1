@@ -49,6 +49,158 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // ChatGPT Custom GPT endpoints - simplified for AI conversation
+  app.get('/gpt/clients', authenticateApiKey, async (req, res) => {
+    try {
+      const clients = await storage.getClients(req.businessId);
+      res.json({
+        success: true,
+        data: clients.map(c => ({
+          id: c.id,
+          name: c.name,
+          email: c.email,
+          phone: c.phone,
+          address: c.address
+        })),
+        message: `Found ${clients.length} clients`
+      });
+    } catch (error) {
+      res.status(500).json({ success: false, error: 'Failed to get clients' });
+    }
+  });
+
+  app.post('/gpt/clients', authenticateApiKey, async (req, res) => {
+    try {
+      const clientData = {
+        businessId: req.businessId,
+        name: req.body.name,
+        email: req.body.email || null,
+        phone: req.body.phone || null,
+        address: req.body.address || null
+      };
+      
+      const client = await storage.createClient(clientData);
+      res.json({
+        success: true,
+        data: client,
+        message: `Client "${client.name}" created successfully`
+      });
+    } catch (error) {
+      res.status(500).json({ success: false, error: 'Failed to create client' });
+    }
+  });
+
+  app.get('/gpt/jobs', authenticateApiKey, async (req, res) => {
+    try {
+      const { date } = req.query;
+      const jobs = await storage.getJobs(req.businessId, date as string);
+      res.json({
+        success: true,
+        data: jobs.map(j => ({
+          id: j.id,
+          title: j.title,
+          client: j.client?.name,
+          status: j.status,
+          scheduledStart: j.scheduledStart,
+          scheduledEnd: j.scheduledEnd,
+          address: j.address
+        })),
+        message: `Found ${jobs.length} jobs${date ? ` for ${date}` : ''}`
+      });
+    } catch (error) {
+      res.status(500).json({ success: false, error: 'Failed to get jobs' });
+    }
+  });
+
+  app.post('/gpt/jobs', authenticateApiKey, async (req, res) => {
+    try {
+      const jobData = {
+        businessId: req.businessId,
+        clientId: req.body.clientId,
+        title: req.body.title,
+        description: req.body.description || null,
+        address: req.body.address || null,
+        scheduledStart: req.body.scheduledStart ? new Date(req.body.scheduledStart) : null,
+        scheduledEnd: req.body.scheduledEnd ? new Date(req.body.scheduledEnd) : null,
+        status: req.body.status || 'scheduled',
+        priority: req.body.priority || 'medium',
+        estimatedAmount: req.body.estimatedAmount || null
+      };
+      
+      const job = await storage.createJob(jobData);
+      res.json({
+        success: true,
+        data: job,
+        message: `Job "${job.title}" scheduled successfully`
+      });
+    } catch (error) {
+      res.status(500).json({ success: false, error: 'Failed to create job' });
+    }
+  });
+
+  app.get('/gpt/revenue', authenticateApiKey, async (req, res) => {
+    try {
+      const { period = 'month' } = req.query;
+      const stats = await storage.getRevenueStats(req.businessId, period as string);
+      res.json({
+        success: true,
+        data: stats,
+        message: `Revenue stats for ${period}`
+      });
+    } catch (error) {
+      res.status(500).json({ success: false, error: 'Failed to get revenue stats' });
+    }
+  });
+
+  app.post('/gpt/invoices', authenticateApiKey, async (req, res) => {
+    try {
+      const invoiceData = {
+        businessId: req.businessId,
+        clientId: req.body.clientId,
+        title: req.body.title,
+        lineItems: req.body.lineItems || [],
+        subtotal: req.body.subtotal,
+        total: req.body.total,
+        status: req.body.status || 'draft',
+        dueDate: req.body.dueDate ? new Date(req.body.dueDate) : null
+      };
+      
+      const invoice = await storage.createInvoice(invoiceData);
+      res.json({
+        success: true,
+        data: invoice,
+        message: `Invoice created for $${invoice.total}`
+      });
+    } catch (error) {
+      res.status(500).json({ success: false, error: 'Failed to create invoice' });
+    }
+  });
+
+  app.post('/gpt/estimates', authenticateApiKey, async (req, res) => {
+    try {
+      const estimateData = {
+        businessId: req.businessId,
+        clientId: req.body.clientId,
+        title: req.body.title,
+        description: req.body.description || null,
+        lineItems: req.body.lineItems || [],
+        subtotal: req.body.subtotal,
+        total: req.body.total,
+        status: req.body.status || 'draft',
+        validUntil: req.body.validUntil ? new Date(req.body.validUntil) : null
+      };
+      
+      const estimate = await storage.createEstimate(estimateData);
+      res.json({
+        success: true,
+        data: estimate,
+        message: `Estimate created for $${estimate.total}`
+      });
+    } catch (error) {
+      res.status(500).json({ success: false, error: 'Failed to create estimate' });
+    }
+  });
+
   // Priority middleware to handle MCP routes before any other middleware
   app.use('/mcp/*', (req, res, next) => {
     // Set headers to prevent caching and ensure proper response
