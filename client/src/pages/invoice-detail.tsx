@@ -740,7 +740,7 @@ Thank you for your business!`;
               Record Payment
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-xs mx-2 max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-sm w-[95vw] max-h-[60vh] overflow-y-auto p-4 fixed top-4 left-1/2 -translate-x-1/2 translate-y-0">
             <DialogHeader>
               <DialogTitle>Record Payment</DialogTitle>
             </DialogHeader>
