@@ -69,47 +69,73 @@ app.use((req, res, next) => {
     credentials: true
   }));
 
-  // Proxy MCP server endpoints to internal port 8000
-  app.use('/mcp', createProxyMiddleware({
-    target: 'http://localhost:8000',
-    changeOrigin: true,
-    pathRewrite: {
-      '^/mcp': ''
-    },
-    on: {
-      error: (err, req, res) => {
-        console.error('MCP Proxy Error:', err.message);
-        res.status(502).json({ error: 'MCP server unavailable' });
+  // MCP endpoints served directly through main app
+  app.post('/mcp/execute', async (req, res) => {
+    try {
+      const { tool, apiKey, ...params } = req.body;
+
+      if (!tool || !apiKey) {
+        return res.status(400).json({ error: 'Tool and API key required' });
       }
-    }
-  }));
 
-  // Proxy SSE endpoint
-  app.use('/sse', createProxyMiddleware({
-    target: 'http://localhost:8000',
-    changeOrigin: true,
-    ws: true,
-    pathRewrite: {
-      '^/sse': '/sse'
-    }
-  }));
+      // Forward to internal MCP server
+      const response = await fetch('http://localhost:3001/execute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tool, apiKey, ...params })
+      });
 
-  // Proxy health and test endpoints
-  app.use('/health-mcp', createProxyMiddleware({
-    target: 'http://localhost:8000',
-    changeOrigin: true,
-    pathRewrite: {
-      '^/health-mcp': '/health'
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      console.error('MCP Execute Error:', error);
+      res.status(500).json({ error: 'MCP server unavailable' });
     }
-  }));
+  });
 
-  app.use('/test-mcp', createProxyMiddleware({
-    target: 'http://localhost:8000',
-    changeOrigin: true,
-    pathRewrite: {
-      '^/test-mcp': '/test'
+  // MCP health check
+  app.get('/mcp/health', async (req, res) => {
+    try {
+      const response = await fetch('http://localhost:3001/health');
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      res.status(502).json({ error: 'MCP server unavailable' });
     }
-  }));
+  });
+
+  // MCP tools list
+  app.get('/mcp/tools', async (req, res) => {
+    try {
+      const response = await fetch('http://localhost:3001/tools');
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      res.status(502).json({ error: 'MCP server unavailable' });
+    }
+  });
+
+  // MCP configuration for N8N
+  app.get('/mcp/config', (req, res) => {
+    res.json({
+      server: {
+        name: "bizworx-mcp-server",
+        version: "1.0.0",
+        protocolVersion: "2024-11-05"
+      },
+      endpoints: {
+        execute: "/mcp/execute",
+        health: "/mcp/health",
+        tools: "/mcp/tools"
+      },
+      authentication: {
+        required: true,
+        method: "body",
+        field: "apiKey"
+      },
+      baseUrl: "https://BluecollarBizWorx.replit.app"
+    });
+  });
 
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
