@@ -439,12 +439,22 @@ app.post('/mcp/call', async (req, res) => {
   return app._router.handle(req, res);
 });
 
-const PORT = process.env.MCP_HTTP_PORT || 8000;
+const PORT = process.env.MCP_HTTP_PORT || 5000;
 const HOST = '0.0.0.0';
+
+// Detect the correct external URL based on environment
+const getExternalUrl = () => {
+  if (process.env.REPL_SLUG && process.env.REPL_OWNER) {
+    return `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`;
+  }
+  return 'https://BluecollarBizWorx.replit.app';
+};
+
 app.listen(PORT, HOST, () => {
+  const externalUrl = getExternalUrl();
   console.log('🚀 BizWorx MCP Server Started');
   console.log(`📡 Server: ${HOST}:${PORT}`);
-  console.log(`🌐 External URL: https://BluecollarBizWorx.replit.app:8000`);
+  console.log(`🌐 External URL: ${externalUrl}:${PORT}`);
   console.log(`🔧 MCP Protocol: 2024-11-05`);
   console.log(`📋 Available Tools: ${Object.keys(toolMap).length}`);
   console.log('\n📌 MCP Endpoints:');
