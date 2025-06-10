@@ -1338,62 +1338,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Public invoice payment confirmation with optional signature
-  app.patch("/api/public/invoice/:shareToken/confirm-payment", async (req, res) => {
-    try {
-      const { shareToken } = req.params;
-      const { status, paidAt, paymentMethod, paymentNotes, clientSignature } = req.body;
-
-      const invoice = await storage.getInvoiceByShareToken(shareToken);
-      if (!invoice) {
-        return res.status(404).json({ error: "Invoice not found" });
-      }
-
-      const updateData: any = {
-        status: status || 'paid',
-        paidAt: paidAt ? new Date(paidAt) : new Date(),
-        paymentMethod: paymentMethod || 'other',
-        paymentNotes: paymentNotes || 'Payment confirmed by client'
-      };
-
-      if (clientSignature) {
-        updateData.clientSignature = clientSignature;
-      }
-
-      const updatedInvoice = await storage.updateInvoice(invoice.id, updateData);
-      res.json(updatedInvoice);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  // Collect client signature on invoice (staff endpoint)
-  app.patch("/api/invoices/:id/signature", authenticateSession, async (req, res) => {
-    try {
-      const invoiceId = parseInt(req.params.id);
-      const { businessId } = req.session;
-      const { clientSignature } = req.body;
-
-      if (!clientSignature) {
-        return res.status(400).json({ error: "Client signature is required" });
-      }
-
-      const invoice = await storage.getInvoiceById(invoiceId);
-      if (!invoice || invoice.businessId !== businessId) {
-        return res.status(404).json({ error: "Invoice not found" });
-      }
-
-      const updatedInvoice = await storage.updateInvoice(invoiceId, {
-        clientSignature,
-        signedAt: new Date()
-      });
-
-      res.json(updatedInvoice);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
   // Get payroll settings
   app.get("/api/payroll/settings", async (req, res) => {
     if (!req.session.role || req.session.role !== "admin") {
@@ -2299,6 +2243,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Webhook error:', error);
       res.status(500).json({ error: error.message });
     }
+  });
+
+  // SSE endpoint for real-time updates
+  app.get("/api/sse/updates", authenticateSession, (req, res) => {
+    // Set SSE headers
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'Cache-Control'
+    });
+
+    const businessId = req.session.businessId;
+    const clientId = `client_${Date.now()}_${Math.random()}`;
+
+    // Send initial connection message
+    res.write(`data: ${JSON.stringify({ type: 'connected', clientId })}\n\n`);
+
+    // Keep connection alive with heartbeat
+    const heartbeat = setInterval(() => {
+      res.write(`data: ${JSON.stringify({ type: 'heartbeat', timestamp: Date.now() })}\n\n`);
+    }, 30000);
+
+    // Clean up on client disconnect
+    req.on('close', () => {
+      clearInterval(heartbeat);
+    });
+
+    req.on('aborted', () => {
+      clearInterval(heartbeat);
+    });
   });
 
   const httpServer = createServer(app);
