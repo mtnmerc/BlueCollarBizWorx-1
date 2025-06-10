@@ -58,6 +58,14 @@ app.use((req, res, next) => {
     credentials: true
   }));
 
+  // Add debug middleware to log all requests
+  app.use((req, res, next) => {
+    if (req.path.startsWith('/mcp/')) {
+      console.log(`MCP Request: ${req.method} ${req.path} from ${req.ip || req.connection.remoteAddress}`);
+    }
+    next();
+  });
+
   // MCP endpoints must be registered before Vite middleware to avoid frontend routing
   app.get('/mcp/health', (req, res) => {
     res.json({ 

@@ -86,8 +86,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return descriptions[toolName] || 'Unknown tool';
   };
 
-  // MCP health check
-  app.get('/mcp/health', (req, res) => {
+  // MCP health check - accessible via /api/mcp/health
+  app.get('/api/mcp/health', (req, res) => {
     res.json({ 
       status: 'healthy', 
       timestamp: new Date().toISOString(),
@@ -95,24 +95,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       version: '1.0.0',
       protocol: "2024-11-05",
       tools_count: Object.keys(toolMap).length,
-      endpoints: ["/mcp/call", "/mcp/tools", "/mcp/config", "/mcp/:toolName"],
-      external_url: "https://bluecollar-bizworx.replit.app/mcp",
+      endpoints: ["/api/mcp/call", "/api/mcp/tools", "/api/mcp/config", "/api/mcp/:toolName"],
+      external_url: "https://bluecollar-bizworx.replit.app/api/mcp",
       note: "MCP server running on main port 5000, externally accessible"
     });
   });
 
   // Simple MCP test endpoint
-  app.get('/mcp/test', (req, res) => {
+  app.get('/api/mcp/test', (req, res) => {
     res.json({
       message: 'MCP server is externally accessible',
       timestamp: new Date().toISOString(),
       available_endpoints: [
-        'GET /mcp/health - Server health check',
-        'GET /mcp/config - Server configuration',
-        'GET /mcp/tools - List available tools', 
-        'GET /mcp/sse - Server-Sent Events endpoint',
-        'POST /mcp/call - Standard MCP protocol calls',
-        'POST /mcp/:toolName - Direct tool execution'
+        'GET /api/mcp/health - Server health check',
+        'GET /api/mcp/config - Server configuration',
+        'GET /api/mcp/tools - List available tools', 
+        'GET /api/mcp/sse - Server-Sent Events endpoint',
+        'POST /api/mcp/call - Standard MCP protocol calls',
+        'POST /api/mcp/:toolName - Direct tool execution'
       ],
       example_tool_call: {
         method: 'POST',
