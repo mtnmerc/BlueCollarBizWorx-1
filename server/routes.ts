@@ -66,8 +66,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })),
         message: `Found ${clients.length} clients`
       });
-    } catch (error) {
-      res.status(500).json({ success: false, error: 'Failed to get clients' });
+    } catch (error: any) {
+      console.error('GPT clients error:', error);
+      res.status(500).json({ success: false, error: 'Failed to get clients', details: error.message });
     }
   });
 
@@ -111,8 +112,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })),
         message: `Found ${jobs.length} jobs${date ? ` for ${date}` : ''}`
       });
-    } catch (error) {
-      res.status(500).json({ success: false, error: 'Failed to get jobs' });
+    } catch (error: any) {
+      console.error('GPT jobs error:', error);
+      res.status(500).json({ success: false, error: 'Failed to get jobs', details: error.message });
     }
   });
 
