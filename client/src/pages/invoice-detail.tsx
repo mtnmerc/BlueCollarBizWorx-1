@@ -689,16 +689,6 @@ Thank you for your business!`;
               Copy Link
             </Button>
           </div>
-          <div className="flex space-x-2">
-            <Button 
-              onClick={() => setPaymentDialogOpen(true)}
-              className="bg-blue-600 hover:bg-blue-700"
-              size="sm"
-            >
-              <DollarSign className="h-4 w-4 mr-2" />
-              Record Payment
-            </Button>
-          </div>
         </div>
       </div>
 
