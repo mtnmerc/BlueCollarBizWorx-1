@@ -53,7 +53,7 @@ Always provide clear confirmations and next steps.
 **Header Name:** X-API-Key
 **API Key:** [Use your business API key - will be provided]
 
-**Schema:** Copy the entire content from `bizworx-openapi.json`
+**Schema:** Copy the entire content from `bizworx-chatgpt-fixed.json`
 
 ### Step 4: Conversation Starters
 ```
@@ -92,12 +92,12 @@ Once configured, test with these voice/text commands:
 
 Your API key will be generated when you create your first business account in BizWorx. 
 
-For testing with localhost:
-- Use: `http://localhost:5000` as base URL
-- Get your API key from business settings
-
 For production:
-- Use: `https://your-deployed-app.replit.app` as base URL
+- Use: `https://bluecollar-bizworx.replit.app` as base URL
+- Get your API key from business settings after creating your account
+
+For local testing:
+- Use: `http://localhost:5000` as base URL
 - Same API key works for both
 
 ## Benefits
