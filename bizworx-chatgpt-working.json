@@ -11,7 +11,7 @@
     }
   ],
   "paths": {
-    "/gpt/clients": {
+    "/api/gpt/clients": {
       "get": {
         "operationId": "getClients",
         "summary": "Get all clients",
@@ -111,7 +111,7 @@
         }
       }
     },
-    "/gpt/jobs": {
+    "/api/gpt/jobs": {
       "get": {
         "operationId": "getJobs",
         "summary": "Get all jobs",
@@ -217,7 +217,7 @@
         }
       }
     },
-    "/gpt/schedule": {
+    "/api/gpt/schedule": {
       "get": {
         "operationId": "getSchedule",
         "summary": "Get today's schedule",

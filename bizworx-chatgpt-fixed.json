@@ -11,7 +11,7 @@
     }
   ],
   "paths": {
-    "/gpt/clients": {
+    "/api/gpt/clients": {
       "get": {
         "operationId": "getClients",
         "summary": "Get all clients",
@@ -62,7 +62,7 @@
         }
       }
     },
-    "/gpt/jobs": {
+    "/api/gpt/jobs": {
       "get": {
         "operationId": "getJobs",
         "summary": "Get jobs",
@@ -123,7 +123,7 @@
         }
       }
     },
-    "/gpt/revenue": {
+    "/api/gpt/revenue": {
       "get": {
         "operationId": "getRevenue",
         "summary": "Get revenue stats",
@@ -148,7 +148,7 @@
         }
       }
     },
-    "/gpt/invoices": {
+    "/api/gpt/invoices": {
       "post": {
         "operationId": "createInvoice",
         "summary": "Create invoice",
