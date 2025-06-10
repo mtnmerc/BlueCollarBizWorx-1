@@ -343,13 +343,13 @@ app.post('/mcp/call', async (req, res) => {
   return app._router.handle(req, res);
 });
 
-const PORT = process.env.MCP_HTTP_PORT || 3002;
+const PORT = process.env.MCP_HTTP_PORT || 8000;
 const HOST = '0.0.0.0';
 app.listen(PORT, HOST, () => {
   console.log(`MCP HTTP server running on ${HOST}:${PORT}`);
-  console.log(`External URL: https://BluecollarBizWorx.replit.app:${PORT}`);
-  console.log(`Health check: https://BluecollarBizWorx.replit.app:${PORT}/health`);
-  console.log(`Test endpoint: https://BluecollarBizWorx.replit.app:${PORT}/test`);
+  console.log(`External URL: https://BluecollarBizWorx.replit.app:8000`);
+  console.log(`Health check: https://BluecollarBizWorx.replit.app:8000/health`);
+  console.log(`Test endpoint: https://BluecollarBizWorx.replit.app:8000/test`);
 });
 
 // Graceful shutdown
