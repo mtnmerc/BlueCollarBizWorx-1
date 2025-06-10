@@ -9,7 +9,8 @@ async function testEndpoint(path, method = 'GET', data = null) {
       method: method,
       headers: {
         'Content-Type': 'application/json',
-        'User-Agent': 'ChatGPT-Test/1.0'
+        'User-Agent': 'ChatGPT-Test/1.0',
+        'X-API-Key': 'test-key-for-validation'
       }
     };
 

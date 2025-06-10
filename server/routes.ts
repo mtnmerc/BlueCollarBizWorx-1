@@ -38,24 +38,7 @@ const authenticateApiKey = async (req: any, res: any, next: any) => {
   }
 };
 
-// Simplified authentication for ChatGPT integration
-const authenticateGPT = async (req: any, res: any, next: any) => {
-  try {
-    // For ChatGPT, we'll use the first available business for now
-    // In production, you'd want proper API key handling
-    const allBusinesses = await storage.getAllBusinesses();
-    if (allBusinesses.length === 0) {
-      return res.status(401).json({ error: "No business found" });
-    }
 
-    // Use the first business (or you can modify this to use a specific business)
-    req.businessId = allBusinesses[0].id;
-    req.apiKeyAuth = true;
-    next();
-  } catch (error) {
-    res.status(401).json({ error: "Authentication failed" });
-  }
-};
 
 export async function registerRoutes(app: Express): Promise<Server> {
 
@@ -201,7 +184,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/gpt/estimates', authenticateGPT, async (req, res) => {
+  app.post('/gpt/estimates', authenticateApiKey, async (req, res) => {
     try {
       const estimateData = {
         businessId: req.businessId,
