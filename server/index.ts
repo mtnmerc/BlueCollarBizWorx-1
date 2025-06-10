@@ -58,79 +58,15 @@ app.use((req, res, next) => {
     credentials: true
   }));
 
-  // Add debug middleware to log all requests
+  // Add debug middleware to log all MCP API requests
   app.use((req, res, next) => {
-    if (req.path.startsWith('/mcp/')) {
-      console.log(`MCP Request: ${req.method} ${req.path} from ${req.ip || req.connection.remoteAddress}`);
+    if (req.path.startsWith('/api/mcp/')) {
+      console.log(`MCP API Request: ${req.method} ${req.path} from ${req.ip || req.connection.remoteAddress}`);
     }
     next();
   });
 
-  // MCP endpoints must be registered before Vite middleware to avoid frontend routing
-  app.get('/mcp/health', (req, res) => {
-    res.json({ 
-      status: 'healthy', 
-      timestamp: new Date().toISOString(),
-      server: 'BizWorx MCP Server (Integrated)',
-      version: '1.0.0',
-      protocol: "2024-11-05",
-      tools_count: 12,
-      endpoints: ["/mcp/call", "/mcp/tools", "/mcp/config", "/mcp/:toolName", "/mcp/sse"],
-      external_url: "https://bluecollar-bizworx.replit.app/mcp",
-      note: "MCP server running on main port 5000, externally accessible"
-    });
-  });
 
-  app.get('/mcp/test', (req, res) => {
-    res.json({
-      message: 'MCP server is externally accessible',
-      timestamp: new Date().toISOString(),
-      available_endpoints: [
-        'GET /mcp/health - Server health check',
-        'GET /mcp/config - Server configuration',
-        'GET /mcp/tools - List available tools', 
-        'GET /mcp/sse - Server-Sent Events endpoint',
-        'POST /mcp/call - Standard MCP protocol calls',
-        'POST /mcp/:toolName - Direct tool execution'
-      ]
-    });
-  });
-
-  app.get('/mcp/sse', (req, res) => {
-    res.writeHead(200, {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers': 'Cache-Control'
-    });
-
-    res.write(`data: ${JSON.stringify({
-      type: 'connection',
-      message: 'MCP SSE connection established',
-      timestamp: new Date().toISOString(),
-      server: 'BizWorx MCP Server',
-      tools_available: 12
-    })}\n\n`);
-
-    const heartbeat = setInterval(() => {
-      res.write(`data: ${JSON.stringify({
-        type: 'heartbeat',
-        timestamp: new Date().toISOString(),
-        status: 'alive'
-      })}\n\n`);
-    }, 30000);
-
-    req.on('close', () => {
-      clearInterval(heartbeat);
-      res.end();
-    });
-
-    req.on('error', () => {
-      clearInterval(heartbeat);
-      res.end();
-    });
-  });
 
   // Tool mapping for direct MCP integration
   const toolMap = {

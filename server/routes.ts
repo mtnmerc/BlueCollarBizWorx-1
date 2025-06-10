@@ -116,7 +116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ],
       example_tool_call: {
         method: 'POST',
-        url: 'https://bluecollar-bizworx.replit.app/mcp/get_clients',
+        url: 'https://bluecollar-bizworx.replit.app/api/mcp/get_clients',
         headers: { 'X-API-Key': 'your-api-key' },
         body: { apiKey: 'your-api-key' }
       }
@@ -124,7 +124,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // MCP Server-Sent Events endpoint for N8N integration
-  app.get('/mcp/sse', (req, res) => {
+  app.get('/api/mcp/sse', (req, res) => {
     // Set SSE headers
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
@@ -177,15 +177,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // MCP configuration endpoint
-  app.get('/mcp/config', (req, res) => {
+  app.get('/api/mcp/config', (req, res) => {
     res.json({
       name: "BizWorx MCP Server",
       version: "1.0.0",
       protocol: "2024-11-05",
       endpoints: {
-        call: "/mcp/call",
-        tools: "/mcp/tools",
-        health: "/mcp/health"
+        call: "/api/mcp/call",
+        tools: "/api/mcp/tools",
+        health: "/api/mcp/health"
       },
       authentication: {
         required: true,
@@ -208,7 +208,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // List available tools
-  app.get('/mcp/tools', (req, res) => {
+  app.get('/api/mcp/tools', (req, res) => {
     const tools = Object.keys(toolMap).map(name => ({
       name,
       description: getToolDescription(name),

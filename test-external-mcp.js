@@ -71,10 +71,10 @@ async function testMultipleUrls() {
   console.log('=== Testing Multiple URL Configurations ===\n');
   
   const endpoints = [
-    '/mcp/health',
-    '/mcp/test', 
-    '/mcp/config',
-    '/mcp/tools'
+    '/api/mcp/health',
+    '/api/mcp/test', 
+    '/api/mcp/config',
+    '/api/mcp/tools'
   ];
   
   for (const testUrl of testUrls) {
