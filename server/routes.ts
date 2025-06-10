@@ -68,8 +68,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // ChatGPT Custom GPT endpoints - simplified for AI conversation
-  app.get('/gpt/clients', authenticateGPT, async (req, res) => {
+  // ChatGPT Custom GPT endpoints - use existing API key authentication
+  app.get('/gpt/clients', authenticateApiKey, async (req, res) => {
     try {
       const clients = await storage.getClientsByBusiness(req.businessId);
       res.json({
@@ -88,7 +88,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/gpt/clients', authenticateGPT, async (req, res) => {
+  app.post('/gpt/clients', authenticateApiKey, async (req, res) => {
     try {
       const clientData = {
         businessId: req.businessId,
@@ -109,7 +109,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/gpt/jobs', authenticateGPT, async (req, res) => {
+  app.get('/gpt/jobs', authenticateApiKey, async (req, res) => {
     try {
       const { date } = req.query;
       const jobs = date ? 
@@ -133,7 +133,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/gpt/jobs', authenticateGPT, async (req, res) => {
+  app.post('/gpt/jobs', authenticateApiKey, async (req, res) => {
     try {
       const jobData = {
         businessId: req.businessId,
@@ -159,7 +159,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/gpt/revenue', authenticateGPT, async (req, res) => {
+  app.get('/gpt/revenue', authenticateApiKey, async (req, res) => {
     try {
       const { period = 'month' } = req.query;
       const now = new Date();
@@ -176,7 +176,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/gpt/invoices', authenticateGPT, async (req, res) => {
+  app.post('/gpt/invoices', authenticateApiKey, async (req, res) => {
     try {
       const invoiceData = {
         businessId: req.businessId,
