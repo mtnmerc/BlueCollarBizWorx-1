@@ -100,39 +100,19 @@
   }
 }
 
-/* Force modal positioning across all devices */
-[data-radix-dialog-overlay] {
-  position: fixed !important;
-  inset: 0 !important;
-  z-index: 50 !important;
-}
-
-[data-radix-dialog-content] {
+/* Force modal positioning with maximum specificity */
+html body [data-radix-popper-content-wrapper] [data-radix-dialog-content],
+html body [data-radix-dialog-content] {
   position: fixed !important;
   left: 50% !important;
   top: 50% !important;
-  z-index: 51 !important;
   transform: translate(-50%, -50%) !important;
-  width: 90vw !important;
-  max-width: 400px !important;
-  max-height: 70vh !important;
+  width: min(90vw, 400px) !important;
+  max-height: 80vh !important;
   margin: 0 !important;
-}
-
-/* Mobile specific adjustments */
-@media (max-width: 768px) {
-  [data-radix-dialog-content] {
-    width: 95vw !important;
-    max-height: 80vh !important;
-  }
-  
-  /* When keyboard is visible */
-  @media (max-height: 600px) {
-    [data-radix-dialog-content] {
-      max-height: 60vh !important;
-      top: 40% !important;
-    }
-  }
+  z-index: 9999 !important;
+  right: auto !important;
+  bottom: auto !important;
 }
 
 .status-on-job {

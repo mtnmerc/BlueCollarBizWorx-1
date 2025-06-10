@@ -34,6 +34,32 @@ export default function InvoiceDetail() {
   const [isDrawing, setIsDrawing] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  // Force center modal on open
+  useEffect(() => {
+    if (paymentDialogOpen) {
+      const timer = setTimeout(() => {
+        const modal = document.querySelector('[data-radix-dialog-content]') as HTMLElement;
+        if (modal) {
+          // Completely override all positioning
+          modal.style.cssText = `
+            position: fixed !important;
+            left: 50% !important;
+            top: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            width: min(90vw, 400px) !important;
+            max-height: 80vh !important;
+            margin: 0 !important;
+            z-index: 9999 !important;
+            right: auto !important;
+            bottom: auto !important;
+            max-width: 400px !important;
+          `;
+        }
+      }, 10);
+      return () => clearTimeout(timer);
+    }
+  }, [paymentDialogOpen]);
+
 
 
   // Signature drawing functions
@@ -872,7 +898,7 @@ Thank you for your business!`;
             </Button>
           </DialogTrigger>
           <DialogContent 
-            className="!fixed !left-1/2 !top-1/2 !-translate-x-1/2 !-translate-y-1/2 !w-[90vw] !max-w-[400px] !max-h-[70vh] overflow-y-auto p-4 !m-0"
+            className="overflow-y-auto p-4"
           >
             <DialogHeader>
               <DialogTitle>Record Payment</DialogTitle>
