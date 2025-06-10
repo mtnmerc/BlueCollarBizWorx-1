@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRoute, useLocation } from "wouter";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Edit, FileText, DollarSign, Calendar, User, CreditCard, CheckCircle, Mail, Copy, Share, MessageSquare, Trash2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ArrowLeft, Edit, FileText, DollarSign, Calendar, User, CreditCard, CheckCircle, Mail, Copy, Share, MessageSquare, Trash2, PenTool, Check } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -27,6 +28,94 @@ export default function InvoiceDetail() {
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
   const [paymentNotes, setPaymentNotes] = useState("");
+  const [signatureRequired, setSignatureRequired] = useState(false);
+  const [signature, setSignature] = useState<string | null>(null);
+  const [showSignaturePad, setShowSignaturePad] = useState(false);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Signature drawing functions
+  const setupCanvas = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * 2;
+    canvas.height = rect.height * 2;
+    
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.scale(2, 2);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 2;
+    }
+  };
+
+  useEffect(() => {
+    if (showSignaturePad) {
+      setTimeout(setupCanvas, 100);
+    }
+  }, [showSignaturePad]);
+
+  const getEventPos = (e: any) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.clientX || (e.touches && e.touches[0]?.clientX) || 0;
+    const clientY = e.clientY || (e.touches && e.touches[0]?.clientY) || 0;
+    
+    return {
+      x: clientX - rect.left,
+      y: clientY - rect.top
+    };
+  };
+
+  const startDrawing = (e: any) => {
+    e.preventDefault();
+    setIsDrawing(true);
+    const { x, y } = getEventPos(e);
+    const ctx = canvasRef.current?.getContext('2d');
+    if (ctx) {
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+    }
+  };
+
+  const draw = (e: any) => {
+    if (!isDrawing) return;
+    e.preventDefault();
+    const { x, y } = getEventPos(e);
+    const ctx = canvasRef.current?.getContext('2d');
+    if (ctx) {
+      ctx.lineTo(x, y);
+      ctx.stroke();
+    }
+  };
+
+  const stopDrawing = (e: any) => {
+    e.preventDefault();
+    setIsDrawing(false);
+  };
+
+  const clearSignature = () => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (ctx && canvas) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  };
+
+  const saveSignature = () => {
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const dataURL = canvas.toDataURL();
+      setSignature(dataURL);
+      setShowSignaturePad(false);
+    }
+  };
 
   // Photo upload mutation
   const uploadPhotoMutation = useMutation({
@@ -157,7 +246,7 @@ export default function InvoiceDetail() {
   });
 
   const recordPaymentMutation = useMutation({
-    mutationFn: (paymentData: { amount: number; method: string; notes?: string }) => 
+    mutationFn: (paymentData: { amount: number; method: string; notes?: string; clientSignature?: string }) => 
       apiRequest("POST", `/api/invoices/${invoiceId}/payment`, paymentData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/invoices/${invoiceId}`] });
@@ -165,6 +254,8 @@ export default function InvoiceDetail() {
       setPaymentAmount("");
       setPaymentMethod("");
       setPaymentNotes("");
+      setSignature(null);
+      setSignatureRequired(false);
       toast({
         title: "Payment Recorded",
         description: "Payment has been successfully recorded.",
@@ -370,10 +461,20 @@ Thank you for your business!`;
       return;
     }
 
+    if (signatureRequired && !signature) {
+      toast({
+        title: "Signature Required",
+        description: "Please collect client signature before recording payment.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     recordPaymentMutation.mutate({
       amount,
       method: paymentMethod,
       notes: paymentNotes || undefined,
+      clientSignature: signature || undefined,
     });
   };
 
@@ -786,6 +887,61 @@ Thank you for your business!`;
                   value={paymentNotes}
                   onChange={(e) => setPaymentNotes(e.target.value)}
                 />
+              </div>
+
+              {/* Signature Collection */}
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="signature-required" 
+                    checked={signatureRequired}
+                    onCheckedChange={(checked) => setSignatureRequired(checked as boolean)}
+                  />
+                  <label htmlFor="signature-required" className="text-sm font-medium">
+                    Collect client signature
+                  </label>
+                </div>
+                
+                {signatureRequired && (
+                  <div className="ml-6 space-y-2">
+                    {!signature ? (
+                      <Button
+                        onClick={() => setShowSignaturePad(true)}
+                        variant="outline"
+                        size="sm"
+                        type="button"
+                      >
+                        <PenTool className="h-4 w-4 mr-2" />
+                        Add Signature
+                      </Button>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">Signature captured</span>
+                          <Badge className="bg-green-600">
+                            <Check className="h-3 w-3 mr-1" />
+                            Signed
+                          </Badge>
+                        </div>
+                        <div className="border rounded-lg p-2 bg-muted max-w-sm">
+                          <img 
+                            src={signature} 
+                            alt="Client Signature" 
+                            className="w-full h-16 object-contain"
+                          />
+                        </div>
+                        <Button
+                          onClick={() => setSignature(null)}
+                          variant="outline"
+                          size="sm"
+                          type="button"
+                        >
+                          Clear Signature
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               
               <div className="flex gap-3 pt-4">
