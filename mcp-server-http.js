@@ -124,7 +124,7 @@ app.get('/test', (req, res) => {
     endpoint: '/mcp/events',
     protocol: 'MCP 2024-11-05',
     tools_available: Object.keys(toolMap).length,
-    correct_url: 'https://BluecollarBizWorx.replit.app:3001'
+    correct_url: 'https://BluecollarBizWorx.replit.app:3002'
   });
 });
 
@@ -343,7 +343,7 @@ app.post('/mcp/call', async (req, res) => {
   return app._router.handle(req, res);
 });
 
-const PORT = process.env.MCP_HTTP_PORT || 3001;
+const PORT = process.env.MCP_HTTP_PORT || 3002;
 const HOST = '0.0.0.0';
 app.listen(PORT, HOST, () => {
   console.log(`MCP HTTP server running on ${HOST}:${PORT}`);
