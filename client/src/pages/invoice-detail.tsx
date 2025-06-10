@@ -932,7 +932,19 @@ Thank you for your business!`;
               Record Payment
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-sm w-[95vw] max-h-[85vh] overflow-y-auto p-4 sm:max-h-[60vh]">
+          <DialogContent 
+            className="max-w-sm w-[95vw] max-h-[85vh] overflow-y-auto p-4 sm:max-h-[60vh]"
+            style={{
+              position: 'fixed',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              margin: 0,
+              maxWidth: '90vw',
+              width: '90vw',
+              maxHeight: '70vh'
+            }}
+          >
             <DialogHeader>
               <DialogTitle>Record Payment</DialogTitle>
             </DialogHeader>
@@ -1194,7 +1206,15 @@ Thank you for your business!`;
 
       {/* Signature Pad Modal for Staff Payment Recording */}
       {showSignaturePad && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1rem'
+          }}
+        >
           <Card className="w-full max-w-lg">
             <CardHeader>
               <CardTitle className="flex items-center">
