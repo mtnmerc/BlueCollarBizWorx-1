@@ -187,7 +187,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         subtotal: req.body.subtotal || '0.00',
         total: req.body.total || '0.00',
         status: req.body.status || 'draft',
-        dueDate: req.body.dueDate ? new Date(req.body.dueDate) : null
+        dueDate: req.body.dueDate ? new Date(req.body.dueDate) : undefined
       };
       
       const invoice = await storage.createInvoice(invoiceData);
@@ -207,12 +207,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         businessId: req.businessId,
         clientId: req.body.clientId,
         title: req.body.title,
+        estimateNumber: `EST-${Date.now()}`,
         description: req.body.description || null,
         lineItems: req.body.lineItems || [],
-        subtotal: req.body.subtotal,
-        total: req.body.total,
+        subtotal: req.body.subtotal || '0.00',
+        total: req.body.total || '0.00',
         status: req.body.status || 'draft',
-        validUntil: req.body.validUntil ? new Date(req.body.validUntil) : null
+        validUntil: req.body.validUntil ? new Date(req.body.validUntil) : undefined
       };
       
       const estimate = await storage.createEstimate(estimateData);
