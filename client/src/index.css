@@ -104,18 +104,23 @@
 @media (max-width: 768px) {
   [data-radix-dialog-content] {
     position: fixed !important;
-    top: 10vh !important;
+    top: 5vh !important;
     left: 50% !important;
-    transform: translateX(-50%) !important;
-    max-height: 80vh !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: translateX(-50%) translateY(0) !important;
+    max-height: 70vh !important;
+    max-width: 90vw !important;
+    width: 90vw !important;
     overflow-y: auto !important;
+    margin: 0 !important;
   }
   
-  /* Ensure modal stays above mobile keyboard */
+  /* iOS Safari specific adjustments */
   @supports (-webkit-touch-callout: none) {
     [data-radix-dialog-content] {
-      top: 5vh !important;
-      max-height: 85vh !important;
+      top: 3vh !important;
+      max-height: 65vh !important;
     }
   }
 
