@@ -38,7 +38,7 @@ mode = "parallel"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "node mcp-server-http.js"
+args = "node mcp-server-http.cjs"
 
 [[ports]]
 localPort = 5000
