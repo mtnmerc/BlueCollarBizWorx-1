@@ -1,4 +1,3 @@
-
 import express from 'express';
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
@@ -30,7 +29,7 @@ const activeConnections = new Set();
 // Direct API call to BizWorx instead of relying on MCP subprocess
 async function callBizWorxAPI(endpoint, options = {}) {
   const baseUrl = 'https://BluecollarBizWorx.replit.app'; // Use correct URL
-  
+
   try {
     const response = await fetch(`${baseUrl}${endpoint}`, {
       method: options.method || 'GET',
@@ -113,7 +112,7 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     server: 'BizWorx MCP HTTP Server',
     version: '1.0.0',
-    url: 'https://BluecollarBizWorx.replit.app:3001'
+    url: 'https://BluecollarBizWorx.replit.app:3002'
   });
 });
 
@@ -159,7 +158,7 @@ function getToolDescription(toolName) {
 app.get('/mcp/events', (req, res) => {
   console.log('SSE connection established from:', req.headers['user-agent']);
   console.log('SSE Headers:', req.headers);
-  
+
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache',
@@ -235,7 +234,7 @@ app.get('/mcp/events', (req, res) => {
 // POST endpoint for MCP protocol messages
 app.post('/mcp/events', async (req, res) => {
   console.log('MCP POST request received:', JSON.stringify(req.body, null, 2));
-  
+
   try {
     const { method, params, id } = req.body;
     const apiKey = req.headers['x-api-key'] || params?.apiKey;
@@ -286,7 +285,7 @@ app.post('/mcp/events', async (req, res) => {
 
       const toolName = params.name;
       const tool = toolMap[toolName];
-      
+
       if (!tool) {
         return res.status(400).json({
           jsonrpc: '2.0',
