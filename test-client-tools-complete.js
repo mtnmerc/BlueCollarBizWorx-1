@@ -9,9 +9,19 @@ async function testClientToolsComplete() {
   try {
     // Test 1: Get all clients
     console.log('1. Testing GET /getClients...');
-    const getResponse = await fetch(`${BASE_URL}/getClients`, {
-      headers: { 'Authorization': `Bearer ${API_KEY}` }
-    });
+    let getResponse;
+    try {
+      getResponse = await fetch(`${BASE_URL}/getClients`, {
+        headers: { 'Authorization': `Bearer ${API_KEY}` }
+      });
+    } catch (error) {
+      console.log('❌ GET FAILED - Network error:', error.message);
+      // Try local server
+      console.log('Attempting local server connection...');
+      getResponse = await fetch('http://localhost:5000/getClients', {
+        headers: { 'Authorization': `Bearer ${API_KEY}` }
+      });
+    }
     
     let initialClientCount = 0;
     let testClientId = null;
@@ -24,6 +34,8 @@ async function testClientToolsComplete() {
       console.log('Sample clients:', clients.slice(0, 3).map(c => `${c.id}: ${c.name}`));
     } else {
       console.log('❌ GET FAILED:', getResponse.status);
+      const errorText = await getResponse.text();
+      console.log('Error details:', errorText.substring(0, 200));
       return;
     }
 
