@@ -1,6 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
-import { registerRoutes } from "./routes";
+import { registerFinalRoutes } from "./routes-final";
 import { setupVite, serveStatic, log } from "./vite";
 import cors from 'cors';
 import { createProxyMiddleware } from 'http-proxy-middleware';
@@ -77,7 +77,7 @@ app.use((req, res, next) => {
   // All MCP endpoints consolidated in server/routes.ts under /api/mcp/ namespace
 
   // Register main API routes first (includes MCP endpoints)
-  const server = await registerRoutes(app);
+  const server = await registerFinalRoutes(app);
 
   // Add middleware to ensure API routes are handled before catch-all
   app.use('/gpt/*', (req, res, next) => {
