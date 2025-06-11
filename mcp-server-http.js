@@ -105,50 +105,6 @@ app.post('/mcp/:toolName', async (req, res) => {
   }
 });
 
-// MCP Server configuration endpoint
-app.get('/mcp/config', (req, res) => {
-  res.json({
-    server: {
-      name: "bizworx-mcp-server",
-      version: "1.0.0",
-      protocolVersion: "2024-11-05",
-      capabilities: {
-        tools: {
-          listChanged: false
-        },
-        resources: {},
-        prompts: {},
-        experimental: {}
-      }
-    },
-    endpoints: {
-      sse: "/sse",
-      events: "/mcp/events", 
-      call: "/mcp/call",
-      tools: "/mcp/tools"
-    },
-    authentication: {
-      required: true,
-      method: "X-API-Key",
-      description: "Business API key required in X-API-Key header"
-    },
-    tools: Object.keys(toolMap).map(name => ({
-      name,
-      description: getToolDescription(name),
-      inputSchema: {
-        type: 'object',
-        properties: {
-          apiKey: { 
-            type: 'string', 
-            description: 'Business API key for authentication' 
-          }
-        },
-        required: ['apiKey']
-      }
-    }))
-  });
-});
-
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ 
@@ -156,12 +112,7 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     server: 'BizWorx MCP HTTP Server',
     version: '1.0.0',
-    url: 'https://BluecollarBizWorx.replit.app:8000',
-    mcp: {
-      protocol: "2024-11-05",
-      tools_count: Object.keys(toolMap).length,
-      endpoints: ["/sse", "/mcp/events", "/mcp/call", "/mcp/config"]
-    }
+    url: 'https://BluecollarBizWorx.replit.app:3002'
   });
 });
 
@@ -173,7 +124,7 @@ app.get('/test', (req, res) => {
     endpoint: '/mcp/events',
     protocol: 'MCP 2024-11-05',
     tools_available: Object.keys(toolMap).length,
-    correct_url: 'https://BluecollarBizWorx.replit.app:8000'
+    correct_url: 'https://BluecollarBizWorx.replit.app:3002'
   });
 });
 
@@ -204,7 +155,7 @@ function getToolDescription(toolName) {
 }
 
 // SSE endpoint for N8N MCP node compatibility
-app.get('/sse', (req, res) => {
+app.get('/mcp/events', (req, res) => {
   console.log('SSE connection established from:', req.headers['user-agent']);
   console.log('SSE Headers:', req.headers);
 
@@ -221,39 +172,30 @@ app.get('/sse', (req, res) => {
   // Add to active connections
   activeConnections.add(res);
 
-  // Send initial MCP handshake with proper protocol
+  // Send initial MCP handshake
   const sendMessage = (data) => {
-    try {
-      res.write(`data: ${JSON.stringify(data)}\n\n`);
-    } catch (err) {
-      console.error('Error sending SSE message:', err);
-    }
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
   };
 
-  // MCP server configuration - proper initialization sequence
+  // MCP initialization sequence
   sendMessage({
     jsonrpc: "2.0",
     method: "notifications/initialized",
     params: {}
   });
 
-  // Send server capabilities with defined tools
   setTimeout(() => {
     sendMessage({
       jsonrpc: "2.0",
       method: "server/capabilities",
       params: {
-        tools: {
-          listChanged: false
-        },
+        tools: {},
         resources: {},
-        prompts: {},
-        experimental: {}
+        prompts: {}
       }
     });
   }, 100);
 
-  // Send server info with proper versioning
   setTimeout(() => {
     sendMessage({
       jsonrpc: "2.0",
@@ -261,48 +203,17 @@ app.get('/sse', (req, res) => {
       params: {
         name: "bizworx-mcp-server",
         version: "1.0.0",
-        protocolVersion: "2024-11-05",
-        serverInfo: {
-          name: "BizWorx MCP Server",
-          version: "1.0.0"
-        }
+        protocolVersion: "2024-11-05"
       }
     });
   }, 200);
 
-  // Send available tools list
-  setTimeout(() => {
-    const tools = Object.keys(toolMap).map(name => ({
-      name,
-      description: getToolDescription(name),
-      inputSchema: {
-        type: 'object',
-        properties: {
-          apiKey: { 
-            type: 'string', 
-            description: 'Business API key for authentication' 
-          }
-        },
-        required: ['apiKey']
-      }
-    }));
-
-    sendMessage({
-      jsonrpc: "2.0",
-      method: "tools/list",
-      params: { tools }
-    });
-  }, 300);
-
-  // Keep connection alive with proper heartbeat
+  // Keep connection alive
   const keepAlive = setInterval(() => {
     sendMessage({
       jsonrpc: "2.0",
       method: "notifications/ping",
-      params: { 
-        timestamp: Date.now(),
-        server: "bizworx-mcp-server"
-      }
+      params: { timestamp: Date.now() }
     });
   }, 30000);
 
@@ -318,13 +229,6 @@ app.get('/sse', (req, res) => {
     activeConnections.delete(res);
     clearInterval(keepAlive);
   });
-});
-
-// Alternative SSE endpoint for compatibility
-app.get('/mcp/events', (req, res) => {
-  // Redirect to main SSE endpoint
-  req.url = '/sse';
-  app._router.handle(req, res);
 });
 
 // POST endpoint for MCP protocol messages
@@ -439,32 +343,13 @@ app.post('/mcp/call', async (req, res) => {
   return app._router.handle(req, res);
 });
 
-const PORT = process.env.MCP_HTTP_PORT || 8000;
+const PORT = process.env.MCP_HTTP_PORT || 3001;
 const HOST = '0.0.0.0';
-
-// Detect the correct external URL based on environment
-const getExternalUrl = () => {
-  if (process.env.REPL_SLUG && process.env.REPL_OWNER) {
-    return `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`;
-  }
-  return 'https://BluecollarBizWorx.replit.app';
-};
-
 app.listen(PORT, HOST, () => {
-  const externalUrl = getExternalUrl();
-  console.log('🚀 BizWorx MCP Server Started');
-  console.log(`📡 Server: ${HOST}:${PORT}`);
-  console.log(`🌐 External URL: ${externalUrl}:${PORT}`);
-  console.log(`🔧 MCP Protocol: 2024-11-05`);
-  console.log(`📋 Available Tools: ${Object.keys(toolMap).length}`);
-  console.log('\n📌 MCP Endpoints:');
-  console.log(`   SSE Stream: https://BluecollarBizWorx.replit.app:8000/sse`);
-  console.log(`   Events: https://BluecollarBizWorx.replit.app:8000/mcp/events`);
-  console.log(`   Call: https://BluecollarBizWorx.replit.app:8000/mcp/call`);
-  console.log(`   Config: https://BluecollarBizWorx.replit.app:8000/mcp/config`);
-  console.log(`   Health: https://BluecollarBizWorx.replit.app:8000/health`);
-  console.log('\n🔑 Authentication: X-API-Key header required');
-  console.log('✅ MCP Server ready for AI client connections');
+  console.log(`MCP HTTP server running on ${HOST}:${PORT}`);
+  console.log(`External URL: https://BluecollarBizWorx.replit.app:${PORT}`);
+  console.log(`Health check: https://BluecollarBizWorx.replit.app:${PORT}/health`);
+  console.log(`Test endpoint: https://BluecollarBizWorx.replit.app:${PORT}/test`);
 });
 
 // Graceful shutdown
