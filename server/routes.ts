@@ -2988,16 +2988,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get estimates (external API)
-  app.get("/api/external/estimates", authenticateApiKey, async (req, res) => {
-    try {
-      const estimates = await storage.getEstimatesByBusiness(req.businessId);
-      res.json(estimates);
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
   // Create estimate (external API)
   app.post("/api/external/estimates", authenticateApiKey, async (req, res) => {
     try {
@@ -3226,10 +3216,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // GPT Authentication function
   function authenticateGPT(req: any, res: any, next: any) {
+    console.log('=== GPT AUTHENTICATION CALLED ===');
+    console.log('Request URL:', req.url);
+    console.log('Request method:', req.method);
     const apiKey = req.headers['x-api-key'];
+    console.log('API Key present:', !!apiKey);
     if (!apiKey) return res.status(401).json({ success: false, error: 'API key required' });
     storage.getBusinessByApiKey(apiKey).then((business: any) => {
       if (!business) return res.status(401).json({ success: false, error: 'Invalid API key' });
+      console.log('Business authenticated:', business.name);
       req.business = business;
       next();
     }).catch((error: any) => res.status(500).json({ success: false, error: 'Authentication error' }));
@@ -3322,6 +3317,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // GPT Estimates endpoints - Updated to include complete schema data
   app.get('/api/gpt/estimates', authenticateGPT, async (req: any, res: any) => {
+    console.log('=== GPT ESTIMATES ROUTE ACCESSED ===');
+    console.log('Business ID:', req.business.id);
     try {
       // Direct database query with proper joins and formatting
       const rawEstimates = await db
