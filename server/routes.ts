@@ -92,17 +92,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Debug endpoint to capture ChatGPT headers
+  app.all('/api/gpt/debug', (req, res) => {
+    console.log('=== CHATGPT DEBUG REQUEST ===');
+    console.log('Method:', req.method);
+    console.log('Headers:', JSON.stringify(req.headers, null, 2));
+    console.log('Body:', req.body);
+    console.log('Query:', req.query);
+    console.log('=============================');
+    
+    res.json({
+      success: true,
+      headers: req.headers,
+      method: req.method,
+      body: req.body,
+      query: req.query,
+      message: 'Debug info captured'
+    });
+  });
+
   // ChatGPT Custom GPT endpoints - moved to /api/gpt/ to bypass Vite middleware
   app.get('/api/gpt/dashboard', async (req, res) => {
     try {
       const apiKey = getApiKey(req);
       if (!apiKey || apiKey === 'undefined') {
-        return res.status(200).json({ success: true, data: { totalClients: 0, totalJobs: 0, revenue: 0 }, message: 'No API key provided' });
+        return res.status(403).json({ 
+          success: false, 
+          error: 'No API key provided', 
+          message: 'Authentication required. Please provide a valid API key.',
+          details: 'Use X-API-Key header with your business API key'
+        });
       }
 
       const business = await storage.getBusinessByApiKey(apiKey);
       if (!business) {
-        return res.status(200).json({ success: true, data: { totalClients: 0, totalJobs: 0, revenue: 0 }, message: 'Invalid API key' });
+        return res.status(403).json({ 
+          success: false, 
+          error: 'Invalid API key', 
+          message: 'The provided API key is not valid or has been revoked.',
+          details: 'Please check your API key in the BizWorx dashboard'
+        });
       }
 
       const clients = await storage.getClientsByBusiness(business.id);

@@ -17,6 +17,30 @@
     }
   ],
   "paths": {
+    "/api/gpt/debug": {
+      "get": {
+        "summary": "Debug authentication headers",
+        "description": "Test endpoint to debug authentication headers sent by ChatGPT",
+        "operationId": "debugAuth",
+        "responses": {
+          "200": {
+            "description": "Debug information returned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "headers": { "type": "object" },
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/gpt/dashboard": {
       "get": {
         "summary": "Get business dashboard overview",
