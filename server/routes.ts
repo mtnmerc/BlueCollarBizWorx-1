@@ -35,7 +35,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Register DELETE endpoint FIRST to prevent conflicts - explicit route registration
-  app.delete('/api/gpt/clients/:id', async (req, res) => {
+  app.delete('/deleteClient/:id', async (req, res) => {
     try {
       console.log('=== CLIENT DELETE REQUEST FROM CHATGPT ===');
       console.log('Client ID:', req.params.id);
