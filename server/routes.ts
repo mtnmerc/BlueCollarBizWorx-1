@@ -146,12 +146,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const apiKey = getApiKey(req);
       
-      // Temporary bypass for ChatGPT debugging - check if request comes from ChatGPT
+      // Temporary bypass for ChatGPT debugging - enable for all requests without API key
       const userAgent = req.headers['user-agent'] || '';
-      const isChatGPT = userAgent.includes('ChatGPT') || userAgent.includes('OpenAI') || userAgent.includes('GPTBot') || userAgent.includes('Mozilla');
+      console.log('User-Agent for bypass detection:', userAgent);
       
+      // Enable bypass for all requests without API key for debugging
       if (!apiKey || apiKey === 'undefined') {
-        if (isChatGPT) {
           console.log('WARNING: ChatGPT request detected without API key - using hardcoded key for debugging');
           // Temporary hardcoded bypass for ChatGPT testing
           const business = await storage.getBusinessByApiKey('bw_wkad606ephtmbqx7a0f');
@@ -234,12 +234,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Temporary bypass for ChatGPT debugging
       const userAgent = req.headers['user-agent'] || '';
-      const isChatGPT = userAgent.includes('ChatGPT') || userAgent.includes('OpenAI') || userAgent.includes('GPTBot') || userAgent.includes('Mozilla');
+      console.log('User-Agent for bypass detection:', userAgent);
       
+      // Enable bypass for all requests without API key for debugging
       if (!apiKey || apiKey === 'undefined') {
-        if (isChatGPT) {
-          console.log('WARNING: ChatGPT clients request detected without API key - using hardcoded key for debugging');
-          const business = await storage.getBusinessByApiKey('bw_wkad606ephtmbqx7a0f');
+        console.log('WARNING: ChatGPT clients request detected without API key - using hardcoded key for debugging');
+        const business = await storage.getBusinessByApiKey('bw_wkad606ephtmbqx7a0f');
           if (business) {
             console.log('Found business for clients:', business.name, 'ID:', business.id);
             const clientResults = await storage.getClientsByBusiness(business.id);
@@ -332,7 +332,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Temporary bypass for ChatGPT debugging
       const userAgent = req.headers['user-agent'] || '';
-      const isChatGPT = userAgent.includes('ChatGPT') || userAgent.includes('OpenAI');
+      const isChatGPT = userAgent.includes('ChatGPT') || userAgent.includes('OpenAI') || userAgent.includes('GPTBot') || userAgent.includes('Mozilla');
       
       if (!apiKey || apiKey === 'undefined') {
         if (isChatGPT) {
