@@ -86,21 +86,7 @@ app.use((req, res, next) => {
   // Register main API routes first (includes MCP endpoints)
   const server = await registerRoutes(app);
 
-  // Add specific handler for /getClients before any catch-all routes
-  app.all('/getClients', (req, res) => {
-    res.status(404).json({ 
-      success: false, 
-      error: 'getClients endpoint moved to /api/gpt/clients',
-      redirect: '/api/gpt/clients'
-    });
-  });
-
   // Add middleware to ensure API routes are handled before catch-all
-  app.use('/gpt/*', (req, res, next) => {
-    // If we reach here, the route wasn't handled by registerRoutes
-    res.status(404).json({ success: false, error: 'GPT endpoint not found' });
-  });
-
   app.use('/api/*', (req, res, next) => {
     // If we reach here, the route wasn't handled by registerRoutes
     res.status(404).json({ success: false, error: 'API endpoint not found' });
@@ -126,13 +112,15 @@ app.use((req, res, next) => {
 
   // Global 404 handler for API routes - ensure JSON response
   app.use('*', (req: Request, res: Response) => {
-    if (req.path.startsWith('/api/') || req.path.startsWith('/gpt/')) {
+    if (req.path.startsWith('/api/') || req.path.startsWith('/gpt/') || req.path.startsWith('/getClients') || req.path.startsWith('/getJobs') || req.path.startsWith('/getDashboard')) {
       return res.status(404).json({
         success: false,
         error: `Endpoint ${req.method} ${req.path} not found`,
         availableEndpoints: [
+          'GET /getClients',
+          'GET /getJobs', 
+          'GET /getDashboard',
           'GET /api/gpt/clients',
-          'POST /api/gpt/clients/create',
           'GET /api/gpt/jobs',
           'GET /api/gpt/dashboard'
         ]
