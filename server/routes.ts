@@ -2,11 +2,11 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { db } from "./db";
-import { insertBusinessSchema, insertUserSchema, insertClientSchema, insertServiceSchema, insertJobSchema, insertInvoiceSchema, insertEstimateSchema, insertTimeEntrySchema, clients, jobs, businesses } from "@shared/schema";
+import { insertBusinessSchema, insertUserSchema, insertClientSchema, insertServiceSchema, insertJobSchema, insertInvoiceSchema, insertEstimateSchema, insertTimeEntrySchema, clients, jobs, businesses, estimates } from "@shared/schema";
 import { z } from "zod";
 import express from "express";
 import path from "path";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 
 // Authentication middleware
 const authenticateSession = (req: any, res: any, next: any) => {
@@ -3343,10 +3343,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GPT Estimates endpoints - Updated to include complete schema data
   app.get('/api/gpt/estimates', authenticateGPT, async (req: any, res: any) => {
     try {
-      const estimates = await storage.getEstimatesByBusiness(req.business.id);
+      // Get raw estimates from database with client join
+      const rawEstimates = await storage.db
+        .select({
+          id: estimates.id,
+          businessId: estimates.businessId,
+          clientId: estimates.clientId,
+          estimateNumber: estimates.estimateNumber,
+          title: estimates.title,
+          description: estimates.description,
+          lineItems: estimates.lineItems,
+          subtotal: estimates.subtotal,
+          taxRate: estimates.taxRate,
+          taxAmount: estimates.taxAmount,
+          total: estimates.total,
+          status: estimates.status,
+          validUntil: estimates.validUntil,
+          notes: estimates.notes,
+          shareToken: estimates.shareToken,
+          createdAt: estimates.createdAt,
+          clientName: clients.name,
+        })
+        .from(estimates)
+        .leftJoin(clients, eq(estimates.clientId, clients.id))
+        .where(eq(estimates.businessId, req.business.id))
+        .orderBy(desc(estimates.createdAt));
       
       // Format estimates to match schema expectations
-      const formattedEstimates = estimates.map((estimate: any) => ({
+      const formattedEstimates = rawEstimates.map((estimate: any) => ({
         id: estimate.id,
         businessId: estimate.businessId,
         clientId: estimate.clientId,
@@ -3373,7 +3397,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ 
         success: true, 
         data: formattedEstimates, 
-        message: `Found ${estimates.length} estimates for ${req.business.name}`, 
+        message: `Found ${rawEstimates.length} estimates for ${req.business.name}`, 
         businessVerification: { 
           businessName: req.business.name, 
           businessId: req.business.id, 
