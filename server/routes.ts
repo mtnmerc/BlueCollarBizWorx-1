@@ -261,8 +261,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ChatGPT Clients POST endpoint for creation requests
-  app.post('/api/gpt/clients', async (req, res) => {
+  // ChatGPT Create Client endpoint
+  app.post('/createClient', async (req, res) => {
     console.log('=== CHATGPT CLIENT CREATION REQUEST ===');
     console.log('Method:', req.method);
     console.log('URL:', req.url);

@@ -61,7 +61,7 @@
         }
       }
     },
-    "/api/gpt/clients": {
+    "/createClient": {
       "post": {
         "operationId": "createClient",
         "summary": "Create a new client",
@@ -134,7 +134,7 @@
         }
       }
     },
-    "/api/gpt/clients/{id}": {
+    "/deleteClient/{id}": {
       "delete": {
         "operationId": "deleteClient",
         "summary": "Delete a client",
@@ -204,16 +204,16 @@
   },
   "components": {
     "securitySchemes": {
-      "BearerAuth": {
-        "type": "http",
-        "scheme": "bearer",
-        "bearerFormat": "API_KEY"
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
       }
     }
   },
   "security": [
     {
-      "BearerAuth": []
+      "ApiKeyAuth": []
     }
   ]
 }

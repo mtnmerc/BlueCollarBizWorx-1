@@ -64,16 +64,16 @@
   },
   "components": {
     "securitySchemes": {
-      "BearerAuth": {
-        "type": "http",
-        "scheme": "bearer",
-        "bearerFormat": "API_KEY"
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
       }
     }
   },
   "security": [
     {
-      "BearerAuth": []
+      "ApiKeyAuth": []
     }
   ]
 }
