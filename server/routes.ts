@@ -24,13 +24,17 @@ const getApiKey = (req: any): string | null => {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
-  // Add debug middleware for all API requests
-  app.use('/api/*', (req, res, next) => {
-    console.log(`=== API REQUEST: ${req.method} ${req.originalUrl} ===`);
+  // Add comprehensive debug middleware for all requests
+  app.use((req, res, next) => {
+    if (req.originalUrl.includes('/api/gpt/clients')) {
+      console.log(`=== CLIENT REQUEST: ${req.method} ${req.originalUrl} ===`);
+      console.log('Headers:', req.headers);
+      console.log('Params:', req.params);
+    }
     next();
   });
 
-  // Register DELETE endpoint FIRST to prevent conflicts
+  // Register DELETE endpoint FIRST to prevent conflicts - explicit route registration
   app.delete('/api/gpt/clients/:id', async (req, res) => {
     try {
       console.log('=== CLIENT DELETE REQUEST FROM CHATGPT ===');

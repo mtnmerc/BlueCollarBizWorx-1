@@ -86,6 +86,17 @@ app.use((req, res, next) => {
   // Register main API routes first (includes MCP endpoints)
   const server = await registerRoutes(app);
 
+  // Add final catch-all handler for unmatched routes
+  app.use((req, res) => {
+    console.log(`Unmatched route: ${req.method} ${req.path}`);
+    res.status(404).json({ 
+      success: false, 
+      error: 'API endpoint not found',
+      method: req.method,
+      path: req.path 
+    });
+  });
+
   // Add comprehensive error handler for JSON responses
   app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
     console.error("Server Error:", err);
