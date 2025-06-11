@@ -11,7 +11,7 @@
     }
   ],
   "paths": {
-    "/getClients": {
+    "/api/gpt/clients": {
       "get": {
         "operationId": "getClients",
         "summary": "Get all clients",
@@ -61,7 +61,7 @@
         }
       }
     },
-    "/createClient": {
+    "/api/gpt/clients/create": {
       "post": {
         "operationId": "createClient",
         "summary": "Create a new client",
@@ -134,7 +134,7 @@
         }
       }
     },
-    "/deleteClient/{id}": {
+    "/api/gpt/clients/{id}": {
       "delete": {
         "operationId": "deleteClient",
         "summary": "Delete a client",
