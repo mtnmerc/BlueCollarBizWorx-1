@@ -24,6 +24,74 @@ const getApiKey = (req: any): string | null => {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
+  // Add debug middleware for all API requests
+  app.use('/api/*', (req, res, next) => {
+    console.log(`=== API REQUEST: ${req.method} ${req.originalUrl} ===`);
+    next();
+  });
+
+  // Register DELETE endpoint FIRST to prevent conflicts
+  app.delete('/api/gpt/clients/:id', async (req, res) => {
+    try {
+      console.log('=== CLIENT DELETE REQUEST FROM CHATGPT ===');
+      console.log('Client ID:', req.params.id);
+      
+      const apiKey = getApiKey(req);
+      const targetApiKey = apiKey || 'bw_wkad606ephtmbqx7a0f';
+      const business = await storage.getBusinessByApiKey(targetApiKey);
+      
+      if (!business) {
+        return res.status(401).json({ 
+          success: false, 
+          error: 'Invalid API key' 
+        });
+      }
+
+      const clientId = parseInt(req.params.id);
+      if (!clientId || isNaN(clientId)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid client ID'
+        });
+      }
+
+      // Check if client exists and belongs to this business
+      const client = await storage.getClientById(clientId);
+      if (!client) {
+        return res.status(404).json({
+          success: false,
+          error: 'Client not found'
+        });
+      }
+
+      if (client.businessId !== business.id) {
+        return res.status(403).json({
+          success: false,
+          error: 'Access denied: Client belongs to different business'
+        });
+      }
+
+      // Delete the client
+      await storage.deleteClient(clientId);
+
+      res.json({
+        success: true,
+        message: `Client "${client.name}" deleted successfully`,
+        data: {
+          deletedClientId: clientId,
+          deletedClientName: client.name
+        }
+      });
+    } catch (error: any) {
+      console.error('Client delete error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to delete client',
+        details: error.message
+      });
+    }
+  });
+  
   // Health check
   app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -83,68 +151,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         success: false, 
         error: 'Authentic data retrieval failed',
-        details: error.message
-      });
-    }
-  });
-
-  // ChatGPT Client Delete endpoint (must be before general /clients routes)
-  app.delete('/api/gpt/clients/:id', async (req, res) => {
-    try {
-      console.log('=== CLIENT DELETE REQUEST FROM CHATGPT ===');
-      console.log('Client ID:', req.params.id);
-      
-      const apiKey = getApiKey(req);
-      const targetApiKey = apiKey || 'bw_wkad606ephtmbqx7a0f';
-      const business = await storage.getBusinessByApiKey(targetApiKey);
-      
-      if (!business) {
-        return res.status(401).json({ 
-          success: false, 
-          error: 'Invalid API key' 
-        });
-      }
-
-      const clientId = parseInt(req.params.id);
-      if (!clientId || isNaN(clientId)) {
-        return res.status(400).json({
-          success: false,
-          error: 'Invalid client ID'
-        });
-      }
-
-      // Check if client exists and belongs to this business
-      const client = await storage.getClientById(clientId);
-      if (!client) {
-        return res.status(404).json({
-          success: false,
-          error: 'Client not found'
-        });
-      }
-
-      if (client.businessId !== business.id) {
-        return res.status(403).json({
-          success: false,
-          error: 'Access denied: Client belongs to different business'
-        });
-      }
-
-      // Delete the client
-      await storage.deleteClient(clientId);
-
-      res.json({
-        success: true,
-        message: `Client "${client.name}" deleted successfully`,
-        data: {
-          deletedClientId: clientId,
-          deletedClientName: client.name
-        }
-      });
-    } catch (error: any) {
-      console.error('Client delete error:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: 'Failed to delete client',
         details: error.message
       });
     }
