@@ -33,6 +33,7 @@ export interface IStorage {
   getClientsByBusiness(businessId: number): Promise<Client[]>;
   getClientById(id: number): Promise<Client | undefined>;
   updateClient(id: number, client: Partial<InsertClient>): Promise<Client>;
+  deleteClient(id: number): Promise<void>;
 
   // Service methods
   createService(service: InsertService): Promise<Service>;
@@ -193,6 +194,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(clients.id, id))
       .returning();
     return updatedClient;
+  }
+
+  async deleteClient(id: number): Promise<void> {
+    await this.db.delete(clients).where(eq(clients.id, id));
   }
 
   // Service methods
