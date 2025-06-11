@@ -2,7 +2,6 @@ import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import cors from 'cors';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 
 const app = express();
@@ -52,11 +51,19 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Add CORS middleware first
-  app.use(cors({
-    origin: true,
-    credentials: true
-  }));
+  // Add CORS middleware manually for ChatGPT/OpenAI compatibility
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-Key, Accept');
+    res.header('Access-Control-Expose-Headers', 'Content-Type');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    
+    if (req.method === 'OPTIONS') {
+      return res.status(200).end();
+    }
+    next();
+  });
 
   // Add debug middleware to log all API requests
   app.use((req, res, next) => {
@@ -90,12 +97,39 @@ app.use((req, res, next) => {
     res.status(404).json({ success: false, error: 'API endpoint not found' });
   });
 
-  // Add error handler after routes
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  // Add comprehensive error handler for JSON responses
+  app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
+    console.error("Server Error:", err);
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
+    
+    // Always return JSON for API endpoints
+    if (req.path.startsWith('/api/') || req.path.startsWith('/gpt/')) {
+      return res.status(status).json({ 
+        success: false,
+        error: message,
+        timestamp: new Date().toISOString()
+      });
+    }
+    
     res.status(status).json({ message });
-    console.error("Error:", err);
+  });
+
+  // Global 404 handler for API routes - ensure JSON response
+  app.use('*', (req: Request, res: Response) => {
+    if (req.path.startsWith('/api/') || req.path.startsWith('/gpt/')) {
+      return res.status(404).json({
+        success: false,
+        error: `Endpoint ${req.method} ${req.path} not found`,
+        availableEndpoints: [
+          'GET /api/gpt/clients',
+          'POST /api/gpt/clients/create',
+          'GET /api/gpt/jobs',
+          'GET /api/gpt/dashboard'
+        ]
+      });
+    }
+    res.status(404).send('Not Found');
   });
 
   // importantly only setup vite in development and after

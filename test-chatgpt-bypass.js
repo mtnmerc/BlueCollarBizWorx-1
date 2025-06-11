@@ -3,54 +3,103 @@ import fetch from 'node-fetch';
 const BASE_URL = 'https://bluecollarbizworx.replit.app';
 
 async function testChatGPTBypass() {
-  console.log('Testing ChatGPT bypass endpoints...\n');
+  console.log('Testing ChatGPT API access with proper JSON responses...\n');
   
-  // Test with ChatGPT user agent to trigger bypass
-  const chatGPTHeaders = {
-    'User-Agent': 'ChatGPT/1.0',
-    'Content-Type': 'application/json'
-  };
-  
-  console.log('1. Testing dashboard with ChatGPT bypass:');
+  // Test 1: Get clients with proper headers
+  console.log('1. Testing GET /api/gpt/clients:');
   try {
-    const response1 = await fetch(`${BASE_URL}/api/gpt/dashboard`, {
+    const response = await fetch(`${BASE_URL}/api/gpt/clients`, {
       method: 'GET',
-      headers: chatGPTHeaders
+      headers: {
+        'X-API-Key': 'bw_wkad606ephtmbqx7a0f',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'User-Agent': 'ChatGPT/1.0'
+      }
     });
     
-    const result1 = await response1.json();
-    console.log('Status:', response1.status);
-    console.log('Response:', JSON.stringify(result1, null, 2));
+    console.log('Status:', response.status);
+    console.log('Content-Type:', response.headers.get('content-type'));
+    
+    const text = await response.text();
+    console.log('Response type:', typeof text);
+    console.log('Response length:', text.length);
+    
+    if (response.status === 200) {
+      const data = JSON.parse(text);
+      console.log('✓ SUCCESS: JSON response received');
+      console.log('Clients found:', data.data?.length || 0);
+      console.log('Real clients:', data.data?.filter(c => 
+        c.name === 'John Deere' || c.name === 'Christine Vasickanin'
+      ).length || 0);
+    } else {
+      console.log('❌ Error response:', text.substring(0, 200));
+    }
   } catch (error) {
-    console.error('Error:', error.message);
+    console.error('❌ Test 1 failed:', error.message);
   }
   
-  console.log('\n2. Testing clients with ChatGPT bypass:');
+  // Test 2: Test POST to wrong endpoint (should get JSON error)
+  console.log('\n2. Testing POST /api/gpt/clients (should return JSON error):');
   try {
-    const response2 = await fetch(`${BASE_URL}/api/gpt/clients`, {
-      method: 'GET',
-      headers: chatGPTHeaders
+    const response = await fetch(`${BASE_URL}/api/gpt/clients`, {
+      method: 'POST',
+      headers: {
+        'X-API-Key': 'bw_wkad606ephtmbqx7a0f',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({})
     });
     
-    const result2 = await response2.json();
-    console.log('Status:', response2.status);
-    console.log('Response:', JSON.stringify(result2, null, 2));
+    console.log('Status:', response.status);
+    console.log('Content-Type:', response.headers.get('content-type'));
+    
+    const text = await response.text();
+    if (text.includes('<html>') || text.includes('<!DOCTYPE')) {
+      console.log('❌ PROBLEM: HTML response instead of JSON');
+      console.log('Response:', text.substring(0, 100));
+    } else {
+      console.log('✓ SUCCESS: JSON error response received');
+      try {
+        const data = JSON.parse(text);
+        console.log('Error message:', data.error || data.message);
+      } catch (e) {
+        console.log('Response text:', text);
+      }
+    }
   } catch (error) {
-    console.error('Error:', error.message);
+    console.error('❌ Test 2 failed:', error.message);
   }
   
-  console.log('\n3. Testing jobs with ChatGPT bypass:');
+  // Test 3: Test nonexistent endpoint
+  console.log('\n3. Testing GET /api/gpt/nonexistent (should return JSON 404):');
   try {
-    const response3 = await fetch(`${BASE_URL}/api/gpt/jobs`, {
+    const response = await fetch(`${BASE_URL}/api/gpt/nonexistent`, {
       method: 'GET',
-      headers: chatGPTHeaders
+      headers: {
+        'X-API-Key': 'bw_wkad606ephtmbqx7a0f',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
     });
     
-    const result3 = await response3.json();
-    console.log('Status:', response3.status);
-    console.log('Response:', JSON.stringify(result3, null, 2));
+    console.log('Status:', response.status);
+    const text = await response.text();
+    
+    if (text.includes('<html>') || text.includes('<!DOCTYPE')) {
+      console.log('❌ PROBLEM: HTML 404 instead of JSON');
+    } else {
+      console.log('✓ SUCCESS: JSON 404 response');
+      try {
+        const data = JSON.parse(text);
+        console.log('404 message:', data.error);
+      } catch (e) {
+        console.log('Response:', text);
+      }
+    }
   } catch (error) {
-    console.error('Error:', error.message);
+    console.error('❌ Test 3 failed:', error.message);
   }
 }
 
