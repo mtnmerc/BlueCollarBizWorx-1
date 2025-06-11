@@ -76,7 +76,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ChatGPT Custom GPT endpoints - moved to /api/gpt/ to bypass Vite middleware
-  app.get('/api/gpt/dashboard/stats', async (req, res) => {
+  app.get('/api/gpt/dashboard', async (req, res) => {
     try {
       const apiKey = getApiKey(req);
       if (!apiKey || apiKey === 'undefined') {
@@ -213,7 +213,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/gpt/jobs', async (req, res) => {
     try {
-      const apiKey = req.headers.authorization?.replace('Bearer ', '');
+      const apiKey = getApiKey(req);
       if (!apiKey || apiKey === 'undefined') {
         return res.status(401).json({ success: false, error: 'API key required' });
       }
@@ -249,7 +249,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/gpt/revenue', async (req, res) => {
     try {
-      const apiKey = req.headers.authorization?.replace('Bearer ', '');
+      const apiKey = getApiKey(req);
       if (!apiKey || apiKey === 'undefined') {
         return res.status(401).json({ success: false, error: 'API key required' });
       }
@@ -276,7 +276,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/gpt/invoices', async (req, res) => {
     try {
-      const apiKey = req.headers.authorization?.replace('Bearer ', '');
+      const apiKey = getApiKey(req);
       if (!apiKey || apiKey === 'undefined') {
         return res.status(401).json({ success: false, error: 'API key required' });
       }
@@ -311,7 +311,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/gpt/estimates', async (req, res) => {
     try {
-      const apiKey = req.headers.authorization?.replace('Bearer ', '');
+      const apiKey = getApiKey(req);
       if (!apiKey || apiKey === 'undefined') {
         return res.status(401).json({ success: false, error: 'API key required' });
       }
@@ -342,6 +342,283 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       res.status(500).json({ success: false, error: 'Failed to create estimate' });
+    }
+  });
+
+  // Get all invoices endpoint
+  app.get('/api/gpt/invoices', async (req, res) => {
+    try {
+      const apiKey = getApiKey(req);
+      if (!apiKey || apiKey === 'undefined') {
+        return res.status(401).json({ success: false, error: 'API key required' });
+      }
+
+      const business = await storage.getBusinessByApiKey(apiKey);
+      if (!business) {
+        return res.status(401).json({ success: false, error: 'Invalid API key' });
+      }
+
+      const invoices = await storage.getInvoicesByBusiness(business.id);
+      res.json({
+        success: true,
+        data: invoices.map((i: any) => ({
+          id: i.id,
+          invoiceNumber: i.invoiceNumber,
+          title: i.title,
+          client: i.client?.name,
+          total: i.total,
+          status: i.status,
+          dueDate: i.dueDate,
+          paidAt: i.paidAt
+        })),
+        message: `Found ${invoices.length} invoices`
+      });
+    } catch (error) {
+      res.status(500).json({ success: false, error: 'Failed to get invoices' });
+    }
+  });
+
+  // Get all estimates endpoint
+  app.get('/api/gpt/estimates', async (req, res) => {
+    try {
+      const apiKey = getApiKey(req);
+      if (!apiKey || apiKey === 'undefined') {
+        return res.status(401).json({ success: false, error: 'API key required' });
+      }
+
+      const business = await storage.getBusinessByApiKey(apiKey);
+      if (!business) {
+        return res.status(401).json({ success: false, error: 'Invalid API key' });
+      }
+
+      const estimates = await storage.getEstimatesByBusiness(business.id);
+      res.json({
+        success: true,
+        data: estimates.map((e: any) => ({
+          id: e.id,
+          estimateNumber: e.estimateNumber,
+          title: e.title,
+          client: e.client?.name,
+          total: e.total,
+          status: e.status,
+          validUntil: e.validUntil
+        })),
+        message: `Found ${estimates.length} estimates`
+      });
+    } catch (error) {
+      res.status(500).json({ success: false, error: 'Failed to get estimates' });
+    }
+  });
+
+  // Get all services endpoint
+  app.get('/api/gpt/services', async (req, res) => {
+    try {
+      const apiKey = getApiKey(req);
+      if (!apiKey || apiKey === 'undefined') {
+        return res.status(401).json({ success: false, error: 'API key required' });
+      }
+
+      const business = await storage.getBusinessByApiKey(apiKey);
+      if (!business) {
+        return res.status(401).json({ success: false, error: 'Invalid API key' });
+      }
+
+      const services = await storage.getServicesByBusiness(business.id);
+      res.json({
+        success: true,
+        data: services.map((s: any) => ({
+          id: s.id,
+          name: s.name,
+          description: s.description,
+          rate: s.rate,
+          unit: s.unit,
+          isActive: s.isActive
+        })),
+        message: `Found ${services.length} services`
+      });
+    } catch (error) {
+      res.status(500).json({ success: false, error: 'Failed to get services' });
+    }
+  });
+
+  // Create service endpoint
+  app.post('/api/gpt/services', async (req, res) => {
+    try {
+      const apiKey = getApiKey(req);
+      if (!apiKey || apiKey === 'undefined') {
+        return res.status(401).json({ success: false, error: 'API key required' });
+      }
+
+      const business = await storage.getBusinessByApiKey(apiKey);
+      if (!business) {
+        return res.status(401).json({ success: false, error: 'Invalid API key' });
+      }
+
+      const serviceData = {
+        businessId: business.id,
+        name: req.body.name,
+        description: req.body.description || null,
+        rate: req.body.rate || '0.00',
+        unit: req.body.unit || 'hour',
+        isActive: req.body.isActive !== false
+      };
+      
+      const service = await storage.createService(serviceData);
+      res.json({
+        success: true,
+        data: service,
+        message: `Service "${service.name}" created successfully`
+      });
+    } catch (error) {
+      res.status(500).json({ success: false, error: 'Failed to create service' });
+    }
+  });
+
+  // Get team members endpoint
+  app.get('/api/gpt/team', async (req, res) => {
+    try {
+      const apiKey = getApiKey(req);
+      if (!apiKey || apiKey === 'undefined') {
+        return res.status(401).json({ success: false, error: 'API key required' });
+      }
+
+      const business = await storage.getBusinessByApiKey(apiKey);
+      if (!business) {
+        return res.status(401).json({ success: false, error: 'Invalid API key' });
+      }
+
+      const users = await storage.getUsersByBusiness(business.id);
+      res.json({
+        success: true,
+        data: users.map((u: any) => ({
+          id: u.id,
+          username: u.username,
+          firstName: u.firstName,
+          lastName: u.lastName,
+          role: u.role,
+          phone: u.phone,
+          email: u.email,
+          isActive: u.isActive
+        })),
+        message: `Found ${users.length} team members`
+      });
+    } catch (error) {
+      res.status(500).json({ success: false, error: 'Failed to get team members' });
+    }
+  });
+
+  // Update job status endpoint
+  app.patch('/api/gpt/jobs/:id', async (req, res) => {
+    try {
+      const apiKey = getApiKey(req);
+      if (!apiKey || apiKey === 'undefined') {
+        return res.status(401).json({ success: false, error: 'API key required' });
+      }
+
+      const business = await storage.getBusinessByApiKey(apiKey);
+      if (!business) {
+        return res.status(401).json({ success: false, error: 'Invalid API key' });
+      }
+
+      const jobId = parseInt(req.params.id);
+      const updateData = {
+        status: req.body.status,
+        notes: req.body.notes,
+        actualAmount: req.body.actualAmount
+      };
+
+      const job = await storage.updateJob(jobId, updateData);
+      res.json({
+        success: true,
+        data: job,
+        message: `Job status updated to ${req.body.status}`
+      });
+    } catch (error) {
+      res.status(500).json({ success: false, error: 'Failed to update job' });
+    }
+  });
+
+  // Time tracking endpoints
+  app.post('/api/gpt/timeclock/in', async (req, res) => {
+    try {
+      const apiKey = getApiKey(req);
+      if (!apiKey || apiKey === 'undefined') {
+        return res.status(401).json({ success: false, error: 'API key required' });
+      }
+
+      const business = await storage.getBusinessByApiKey(apiKey);
+      if (!business) {
+        return res.status(401).json({ success: false, error: 'Invalid API key' });
+      }
+
+      const timeEntryData = {
+        businessId: business.id,
+        userId: req.body.userId,
+        jobId: req.body.jobId || null,
+        clockIn: new Date(),
+        notes: req.body.notes || null
+      };
+
+      const timeEntry = await storage.createTimeEntry(timeEntryData);
+      res.json({
+        success: true,
+        data: timeEntry,
+        message: 'Clocked in successfully'
+      });
+    } catch (error) {
+      res.status(500).json({ success: false, error: 'Failed to clock in' });
+    }
+  });
+
+  app.post('/api/gpt/timeclock/out', async (req, res) => {
+    try {
+      const apiKey = getApiKey(req);
+      if (!apiKey || apiKey === 'undefined') {
+        return res.status(401).json({ success: false, error: 'API key required' });
+      }
+
+      const business = await storage.getBusinessByApiKey(apiKey);
+      if (!business) {
+        return res.status(401).json({ success: false, error: 'Invalid API key' });
+      }
+
+      const timeEntryId = req.body.timeEntryId;
+      const clockOut = new Date();
+      
+      const timeEntry = await storage.updateTimeEntry(timeEntryId, { clockOut });
+      res.json({
+        success: true,
+        data: timeEntry,
+        message: 'Clocked out successfully'
+      });
+    } catch (error) {
+      res.status(500).json({ success: false, error: 'Failed to clock out' });
+    }
+  });
+
+  // Natural language processing endpoint for voice commands
+  app.post('/api/gpt/process', async (req, res) => {
+    try {
+      const apiKey = getApiKey(req);
+      if (!apiKey || apiKey === 'undefined') {
+        return res.status(401).json({ success: false, error: 'API key required' });
+      }
+
+      const business = await storage.getBusinessByApiKey(apiKey);
+      if (!business) {
+        return res.status(401).json({ success: false, error: 'Invalid API key' });
+      }
+
+      const { message, intent, context } = req.body;
+      const result = await processNaturalLanguage(message, intent, context);
+      
+      res.json({
+        success: true,
+        data: result,
+        message: 'Command processed successfully'
+      });
+    } catch (error) {
+      res.status(500).json({ success: false, error: 'Failed to process command' });
     }
   });
 
