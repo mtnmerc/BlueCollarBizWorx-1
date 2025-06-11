@@ -263,7 +263,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ChatGPT Clients POST endpoint for creation requests
   app.post('/api/gpt/clients', async (req, res) => {
-    console.log('=== CHATGPT CLIENT POST REQUEST RECEIVED ===');
+    console.log('=== CHATGPT CLIENT CREATION REQUEST ===');
     console.log('Method:', req.method);
     console.log('URL:', req.url);
     console.log('Headers:', JSON.stringify(req.headers, null, 2));
@@ -281,34 +281,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const clientResults = await storage.getClientsByBusiness(business.id);
+      // Validate request data
+      const { name, email, phone, address } = req.body;
       
+      if (!name || !email) {
+        return res.status(400).json({
+          success: false,
+          error: 'Missing required fields: name and email are required'
+        });
+      }
+
+      // Create the client
+      console.log('Creating client with data:', { name, email, phone, address, businessId: business.id });
+      
+      const newClient = await storage.createClient({
+        name,
+        email,
+        phone: phone || '',
+        address: address || null,
+        businessId: business.id
+      });
+
+      console.log('Client created successfully:', newClient);
+
       const response = {
         success: true,
-        data: clientResults.map((client: any) => ({
-          id: client.id,
-          name: client.name,
-          email: client.email,
-          phone: client.phone,
-          address: client.address,
-          createdAt: client.createdAt
-        })),
-        message: `${business.name} - ${clientResults.length} authentic clients retrieved`,
+        data: {
+          id: newClient.id,
+          name: newClient.name,
+          email: newClient.email,
+          phone: newClient.phone,
+          address: newClient.address,
+          createdAt: newClient.createdAt
+        },
+        message: `Client "${name}" created successfully for ${business.name}`,
         businessVerification: {
           businessName: business.name,
           businessId: business.id,
-          totalClients: clientResults.length,
-          dataSource: 'AUTHENTIC_DATABASE',
-          method: req.method
+          clientId: newClient.id,
+          dataSource: 'AUTHENTIC_DATABASE'
         }
       };
 
-      res.json(response);
+      console.log('Sending creation response:', JSON.stringify(response, null, 2));
+      res.status(201).json(response);
+      
     } catch (error: any) {
-      console.error('Clients POST error:', error);
+      console.error('Client creation error:', error);
       res.status(500).json({ 
         success: false, 
-        error: 'Server error',
+        error: 'Failed to create client',
         details: error.message,
         timestamp: new Date().toISOString()
       });
