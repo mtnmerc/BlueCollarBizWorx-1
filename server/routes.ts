@@ -34,6 +34,257 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   });
 
+  // Business Registration endpoint
+  app.post('/api/auth/business/register', async (req, res) => {
+    try {
+      const { name, email, password, phone, address } = req.body;
+      
+      if (!name || !email || !password) {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Name, email, and password are required' 
+        });
+      }
+
+      // Check if business already exists
+      const existingBusiness = await storage.getBusinessByEmail(email);
+      if (existingBusiness) {
+        return res.status(409).json({ 
+          success: false, 
+          error: 'Business with this email already exists' 
+        });
+      }
+
+      const business = await storage.createBusiness({
+        name,
+        email,
+        password,
+        phone: phone || '',
+        address: address || ''
+      });
+
+      res.json({ 
+        success: true, 
+        business: {
+          id: business.id,
+          name: business.name,
+          email: business.email,
+          phone: business.phone,
+          address: business.address
+        }
+      });
+    } catch (error: any) {
+      console.error('Business registration error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Registration failed',
+        details: error.message 
+      });
+    }
+  });
+
+  // Business Login endpoint
+  app.post('/api/auth/business/login', async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Email and password are required' 
+        });
+      }
+
+      const business = await storage.authenticateBusiness(email, password);
+      if (!business) {
+        return res.status(401).json({ 
+          success: false, 
+          error: 'Invalid email or password' 
+        });
+      }
+
+      // Check if business has an admin user
+      const adminUser = await storage.getAdminUserByBusiness(business.id);
+
+      res.json({ 
+        success: true, 
+        business: {
+          id: business.id,
+          name: business.name,
+          email: business.email,
+          phone: business.phone,
+          address: business.address
+        },
+        user: adminUser ? {
+          id: adminUser.id,
+          businessId: adminUser.businessId,
+          username: adminUser.username,
+          role: adminUser.role,
+          firstName: adminUser.firstName,
+          lastName: adminUser.lastName
+        } : null
+      });
+    } catch (error: any) {
+      console.error('Business login error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Login failed',
+        details: error.message 
+      });
+    }
+  });
+
+  // Setup completion endpoint (creates admin user)
+  app.post('/api/auth/setup', async (req, res) => {
+    try {
+      const { firstName, lastName, pin } = req.body;
+      
+      if (!firstName || !lastName || !pin) {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'First name, last name, and PIN are required' 
+        });
+      }
+
+      // For now, use the default business (you can extend this with session management)
+      const business = await storage.getBusinessByApiKey('bw_wkad606ephtmbqx7a0f');
+      if (!business) {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Business not found' 
+        });
+      }
+
+      const adminUser = await storage.createUser({
+        businessId: business.id,
+        username: `${firstName.toLowerCase()}_admin`,
+        pin,
+        role: 'admin',
+        firstName,
+        lastName
+      });
+
+      res.json({ 
+        success: true, 
+        user: {
+          id: adminUser.id,
+          businessId: adminUser.businessId,
+          username: adminUser.username,
+          role: adminUser.role,
+          firstName: adminUser.firstName,
+          lastName: adminUser.lastName
+        }
+      });
+    } catch (error: any) {
+      console.error('Setup completion error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Setup failed',
+        details: error.message 
+      });
+    }
+  });
+
+  // User PIN login endpoint
+  app.post('/api/auth/user/login', async (req, res) => {
+    try {
+      const { pin } = req.body;
+      
+      if (!pin) {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'PIN is required' 
+        });
+      }
+
+      const user = await storage.authenticateUserByPin(pin);
+      if (!user) {
+        return res.status(401).json({ 
+          success: false, 
+          error: 'Invalid PIN' 
+        });
+      }
+
+      const business = await storage.getBusinessById(user.businessId);
+
+      res.json({ 
+        success: true, 
+        user: {
+          id: user.id,
+          businessId: user.businessId,
+          username: user.username,
+          role: user.role,
+          firstName: user.firstName,
+          lastName: user.lastName
+        },
+        business: business ? {
+          id: business.id,
+          name: business.name,
+          email: business.email,
+          phone: business.phone,
+          address: business.address
+        } : null
+      });
+    } catch (error: any) {
+      console.error('User login error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Login failed',
+        details: error.message 
+      });
+    }
+  });
+
+  // Logout endpoint
+  app.post('/api/auth/logout', async (req, res) => {
+    res.json({ success: true });
+  });
+
+  // Get current user endpoint
+  app.get('/api/auth/me', async (req, res) => {
+    try {
+      // For now, return the default business and admin user if they exist
+      const business = await storage.getBusinessByApiKey('bw_wkad606ephtmbqx7a0f');
+      if (business) {
+        const adminUser = await storage.getAdminUserByBusiness(business.id);
+        
+        res.json({ 
+          success: true,
+          isAuthenticated: !!adminUser,
+          user: adminUser ? {
+            id: adminUser.id,
+            businessId: adminUser.businessId,
+            username: adminUser.username,
+            role: adminUser.role,
+            firstName: adminUser.firstName,
+            lastName: adminUser.lastName
+          } : null,
+          business: {
+            id: business.id,
+            name: business.name,
+            email: business.email,
+            phone: business.phone,
+            address: business.address
+          }
+        });
+      } else {
+        res.json({ 
+          success: true,
+          isAuthenticated: false,
+          user: null,
+          business: null
+        });
+      }
+    } catch (error: any) {
+      console.error('Get me error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to get user info',
+        details: error.message 
+      });
+    }
+  });
+
   // Register DELETE endpoint FIRST to prevent conflicts - explicit route registration
   app.delete('/api/gpt/clients/:id', async (req, res) => {
     try {

@@ -20,6 +20,7 @@ export interface IStorage {
   getBusinessById(id: number): Promise<Business | undefined>;
   getAllBusinesses(): Promise<Business[]>;
   updateBusiness(id: number, business: Partial<InsertBusiness>): Promise<Business>;
+  authenticateBusiness(email: string, password: string): Promise<Business | undefined>;
 
   // User methods
   createUser(user: InsertUser): Promise<User>;
@@ -27,6 +28,8 @@ export interface IStorage {
   getUsersByBusiness(businessId: number): Promise<User[]>;
   getUserById(id: number): Promise<User | undefined>;
   updateUser(id: number, user: Partial<InsertUser>): Promise<User>;
+  getAdminUserByBusiness(businessId: number): Promise<User | undefined>;
+  authenticateUserByPin(pin: string): Promise<User | undefined>;
 
   // Client methods
   createClient(client: InsertClient): Promise<Client>;
@@ -127,6 +130,14 @@ export class DatabaseStorage implements IStorage {
     return updatedBusiness;
   }
 
+  async authenticateBusiness(email: string, password: string): Promise<Business | undefined> {
+    const [business] = await this.db
+      .select()
+      .from(businesses)
+      .where(and(eq(businesses.email, email), eq(businesses.password, password)));
+    return business || undefined;
+  }
+
   // User methods
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await this.db
@@ -163,6 +174,22 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, id))
       .returning();
     return updatedUser;
+  }
+
+  async getAdminUserByBusiness(businessId: number): Promise<User | undefined> {
+    const [user] = await this.db
+      .select()
+      .from(users)
+      .where(and(eq(users.businessId, businessId), eq(users.role, 'admin'), eq(users.isActive, true)));
+    return user || undefined;
+  }
+
+  async authenticateUserByPin(pin: string): Promise<User | undefined> {
+    const [user] = await this.db
+      .select()
+      .from(users)
+      .where(and(eq(users.pin, pin), eq(users.isActive, true)));
+    return user || undefined;
   }
 
   // Client methods
