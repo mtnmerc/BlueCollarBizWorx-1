@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { db } from "./db";
+import { registerGPTRoutes } from "./gpt-routes";
 import { insertBusinessSchema, insertUserSchema, insertClientSchema, insertServiceSchema, insertJobSchema, insertInvoiceSchema, insertEstimateSchema, insertTimeEntrySchema, clients, jobs, businesses, estimates, invoices } from "@shared/schema";
 import { z } from "zod";
 import express from "express";
@@ -91,6 +92,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // =============================================================================
   // CRITICAL: ISOLATED GPT ROUTING SYSTEM - MUST EXECUTE FIRST
   // =============================================================================
+  
+  // Register isolated GPT routes with highest priority
+  registerGPTRoutes(app);
   
   // Direct GPT estimates route - bypassing all other middleware
   app.get('/api/gpt/estimates', async (req: any, res: any) => {
