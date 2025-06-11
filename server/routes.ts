@@ -3340,11 +3340,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test endpoint to verify server changes
+  app.get('/api/gpt/test', authenticateGPT, async (req: any, res: any) => {
+    res.json({ 
+      success: true, 
+      message: `Server timestamp: ${new Date().toISOString()}`,
+      businessId: req.business.id,
+      businessName: req.business.name
+    });
+  });
+
   // GPT Estimates endpoints - Updated to include complete schema data
   app.get('/api/gpt/estimates', authenticateGPT, async (req: any, res: any) => {
     try {
-      // Get raw estimates from database with client join
-      const rawEstimates = await storage.db
+      // Direct database query with proper joins and formatting
+      const rawEstimates = await db
         .select({
           id: estimates.id,
           businessId: estimates.businessId,
@@ -3368,31 +3378,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .leftJoin(clients, eq(estimates.clientId, clients.id))
         .where(eq(estimates.businessId, req.business.id))
         .orderBy(desc(estimates.createdAt));
+
+      console.log('Raw estimates from database:', JSON.stringify(rawEstimates, null, 2));
       
-      // Format estimates to match schema expectations
-      const formattedEstimates = rawEstimates.map((estimate: any) => ({
-        id: estimate.id,
-        businessId: estimate.businessId,
-        clientId: estimate.clientId,
-        title: estimate.title || '',
-        description: estimate.description || '',
-        items: Array.isArray(estimate.lineItems) ? estimate.lineItems.map((item: any) => ({
-          id: item.id || String(Math.random()),
-          description: item.description || '',
+      // Format estimates to match ChatGPT schema expectations
+      const formattedEstimates = rawEstimates.map((estimate: any) => {
+        // Parse lineItems if it's a JSON string
+        let items = [];
+        try {
+          if (typeof estimate.lineItems === 'string') {
+            items = JSON.parse(estimate.lineItems);
+          } else if (Array.isArray(estimate.lineItems)) {
+            items = estimate.lineItems;
+          }
+        } catch (e) {
+          items = [];
+        }
+
+        // Format items array for schema compliance
+        const formattedItems = Array.isArray(items) ? items.map((item: any, index: number) => ({
+          id: item.id || `item_${index + 1}`,
+          description: item.description || item.name || '',
           quantity: parseFloat(item.quantity || '1'),
-          rate: parseFloat(item.rate || '0'),
-          amount: parseFloat(item.amount || item.total || '0')
-        })) : [],
-        subtotal: estimate.subtotal || '0.00',
-        tax: estimate.taxAmount || '0.00',
-        total: estimate.total || '0.00',
-        status: estimate.status || 'draft',
-        validUntil: estimate.validUntil,
-        notes: estimate.notes || '',
-        shareToken: estimate.shareToken || '',
-        createdAt: estimate.createdAt,
-        clientName: estimate.clientName || 'Unknown Client'
-      }));
+          rate: parseFloat(item.rate || item.price || '0'),
+          amount: parseFloat(item.amount || item.total || (item.quantity * item.rate) || '0')
+        })) : [];
+
+        return {
+          id: estimate.id,
+          businessId: estimate.businessId,
+          clientId: estimate.clientId,
+          title: estimate.title || '',
+          description: estimate.description || '',
+          items: formattedItems,
+          subtotal: estimate.subtotal || '0.00',
+          tax: estimate.taxAmount || '0.00',
+          total: estimate.total || '0.00',
+          status: estimate.status || 'draft',
+          validUntil: estimate.validUntil,
+          notes: estimate.notes || '',
+          shareToken: estimate.shareToken || '',
+          createdAt: estimate.createdAt,
+          clientName: estimate.clientName || 'Unknown Client'
+        };
+      });
+
+      console.log('Formatted estimates for response:', JSON.stringify(formattedEstimates, null, 2));
 
       res.json({ 
         success: true, 
@@ -3406,7 +3437,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
     } catch (error: any) {
-      res.status(500).json({ success: false, error: 'Failed to fetch estimates' });
+      console.error('Error in estimates endpoint:', error);
+      res.status(500).json({ success: false, error: 'Failed to fetch estimates', details: error.message });
     }
   });
 
