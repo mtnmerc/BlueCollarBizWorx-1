@@ -57,7 +57,23 @@ async getBusinessByApiKey(apiKey: string): Promise<Business | null> {
 4. Set API key in database:
 UPDATE businesses SET api_key = 'bw_wkad606ephtmbqx7a0f' WHERE id = 1;
 
-5. Test with:
+5. Test endpoints work:
 curl -H "X-API-Key: bw_wkad606ephtmbqx7a0f" https://bluecollarbizworx.replit.app/api/gpt/test
 
-This will restore all ChatGPT Custom GPT functionality with access to your 10 clients and 8 jobs.
+6. Generate three separate OpenAPI schema files for ChatGPT Custom GPT configuration:
+
+CREATE FILE: chatgpt-clients-tools.json
+CREATE FILE: chatgpt-jobs-tools.json  
+CREATE FILE: chatgpt-dashboard-tools.json
+
+Each schema must include:
+- OpenAPI 3.0.0 specification
+- Base URL: https://bluecollarbizworx.replit.app
+- X-API-Key authentication with value: bw_wkad606ephtmbqx7a0f
+- Proper paths for /api/gpt/clients, /api/gpt/jobs, /api/gpt/dashboard
+- Complete response schemas matching the actual API responses
+- Security schemes for API key authentication
+
+7. Upload each schema file separately to ChatGPT Custom GPT actions
+
+This will restore complete ChatGPT Custom GPT functionality with access to your 10 clients and 8 jobs, plus properly formatted schemas for ChatGPT configuration.
