@@ -83,8 +83,20 @@ app.use((req, res, next) => {
 
   // All MCP endpoints consolidated in server/routes.ts under /api/mcp/ namespace
 
-  // Register main API routes first (includes MCP endpoints)
+  // Register main API routes first (includes MCP endpoints)  
   const server = await registerRoutes(app);
+
+  // Add middleware to ensure API routes are not intercepted by static serving
+  app.use((req, res, next) => {
+    // Skip static file serving for API routes
+    if (req.path.startsWith('/api/') || req.path.startsWith('/gpt/') || 
+        req.path.startsWith('/getClients') || req.path.startsWith('/getJobs') || 
+        req.path.startsWith('/getDashboard') || req.path.startsWith('/deleteClient') || 
+        req.path.startsWith('/health')) {
+      return next('route'); // Skip to next route handler, bypass static serving
+    }
+    next();
+  });
 
   // Setup static file serving and frontend routing AFTER API routes
   if (app.get("env") === "development") {

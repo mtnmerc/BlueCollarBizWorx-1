@@ -26,8 +26,12 @@ async function testCompleteFunctionality() {
     
     if (clientsResponse.ok) {
       const clientsData = await clientsResponse.json();
-      console.log(`✅ Retrieved ${clientsData.data.length} clients`);
-      console.log('Sample clients:', clientsData.data.slice(0, 3).map(c => `${c.id}: ${c.name}`));
+      if (clientsData && clientsData.data && Array.isArray(clientsData.data)) {
+        console.log(`✅ Retrieved ${clientsData.data.length} clients`);
+        console.log('Sample clients:', clientsData.data.slice(0, 3).map(c => `${c.id}: ${c.name}`));
+      } else {
+        console.log('❌ Invalid client data structure:', clientsData);
+      }
     } else {
       console.log('❌ Failed to get clients:', clientsResponse.status);
       const errorText = await clientsResponse.text();
