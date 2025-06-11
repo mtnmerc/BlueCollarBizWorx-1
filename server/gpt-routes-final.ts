@@ -298,6 +298,212 @@ export function registerGPTRoutes(app: Express) {
     }
   });
 
+  // GPT CREATE INVOICE - Schema compliant
+  app.post('/api/gpt/invoices', authenticateGPT, async (req: any, res: any) => {
+    console.log('=== GPT FINAL CREATE INVOICE HANDLER ===');
+    
+    try {
+      const business = req.business;
+      console.log('GPT FINAL: Creating invoice for business:', business.name);
+      
+      const invoiceData = {
+        businessId: business.id,
+        clientId: req.body.clientId,
+        title: req.body.title,
+        description: req.body.description || '',
+        lineItems: JSON.stringify(req.body.items || []),
+        subtotal: req.body.subtotal?.toString() || '0.00',
+        taxRate: req.body.taxRate?.toString() || '0.00',
+        taxAmount: req.body.tax?.toString() || '0.00',
+        total: req.body.total?.toString() || '0.00',
+        status: req.body.status || 'pending',
+        dueDate: req.body.dueDate ? new Date(req.body.dueDate) : undefined,
+        notes: req.body.notes || '',
+        shareToken: `inv_${Math.random().toString(36).substring(2, 15)}`,
+        invoiceNumber: `INV-${Date.now()}`
+      };
+
+      const newInvoice = await storage.createInvoice(invoiceData);
+      
+      console.log('GPT FINAL: Created invoice', newInvoice.id);
+      
+      res.json({
+        success: true,
+        data: {
+          ...newInvoice,
+          items: req.body.items || [],
+          tax: newInvoice.taxAmount
+        },
+        message: `Invoice "${newInvoice.title}" created successfully`,
+        businessVerification: {
+          businessName: business.name,
+          businessId: business.id,
+          dataSource: "AUTHENTIC_DATABASE",
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (error: any) {
+      console.error('GPT FINAL Create Invoice error:', error);
+      res.status(500).json({ success: false, error: 'Failed to create invoice', details: error.message });
+    }
+  });
+
+  // GPT UPDATE INVOICE - Schema compliant
+  app.put('/api/gpt/invoices/:id', authenticateGPT, async (req: any, res: any) => {
+    console.log('=== GPT FINAL UPDATE INVOICE HANDLER ===');
+    
+    try {
+      const business = req.business;
+      const invoiceId = parseInt(req.params.id);
+      console.log('GPT FINAL: Updating invoice', invoiceId, 'for business:', business.name);
+      
+      // Verify invoice belongs to business
+      const existingInvoice = await storage.getInvoiceById(invoiceId);
+      if (!existingInvoice || existingInvoice.businessId !== business.id) {
+        return res.status(404).json({ success: false, error: 'Invoice not found' });
+      }
+
+      const updateData: any = {};
+      if (req.body.clientId !== undefined) updateData.clientId = req.body.clientId;
+      if (req.body.title !== undefined) updateData.title = req.body.title;
+      if (req.body.description !== undefined) updateData.description = req.body.description;
+      if (req.body.items !== undefined) updateData.lineItems = JSON.stringify(req.body.items);
+      if (req.body.subtotal !== undefined) updateData.subtotal = req.body.subtotal.toString();
+      if (req.body.tax !== undefined) updateData.taxAmount = req.body.tax.toString();
+      if (req.body.total !== undefined) updateData.total = req.body.total.toString();
+      if (req.body.status !== undefined) updateData.status = req.body.status;
+      if (req.body.dueDate !== undefined) updateData.dueDate = req.body.dueDate ? new Date(req.body.dueDate) : undefined;
+      if (req.body.notes !== undefined) updateData.notes = req.body.notes;
+
+      const updatedInvoice = await storage.updateInvoice(invoiceId, updateData);
+      
+      console.log('GPT FINAL: Updated invoice', updatedInvoice.id);
+      
+      res.json({
+        success: true,
+        data: {
+          ...updatedInvoice,
+          items: req.body.items || JSON.parse(updatedInvoice.lineItems || '[]'),
+          tax: updatedInvoice.taxAmount
+        },
+        message: `Invoice "${updatedInvoice.title}" updated successfully`,
+        businessVerification: {
+          businessName: business.name,
+          businessId: business.id,
+          dataSource: "AUTHENTIC_DATABASE",
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (error: any) {
+      console.error('GPT FINAL Update Invoice error:', error);
+      res.status(500).json({ success: false, error: 'Failed to update invoice', details: error.message });
+    }
+  });
+
+  // GPT GET INVOICE BY ID - Schema compliant
+  app.get('/api/gpt/invoices/:id', authenticateGPT, async (req: any, res: any) => {
+    console.log('=== GPT FINAL GET INVOICE BY ID HANDLER ===');
+    
+    try {
+      const business = req.business;
+      const invoiceId = parseInt(req.params.id);
+      console.log('GPT FINAL: Getting invoice', invoiceId, 'for business:', business.name);
+      
+      const invoice = await storage.getInvoiceById(invoiceId);
+      if (!invoice || invoice.businessId !== business.id) {
+        return res.status(404).json({ success: false, error: 'Invoice not found' });
+      }
+
+      // Format invoice items
+      let items = [];
+      try {
+        if (typeof invoice.lineItems === 'string') {
+          items = JSON.parse(invoice.lineItems);
+        } else if (Array.isArray(invoice.lineItems)) {
+          items = invoice.lineItems;
+        }
+      } catch (e) {
+        items = [];
+      }
+
+      const formattedItems = Array.isArray(items) ? items.map((item: any, index: number) => ({
+        id: item.id || `item_${index + 1}`,
+        description: item.description || item.name || '',
+        quantity: parseFloat(item.quantity || '1'),
+        rate: parseFloat(item.rate || item.price || '0'),
+        amount: parseFloat(item.amount || item.total || (item.quantity * item.rate) || '0')
+      })) : [];
+
+      const formattedInvoice = {
+        id: invoice.id,
+        businessId: invoice.businessId,
+        clientId: invoice.clientId,
+        title: invoice.title || '',
+        description: invoice.description || '',
+        items: formattedItems,
+        subtotal: invoice.subtotal || '0.00',
+        tax: invoice.taxAmount || '0.00',
+        total: invoice.total || '0.00',
+        status: invoice.status || 'draft',
+        dueDate: invoice.dueDate,
+        shareToken: invoice.shareToken || '',
+        createdAt: invoice.createdAt
+      };
+      
+      console.log('GPT FINAL: Returning invoice', invoice.id);
+      
+      res.json({
+        success: true,
+        data: formattedInvoice,
+        message: `Invoice "${invoice.title}" retrieved successfully`,
+        businessVerification: {
+          businessName: business.name,
+          businessId: business.id,
+          dataSource: "AUTHENTIC_DATABASE",
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (error: any) {
+      console.error('GPT FINAL Get Invoice error:', error);
+      res.status(500).json({ success: false, error: 'Failed to get invoice', details: error.message });
+    }
+  });
+
+  // GPT DELETE INVOICE - Schema compliant
+  app.delete('/api/gpt/invoices/:id', authenticateGPT, async (req: any, res: any) => {
+    console.log('=== GPT FINAL DELETE INVOICE HANDLER ===');
+    
+    try {
+      const business = req.business;
+      const invoiceId = parseInt(req.params.id);
+      console.log('GPT FINAL: Deleting invoice', invoiceId, 'for business:', business.name);
+      
+      // Verify invoice belongs to business
+      const existingInvoice = await storage.getInvoiceById(invoiceId);
+      if (!existingInvoice || existingInvoice.businessId !== business.id) {
+        return res.status(404).json({ success: false, error: 'Invoice not found' });
+      }
+
+      await storage.deleteInvoice(invoiceId);
+      
+      console.log('GPT FINAL: Deleted invoice', invoiceId);
+      
+      res.json({
+        success: true,
+        message: `Invoice "${existingInvoice.title}" deleted successfully`,
+        businessVerification: {
+          businessName: business.name,
+          businessId: business.id,
+          dataSource: "AUTHENTIC_DATABASE",
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (error: any) {
+      console.error('GPT FINAL Delete Invoice error:', error);
+      res.status(500).json({ success: false, error: 'Failed to delete invoice', details: error.message });
+    }
+  });
+
   // GPT JOBS - Schema compliant
   app.get('/api/gpt/jobs', authenticateGPT, async (req: any, res: any) => {
     console.log('=== GPT FINAL JOBS HANDLER ===');
