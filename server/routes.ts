@@ -3340,13 +3340,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // GPT Estimates endpoints
+  // GPT Estimates endpoints - Updated to include complete schema data
   app.get('/api/gpt/estimates', authenticateGPT, async (req: any, res: any) => {
     try {
       const estimates = await storage.getEstimatesByBusiness(req.business.id);
+      
+      // Format estimates to match schema expectations
+      const formattedEstimates = estimates.map((estimate: any) => ({
+        id: estimate.id,
+        businessId: estimate.businessId,
+        clientId: estimate.clientId,
+        title: estimate.title || '',
+        description: estimate.description || '',
+        items: Array.isArray(estimate.lineItems) ? estimate.lineItems.map((item: any) => ({
+          id: item.id || String(Math.random()),
+          description: item.description || '',
+          quantity: parseFloat(item.quantity || '1'),
+          rate: parseFloat(item.rate || '0'),
+          amount: parseFloat(item.amount || item.total || '0')
+        })) : [],
+        subtotal: estimate.subtotal || '0.00',
+        tax: estimate.taxAmount || '0.00',
+        total: estimate.total || '0.00',
+        status: estimate.status || 'draft',
+        validUntil: estimate.validUntil,
+        notes: estimate.notes || '',
+        shareToken: estimate.shareToken || '',
+        createdAt: estimate.createdAt,
+        clientName: estimate.clientName || 'Unknown Client'
+      }));
+
       res.json({ 
         success: true, 
-        data: estimates, 
+        data: formattedEstimates, 
         message: `Found ${estimates.length} estimates for ${req.business.name}`, 
         businessVerification: { 
           businessName: req.business.name, 

@@ -351,11 +351,35 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getEstimatesByBusiness(businessId: number): Promise<Estimate[]> {
-    return await this.db
-      .select()
+    const results = await this.db
+      .select({
+        id: estimates.id,
+        businessId: estimates.businessId,
+        clientId: estimates.clientId,
+        estimateNumber: estimates.estimateNumber,
+        title: estimates.title,
+        description: estimates.description,
+        lineItems: estimates.lineItems,
+        subtotal: estimates.subtotal,
+        taxRate: estimates.taxRate,
+        taxAmount: estimates.taxAmount,
+        total: estimates.total,
+        status: estimates.status,
+        validUntil: estimates.validUntil,
+        notes: estimates.notes,
+        shareToken: estimates.shareToken,
+        createdAt: estimates.createdAt,
+        clientName: clients.name,
+      })
       .from(estimates)
+      .leftJoin(clients, eq(estimates.clientId, clients.id))
       .where(eq(estimates.businessId, businessId))
       .orderBy(desc(estimates.createdAt));
+
+    return results.map(result => ({
+      ...result,
+      clientName: result.clientName || 'Unknown Client'
+    }));
   }
 
   async getEstimateById(id: number): Promise<Estimate | undefined> {
