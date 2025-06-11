@@ -263,17 +263,9 @@ export class DatabaseStorage implements IStorage {
 
   // Job methods
   async createJob(insertJob: InsertJob): Promise<Job> {
-    // Convert date strings to Date objects if needed
-    const jobData = {
-      ...insertJob,
-      scheduledStart: insertJob.scheduledStart ? new Date(insertJob.scheduledStart) : null,
-      scheduledEnd: insertJob.scheduledEnd ? new Date(insertJob.scheduledEnd) : null,
-      recurringEndDate: insertJob.recurringEndDate ? new Date(insertJob.recurringEndDate) : null,
-    };
-
     const [job] = await this.db
       .insert(jobs)
-      .values(jobData)
+      .values(insertJob)
       .returning();
     return job;
   }
@@ -675,9 +667,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Additional business and job management methods
-  async getAllBusinesses(): Promise<Business[]> {
-    return await this.db.select().from(businesses);
-  }
 
   async getIncompleteJobsForDate(businessId: number, date: Date): Promise<Job[]> {
     const nextDay = new Date(date);

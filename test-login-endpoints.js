@@ -11,7 +11,8 @@ async function testLoginEndpoints() {
     const loginResponse = await fetch(`${BASE_URL}/api/auth/business/login`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'User-Agent': 'Test-Client/1.0'
       },
       body: JSON.stringify({
         email: 'alter3d24@gmail.com',
