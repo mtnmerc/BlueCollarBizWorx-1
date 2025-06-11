@@ -83,27 +83,14 @@ app.use((req, res, next) => {
 
   // All MCP endpoints consolidated in server/routes.ts under /api/mcp/ namespace
 
-  // Register main API routes first (includes MCP endpoints)  
+  // Register main API routes first (includes MCP endpoints)
   const server = await registerRoutes(app);
 
-  // Add middleware to ensure API routes are not intercepted by static serving
-  app.use((req, res, next) => {
-    // Skip static file serving for API routes
-    if (req.path.startsWith('/api/') || req.path.startsWith('/gpt/') || 
-        req.path.startsWith('/getClients') || req.path.startsWith('/getJobs') || 
-        req.path.startsWith('/getDashboard') || req.path.startsWith('/deleteClient') || 
-        req.path.startsWith('/health')) {
-      return next('route'); // Skip to next route handler, bypass static serving
-    }
-    next();
+  // Add middleware to ensure API routes are handled before catch-all
+  app.use('/api/*', (req, res, next) => {
+    // If we reach here, the route wasn't handled by registerRoutes
+    res.status(404).json({ success: false, error: 'API endpoint not found' });
   });
-
-  // Setup static file serving and frontend routing AFTER API routes
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
-  }
 
   // Add comprehensive error handler for JSON responses
   app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
@@ -112,7 +99,7 @@ app.use((req, res, next) => {
     const message = err.message || "Internal Server Error";
     
     // Always return JSON for API endpoints
-    if (req.path.startsWith('/api/') || req.path.startsWith('/gpt/') || req.path.startsWith('/getClients') || req.path.startsWith('/getJobs') || req.path.startsWith('/getDashboard') || req.path.startsWith('/deleteClient')) {
+    if (req.path.startsWith('/api/') || req.path.startsWith('/gpt/')) {
       return res.status(status).json({ 
         success: false,
         error: message,
@@ -125,7 +112,7 @@ app.use((req, res, next) => {
 
   // Global 404 handler for API routes - ensure JSON response
   app.use('*', (req: Request, res: Response) => {
-    if (req.path.startsWith('/api/') || req.path.startsWith('/gpt/') || req.path.startsWith('/getClients') || req.path.startsWith('/getJobs') || req.path.startsWith('/getDashboard') || req.path.startsWith('/deleteClient')) {
+    if (req.path.startsWith('/api/') || req.path.startsWith('/gpt/') || req.path.startsWith('/getClients') || req.path.startsWith('/getJobs') || req.path.startsWith('/getDashboard')) {
       return res.status(404).json({
         success: false,
         error: `Endpoint ${req.method} ${req.path} not found`,
@@ -133,7 +120,6 @@ app.use((req, res, next) => {
           'GET /getClients',
           'GET /getJobs', 
           'GET /getDashboard',
-          'DELETE /api/gpt/clients/:id',
           'GET /api/gpt/clients',
           'GET /api/gpt/jobs',
           'GET /api/gpt/dashboard'
@@ -142,6 +128,15 @@ app.use((req, res, next) => {
     }
     res.status(404).send('Not Found');
   });
+
+  // importantly only setup vite in development and after
+  // setting up all the other routes so the catch-all route
+  // doesn't interfere with the other routes
+  if (app.get("env") === "development") {
+    await setupVite(app, server);
+  } else {
+    serveStatic(app);
+  }
 
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client.

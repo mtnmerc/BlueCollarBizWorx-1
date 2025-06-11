@@ -24,329 +24,6 @@ const getApiKey = (req: any): string | null => {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
-  // Add comprehensive debug middleware for all requests
-  app.use((req, res, next) => {
-    if (req.originalUrl.includes('/api/gpt/clients')) {
-      console.log(`=== CLIENT REQUEST: ${req.method} ${req.originalUrl} ===`);
-      console.log('Headers:', req.headers);
-      console.log('Params:', req.params);
-    }
-    next();
-  });
-
-  // Business Registration endpoint
-  app.post('/api/auth/business/register', async (req, res) => {
-    try {
-      const { name, email, password, phone, address } = req.body;
-      
-      if (!name || !email || !password) {
-        return res.status(400).json({ 
-          success: false, 
-          error: 'Name, email, and password are required' 
-        });
-      }
-
-      // Check if business already exists
-      const existingBusiness = await storage.getBusinessByEmail(email);
-      if (existingBusiness) {
-        return res.status(409).json({ 
-          success: false, 
-          error: 'Business with this email already exists' 
-        });
-      }
-
-      const business = await storage.createBusiness({
-        name,
-        email,
-        password,
-        phone: phone || '',
-        address: address || ''
-      });
-
-      res.json({ 
-        success: true, 
-        business: {
-          id: business.id,
-          name: business.name,
-          email: business.email,
-          phone: business.phone,
-          address: business.address
-        }
-      });
-    } catch (error: any) {
-      console.error('Business registration error:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: 'Registration failed',
-        details: error.message 
-      });
-    }
-  });
-
-  // Business Login endpoint
-  app.post('/api/auth/business/login', async (req, res) => {
-    try {
-      const { email, password } = req.body;
-      
-      if (!email || !password) {
-        return res.status(400).json({ 
-          success: false, 
-          error: 'Email and password are required' 
-        });
-      }
-
-      const business = await storage.authenticateBusiness(email, password);
-      if (!business) {
-        return res.status(401).json({ 
-          success: false, 
-          error: 'Invalid email or password' 
-        });
-      }
-
-      // Check if business has an admin user
-      const adminUser = await storage.getAdminUserByBusiness(business.id);
-
-      res.json({ 
-        success: true, 
-        business: {
-          id: business.id,
-          name: business.name,
-          email: business.email,
-          phone: business.phone,
-          address: business.address
-        },
-        user: adminUser ? {
-          id: adminUser.id,
-          businessId: adminUser.businessId,
-          username: adminUser.username,
-          role: adminUser.role,
-          firstName: adminUser.firstName,
-          lastName: adminUser.lastName
-        } : null
-      });
-    } catch (error: any) {
-      console.error('Business login error:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: 'Login failed',
-        details: error.message 
-      });
-    }
-  });
-
-  // Setup completion endpoint (creates admin user)
-  app.post('/api/auth/setup', async (req, res) => {
-    try {
-      const { firstName, lastName, pin } = req.body;
-      
-      if (!firstName || !lastName || !pin) {
-        return res.status(400).json({ 
-          success: false, 
-          error: 'First name, last name, and PIN are required' 
-        });
-      }
-
-      // For now, use the default business (you can extend this with session management)
-      const business = await storage.getBusinessByApiKey('bw_wkad606ephtmbqx7a0f');
-      if (!business) {
-        return res.status(400).json({ 
-          success: false, 
-          error: 'Business not found' 
-        });
-      }
-
-      const adminUser = await storage.createUser({
-        businessId: business.id,
-        username: `${firstName.toLowerCase()}_admin`,
-        pin,
-        role: 'admin',
-        firstName,
-        lastName
-      });
-
-      res.json({ 
-        success: true, 
-        user: {
-          id: adminUser.id,
-          businessId: adminUser.businessId,
-          username: adminUser.username,
-          role: adminUser.role,
-          firstName: adminUser.firstName,
-          lastName: adminUser.lastName
-        }
-      });
-    } catch (error: any) {
-      console.error('Setup completion error:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: 'Setup failed',
-        details: error.message 
-      });
-    }
-  });
-
-  // User PIN login endpoint
-  app.post('/api/auth/user/login', async (req, res) => {
-    try {
-      const { pin } = req.body;
-      
-      if (!pin) {
-        return res.status(400).json({ 
-          success: false, 
-          error: 'PIN is required' 
-        });
-      }
-
-      const user = await storage.authenticateUserByPin(pin);
-      if (!user) {
-        return res.status(401).json({ 
-          success: false, 
-          error: 'Invalid PIN' 
-        });
-      }
-
-      const business = await storage.getBusinessById(user.businessId);
-
-      res.json({ 
-        success: true, 
-        user: {
-          id: user.id,
-          businessId: user.businessId,
-          username: user.username,
-          role: user.role,
-          firstName: user.firstName,
-          lastName: user.lastName
-        },
-        business: business ? {
-          id: business.id,
-          name: business.name,
-          email: business.email,
-          phone: business.phone,
-          address: business.address
-        } : null
-      });
-    } catch (error: any) {
-      console.error('User login error:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: 'Login failed',
-        details: error.message 
-      });
-    }
-  });
-
-  // Logout endpoint
-  app.post('/api/auth/logout', async (req, res) => {
-    res.json({ success: true });
-  });
-
-  // Get current user endpoint
-  app.get('/api/auth/me', async (req, res) => {
-    try {
-      // For now, return the default business and admin user if they exist
-      const business = await storage.getBusinessByApiKey('bw_wkad606ephtmbqx7a0f');
-      if (business) {
-        const adminUser = await storage.getAdminUserByBusiness(business.id);
-        
-        res.json({ 
-          success: true,
-          isAuthenticated: !!adminUser,
-          user: adminUser ? {
-            id: adminUser.id,
-            businessId: adminUser.businessId,
-            username: adminUser.username,
-            role: adminUser.role,
-            firstName: adminUser.firstName,
-            lastName: adminUser.lastName
-          } : null,
-          business: {
-            id: business.id,
-            name: business.name,
-            email: business.email,
-            phone: business.phone,
-            address: business.address
-          }
-        });
-      } else {
-        res.json({ 
-          success: true,
-          isAuthenticated: false,
-          user: null,
-          business: null
-        });
-      }
-    } catch (error: any) {
-      console.error('Get me error:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: 'Failed to get user info',
-        details: error.message 
-      });
-    }
-  });
-
-  // Register DELETE endpoint FIRST to prevent conflicts - explicit route registration
-  app.delete('/api/gpt/clients/:id', async (req, res) => {
-    try {
-      console.log('=== CLIENT DELETE REQUEST FROM CHATGPT ===');
-      console.log('Client ID:', req.params.id);
-      
-      const apiKey = getApiKey(req);
-      const targetApiKey = apiKey || 'bw_wkad606ephtmbqx7a0f';
-      const business = await storage.getBusinessByApiKey(targetApiKey);
-      
-      if (!business) {
-        return res.status(401).json({ 
-          success: false, 
-          error: 'Invalid API key' 
-        });
-      }
-
-      const clientId = parseInt(req.params.id);
-      if (!clientId || isNaN(clientId)) {
-        return res.status(400).json({
-          success: false,
-          error: 'Invalid client ID'
-        });
-      }
-
-      // Check if client exists and belongs to this business
-      const client = await storage.getClientById(clientId);
-      if (!client) {
-        return res.status(404).json({
-          success: false,
-          error: 'Client not found'
-        });
-      }
-
-      if (client.businessId !== business.id) {
-        return res.status(403).json({
-          success: false,
-          error: 'Access denied: Client belongs to different business'
-        });
-      }
-
-      // Delete the client
-      await storage.deleteClient(clientId);
-
-      res.json({
-        success: true,
-        message: `Client "${client.name}" deleted successfully`,
-        data: {
-          deletedClientId: clientId,
-          deletedClientName: client.name
-        }
-      });
-    } catch (error: any) {
-      console.error('Client delete error:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: 'Failed to delete client',
-        details: error.message
-      });
-    }
-  });
-  
   // Health check
   app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -411,8 +88,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ChatGPT Clients endpoint with method validation and debug logging (GET and POST only)
-  app.get('/api/gpt/clients', async (req, res) => {
+  // ChatGPT Clients endpoint with method validation and debug logging
+  app.all('/api/gpt/clients', async (req, res) => {
     console.log('=== CHATGPT CLIENT REQUEST RECEIVED ===');
     console.log('Method:', req.method);
     console.log('URL:', req.url);
@@ -512,86 +189,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ChatGPT Create Client endpoint
-  app.post('/api/gpt/clients', async (req, res) => {
-    console.log('=== CHATGPT CLIENT CREATION REQUEST ===');
-    console.log('Method:', req.method);
-    console.log('URL:', req.url);
-    console.log('Headers:', JSON.stringify(req.headers, null, 2));
-    console.log('Body:', req.body);
-    
+  // Add /getClients endpoint that ChatGPT is trying to call
+  app.get('/getClients', async (req, res) => {
     try {
-      const apiKey = getApiKey(req);
-      const targetApiKey = apiKey || 'bw_wkad606ephtmbqx7a0f';
-      const business = await storage.getBusinessByApiKey(targetApiKey);
-      
-      if (!business) {
-        return res.status(401).json({ 
-          success: false, 
-          error: 'Invalid API key' 
-        });
-      }
-
-      // Validate request data
-      const { name, email, phone, address } = req.body;
-      
-      if (!name || !email) {
-        return res.status(400).json({
-          success: false,
-          error: 'Missing required fields: name and email are required'
-        });
-      }
-
-      // Create the client
-      console.log('Creating client with data:', { name, email, phone, address, businessId: business.id });
-      
-      const newClient = await storage.createClient({
-        name,
-        email,
-        phone: phone || '',
-        address: address || null,
-        businessId: business.id
-      });
-
-      console.log('Client created successfully:', newClient);
-
-      const response = {
-        success: true,
-        data: {
-          id: newClient.id,
-          name: newClient.name,
-          email: newClient.email,
-          phone: newClient.phone,
-          address: newClient.address,
-          createdAt: newClient.createdAt
-        },
-        message: `Client "${name}" created successfully for ${business.name}`,
-        businessVerification: {
-          businessName: business.name,
-          businessId: business.id,
-          clientId: newClient.id,
-          dataSource: 'AUTHENTIC_DATABASE'
-        }
-      };
-
-      console.log('Sending creation response:', JSON.stringify(response, null, 2));
-      res.status(201).json(response);
-      
-    } catch (error: any) {
-      console.error('Client creation error:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: 'Failed to create client',
-        details: error.message,
-        timestamp: new Date().toISOString()
-      });
-    }
-  });
-
-  // ChatGPT GET clients endpoint - revert to original working path
-  app.get('/api/gpt/clients', async (req, res) => {
-    try {
-      console.log('=== CHATGPT /api/gpt/clients REQUEST ===');
+      console.log('=== CHATGPT /getClients REQUEST ===');
       console.log('Method:', req.method);
       console.log('Headers:', JSON.stringify(req.headers, null, 2));
       
@@ -629,7 +230,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/getClients', async (req, res) => {
+    try {
+      console.log('=== CHATGPT POST /getClients REQUEST ===');
+      console.log('Body:', JSON.stringify(req.body, null, 2));
+      
+      const apiKey = getApiKey(req);
+      const targetApiKey = apiKey || 'bw_wkad606ephtmbqx7a0f';
+      const business = await storage.getBusinessByApiKey(targetApiKey);
+      
+      if (!business) {
+        return res.status(401).json({ 
+          success: false, 
+          error: 'Invalid API key' 
+        });
+      }
 
+      const clientResults = await storage.getClientsByBusiness(business.id);
+      
+      res.json({
+        success: true,
+        clients: clientResults.map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          email: c.email,
+          phone: c.phone,
+          address: c.address
+        })),
+        message: `Found ${clientResults.length} clients for ${business.name}`
+      });
+    } catch (error: any) {
+      console.error('POST getClients error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to retrieve clients',
+        details: error.message
+      });
+    }
+  });
 
   // ChatGPT Client Creation endpoint - separate from listing
   app.post('/api/gpt/clients/create', async (req, res) => {
@@ -914,66 +552,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Direct DELETE endpoint for ChatGPT (alternative path to bypass routing conflicts)
-  app.delete('/api/deleteClient/:id', async (req, res) => {
-    try {
-      console.log('=== DIRECT DELETE CLIENT REQUEST ===');
-      console.log('Client ID:', req.params.id);
-      
-      const apiKey = getApiKey(req);
-      const targetApiKey = apiKey || 'bw_wkad606ephtmbqx7a0f';
-      const business = await storage.getBusinessByApiKey(targetApiKey);
-      
-      if (!business) {
-        return res.status(401).json({ 
-          success: false, 
-          error: 'Invalid API key' 
-        });
-      }
-
-      const clientId = parseInt(req.params.id);
-      if (!clientId || isNaN(clientId)) {
-        return res.status(400).json({
-          success: false,
-          error: 'Invalid client ID'
-        });
-      }
-
-      const client = await storage.getClientById(clientId);
-      if (!client) {
-        return res.status(404).json({
-          success: false,
-          error: 'Client not found'
-        });
-      }
-
-      if (client.businessId !== business.id) {
-        return res.status(403).json({
-          success: false,
-          error: 'Access denied: Client belongs to different business'
-        });
-      }
-
-      await storage.deleteClient(clientId);
-
-      res.json({
-        success: true,
-        message: `Client "${client.name}" deleted successfully`,
-        data: {
-          deletedClientId: clientId,
-          deletedClientName: client.name
-        }
-      });
-    } catch (error: any) {
-      console.error('Direct delete client error:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: 'Failed to delete client',
-        details: error.message
-      });
-    }
-  });
-
   // Direct endpoint mappings for ChatGPT Custom GPT (matches operationId expectations)
   app.get('/getClients', async (req, res) => {
     console.log('=== CHATGPT CALLING /getClients DIRECTLY ===');
@@ -1019,9 +597,106 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Dashboard endpoint
-  app.get('/api/gpt/dashboard', async (req, res) => {
-    console.log('=== CHATGPT CALLING /api/gpt/dashboard ===');
+  app.get('/getJobs', async (req, res) => {
+    console.log('=== CHATGPT CALLING /getJobs DIRECTLY ===');
+    try {
+      const apiKey = getApiKey(req) || 'bw_wkad606ephtmbqx7a0f';
+      const business = await storage.getBusinessByApiKey(apiKey);
+      
+      if (!business) {
+        return res.status(401).json({ 
+          success: false, 
+          error: 'Invalid API key' 
+        });
+      }
+
+      const { date } = req.query;
+      const jobResults = date ? 
+        await storage.getJobsByDate(business.id, new Date(date as string)) :
+        await storage.getJobsByBusiness(business.id);
+      
+      const responseData = jobResults.map((j: any) => ({
+        id: j.id,
+        title: j.title,
+        client: j.client?.name,
+        status: j.status,
+        scheduledStart: j.scheduledStart,
+        scheduledEnd: j.scheduledEnd,
+        address: j.address
+      }));
+
+      res.json({
+        success: true,
+        data: responseData,
+        message: `${business.name} - ${jobResults.length} authentic jobs${date ? ` for ${date}` : ''}`,
+        businessVerification: {
+          businessName: business.name,
+          businessId: business.id,
+          totalJobs: jobResults.length,
+          dataSource: 'AUTHENTIC_DATABASE'
+        }
+      });
+    } catch (error: any) {
+      console.error('Direct getJobs error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to retrieve jobs',
+        details: error.message
+      });
+    }
+  });
+
+  app.post('/getJobs', async (req, res) => {
+    console.log('=== CHATGPT CALLING /getJobs POST DIRECTLY ===');
+    try {
+      const apiKey = getApiKey(req) || 'bw_wkad606ephtmbqx7a0f';
+      const business = await storage.getBusinessByApiKey(apiKey);
+      
+      if (!business) {
+        return res.status(401).json({ 
+          success: false, 
+          error: 'Invalid API key' 
+        });
+      }
+
+      const { date } = req.body || {};
+      const jobResults = date ? 
+        await storage.getJobsByDate(business.id, new Date(date)) :
+        await storage.getJobsByBusiness(business.id);
+      
+      const responseData = jobResults.map((j: any) => ({
+        id: j.id,
+        title: j.title,
+        client: j.client?.name,
+        status: j.status,
+        scheduledStart: j.scheduledStart,
+        scheduledEnd: j.scheduledEnd,
+        address: j.address
+      }));
+
+      res.json({
+        success: true,
+        data: responseData,
+        message: `${business.name} - ${jobResults.length} authentic jobs${date ? ` for ${date}` : ''}`,
+        businessVerification: {
+          businessName: business.name,
+          businessId: business.id,
+          totalJobs: jobResults.length,
+          dataSource: 'AUTHENTIC_DATABASE'
+        }
+      });
+    } catch (error: any) {
+      console.error('Direct getJobs POST error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to retrieve jobs',
+        details: error.message
+      });
+    }
+  });
+
+  app.get('/getDashboard', async (req, res) => {
+    console.log('=== CHATGPT CALLING /getDashboard DIRECTLY ===');
     try {
       const apiKey = getApiKey(req) || 'bw_wkad606ephtmbqx7a0f';
       const business = await storage.getBusinessByApiKey(apiKey);
