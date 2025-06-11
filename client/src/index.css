@@ -3,48 +3,48 @@
 @tailwind utilities;
 
 :root {
-  --background: 20 5% 10%; /* #1A1A1A */
-  --foreground: 0 0% 100%; /* #FFFFFF */
-  --muted: 0 0% 18%; /* #2D2D2D */
-  --muted-foreground: 0 0% 69%; /* #B0B0B0 */
-  --popover: 0 0% 18%; /* #2D2D2D */
-  --popover-foreground: 0 0% 100%; /* #FFFFFF */
-  --card: 0 0% 18%; /* #2D2D2D */
-  --card-foreground: 0 0% 100%; /* #FFFFFF */
-  --border: 0 0% 44%; /* #707070 */
-  --input: 0 0% 18%; /* #2D2D2D */
-  --primary: 100 36% 25%; /* #2D5A27 */
-  --primary-foreground: 0 0% 100%; /* #FFFFFF */
-  --secondary: 100 25% 40%; /* #4A7C59 */
-  --secondary-foreground: 0 0% 100%; /* #FFFFFF */
-  --accent: 100 38% 55%; /* #5EBA63 */
-  --accent-foreground: 20 5% 10%; /* #1A1A1A */
-  --destructive: 0 84% 60%; /* #F56565 */
-  --destructive-foreground: 0 0% 100%; /* #FFFFFF */
-  --ring: 100 36% 25%; /* #2D5A27 */
+  --background: 135 25% 8%; /* #0F1F0F - Deep forest green background */
+  --foreground: 120 15% 95%; /* #F2F5F2 - Soft white with green tint */
+  --muted: 135 20% 15%; /* #1F3A1F - Darker green muted */
+  --muted-foreground: 120 10% 70%; /* #B8C4B8 - Muted green-gray */
+  --popover: 135 25% 12%; /* #172C17 - Dark green popover */
+  --popover-foreground: 120 15% 95%; /* #F2F5F2 - Light foreground */
+  --card: 135 30% 12%; /* #172E17 - Rich dark green cards */
+  --card-foreground: 120 15% 95%; /* #F2F5F2 - Light text on cards */
+  --border: 135 15% 25%; /* #384538 - Subtle green border */
+  --input: 135 25% 15%; /* #1F3A1F - Dark green input background */
+  --primary: 120 70% 35%; /* #1B8B1B - Vibrant opaque green */
+  --primary-foreground: 120 15% 95%; /* #F2F5F2 - Light text on primary */
+  --secondary: 135 40% 25%; /* #284D28 - Secondary dark green */
+  --secondary-foreground: 120 15% 95%; /* #F2F5F2 - Light text on secondary */
+  --accent: 120 60% 45%; /* #33A533 - Bright opaque green accent */
+  --accent-foreground: 135 25% 8%; /* #0F1F0F - Dark text on accent */
+  --destructive: 0 84% 60%; /* #F56565 - Red for warnings */
+  --destructive-foreground: 0 0% 100%; /* #FFFFFF - White text on red */
+  --ring: 120 70% 35%; /* #1B8B1B - Green focus ring */
   --radius: 0.75rem;
 }
 
 .dark {
-  --background: 20 5% 10%; /* #1A1A1A */
-  --foreground: 0 0% 100%; /* #FFFFFF */
-  --muted: 0 0% 18%; /* #2D2D2D */
-  --muted-foreground: 0 0% 69%; /* #B0B0B0 */
-  --popover: 0 0% 18%; /* #2D2D2D */
-  --popover-foreground: 0 0% 100%; /* #FFFFFF */
-  --card: 0 0% 18%; /* #2D2D2D */
-  --card-foreground: 0 0% 100%; /* #FFFFFF */
-  --border: 0 0% 44%; /* #707070 */
-  --input: 0 0% 18%; /* #2D2D2D */
-  --primary: 100 36% 25%; /* #2D5A27 */
-  --primary-foreground: 0 0% 100%; /* #FFFFFF */
-  --secondary: 100 25% 40%; /* #4A7C59 */
-  --secondary-foreground: 0 0% 100%; /* #FFFFFF */
-  --accent: 100 38% 55%; /* #5EBA63 */
-  --accent-foreground: 20 5% 10%; /* #1A1A1A */
-  --destructive: 0 84% 60%; /* #F56565 */
-  --destructive-foreground: 0 0% 100%; /* #FFFFFF */
-  --ring: 100 36% 25%; /* #2D5A27 */
+  --background: 135 25% 8%; /* #0F1F0F - Deep forest green background */
+  --foreground: 120 15% 95%; /* #F2F5F2 - Soft white with green tint */
+  --muted: 135 20% 15%; /* #1F3A1F - Darker green muted */
+  --muted-foreground: 120 10% 70%; /* #B8C4B8 - Muted green-gray */
+  --popover: 135 25% 12%; /* #172C17 - Dark green popover */
+  --popover-foreground: 120 15% 95%; /* #F2F5F2 - Light foreground */
+  --card: 135 30% 12%; /* #172E17 - Rich dark green cards */
+  --card-foreground: 120 15% 95%; /* #F2F5F2 - Light text on cards */
+  --border: 135 15% 25%; /* #384538 - Subtle green border */
+  --input: 135 25% 15%; /* #1F3A1F - Dark green input background */
+  --primary: 120 70% 35%; /* #1B8B1B - Vibrant opaque green */
+  --primary-foreground: 120 15% 95%; /* #F2F5F2 - Light text on primary */
+  --secondary: 135 40% 25%; /* #284D28 - Secondary dark green */
+  --secondary-foreground: 120 15% 95%; /* #F2F5F2 - Light text on secondary */
+  --accent: 120 60% 45%; /* #33A533 - Bright opaque green accent */
+  --accent-foreground: 135 25% 8%; /* #0F1F0F - Dark text on accent */
+  --destructive: 0 84% 60%; /* #F56565 - Red for warnings */
+  --destructive-foreground: 0 0% 100%; /* #FFFFFF - White text on red */
+  --ring: 120 70% 35%; /* #1B8B1B - Green focus ring */
 }
 
 @layer base {
