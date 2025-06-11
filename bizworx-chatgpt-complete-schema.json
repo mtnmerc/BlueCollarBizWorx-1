@@ -111,7 +111,7 @@
                   "type": "object",
                   "properties": {
                     "success": { "type": "boolean" },
-                    "clients": {
+                    "data": {
                       "type": "array",
                       "items": {
                         "type": "object",
