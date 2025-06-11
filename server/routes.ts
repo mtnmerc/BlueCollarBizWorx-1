@@ -2281,27 +2281,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create estimate (external API)
-  app.post("/api/external/estimates", authenticateApiKey, async (req, res) => {
-    try {
-      // Generate unique estimate number
-      const now = new Date();
-      const dateStr = now.toISOString().slice(2, 10).replace(/-/g, '');
-      const timeStr = now.getHours().toString().padStart(2, '0') + now.getMinutes().toString().padStart(2, '0');
-      const estimateNumber = `EST-${dateStr}-${timeStr}`;
-
-      const data = insertEstimateSchema.parse({
-        ...req.body,
-        businessId: req.businessId,
-        estimateNumber,
-      });
-
-      const estimate = await storage.createEstimate(data);
-      res.json(estimate);
-    } catch (error) {
-      res.status(400).json({ error: error.message });
-    }
-  });
+  // Duplicate route removed - using the schema-compliant version above
 
   // Update estimate (external API)
   app.put("/api/external/estimates/:id", authenticateApiKey, async (req, res) => {
