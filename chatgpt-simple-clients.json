@@ -1,0 +1,24 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Get Clients",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://bluecollarbizworx.replit.app/api/gpt"
+    }
+  ],
+  "paths": {
+    "/clients": {
+      "get": {
+        "summary": "Get clients",
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    }
+  }
+}
