@@ -1570,8 +1570,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GPT Estimates endpoint - MUST come before external API routes
   app.get('/api/gpt/estimates', authenticateGPT, async (req: any, res: any) => {
     console.log('=== SCHEMA-COMPLIANT GPT ESTIMATES ROUTE EXECUTING ===');
+    console.log('Request URL:', req.originalUrl);
     console.log('Business ID:', req.business.id);
     console.log('Business Name:', req.business.name);
+    
+    // Force execution of this route
+    res.locals.routeExecuted = 'GPT_ESTIMATES';
     try {
       // Use the schema-compliant query from external estimates endpoint
       const rawEstimates = await db
@@ -1699,7 +1703,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all estimates (external API) - simplified for external use only
-  app.get("/api/external/estimates", authenticateApiKey, async (req, res) => {
+  app.get("/api/external/estimates", authenticateApiKey, async (req, res, next) => {
+    // Prevent intercepting GPT requests
+    if (req.originalUrl.includes('/api/gpt/')) {
+      return next(); // Pass to next route handler
+    }
+    
     try {
       const estimates = await storage.getEstimatesByBusiness(req.businessId);
       res.json({
