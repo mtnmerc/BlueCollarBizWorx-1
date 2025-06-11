@@ -29,6 +29,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
   });
 
+
+
   // ChatGPT Dashboard endpoint - Force authentic data access
   app.get('/api/gpt/dashboard', async (req, res) => {
     try {
