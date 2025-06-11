@@ -1533,6 +1533,130 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // GPT Authentication function
+  function authenticateGPT(req: any, res: any, next: any) {
+    console.log('=== GPT AUTHENTICATION CALLED ===');
+    console.log('Request URL:', req.url);
+    console.log('Request method:', req.method);
+    
+    // For GPT routes, check if already processed by external API middleware
+    if (req.apiKeyAuth) {
+      console.log('Request already processed by external API middleware, skipping');
+      return res.status(403).json({ success: false, error: 'Route conflict detected' });
+    }
+    
+    const apiKey = req.headers['x-api-key'];
+    console.log('API Key present:', !!apiKey);
+    if (!apiKey) return res.status(401).json({ success: false, error: 'API key required' });
+    storage.getBusinessByApiKey(apiKey).then((business: any) => {
+      if (!business) return res.status(401).json({ success: false, error: 'Invalid API key' });
+      console.log('Business authenticated:', business.name);
+      req.business = business;
+      req.gptAuth = true;
+      next();
+    }).catch((error: any) => res.status(500).json({ success: false, error: 'Authentication error' }));
+  }
+
+  // GPT Test endpoint
+  app.get('/api/gpt/test', authenticateGPT, (req: any, res: any) => {
+    res.json({ 
+      success: true, 
+      message: 'GPT API endpoint working',
+      business: req.business.name,
+      timestamp: new Date().toISOString()
+    });
+  });
+
+  // GPT Estimates endpoint - MUST come before external API routes
+  app.get('/api/gpt/estimates', authenticateGPT, async (req: any, res: any) => {
+    console.log('=== SCHEMA-COMPLIANT GPT ESTIMATES ROUTE EXECUTING ===');
+    console.log('Business ID:', req.business.id);
+    console.log('Business Name:', req.business.name);
+    try {
+      // Use the schema-compliant query from external estimates endpoint
+      const rawEstimates = await db
+        .select({
+          id: estimates.id,
+          businessId: estimates.businessId,
+          clientId: estimates.clientId,
+          estimateNumber: estimates.estimateNumber,
+          title: estimates.title,
+          description: estimates.description,
+          lineItems: estimates.lineItems,
+          subtotal: estimates.subtotal,
+          taxRate: estimates.taxRate,
+          taxAmount: estimates.taxAmount,
+          total: estimates.total,
+          status: estimates.status,
+          validUntil: estimates.validUntil,
+          notes: estimates.notes,
+          shareToken: estimates.shareToken,
+          createdAt: estimates.createdAt,
+          clientName: clients.name
+        })
+        .from(estimates)
+        .leftJoin(clients, eq(estimates.clientId, clients.id))
+        .where(eq(estimates.businessId, req.business.id))
+        .orderBy(desc(estimates.createdAt));
+
+      // Format estimates to match ChatGPT schema expectations
+      const formattedEstimates = rawEstimates.map((estimate: any) => {
+        // Parse lineItems if it's a JSON string
+        let items = [];
+        try {
+          if (typeof estimate.lineItems === 'string') {
+            items = JSON.parse(estimate.lineItems);
+          } else if (Array.isArray(estimate.lineItems)) {
+            items = estimate.lineItems;
+          }
+        } catch (e) {
+          items = [];
+        }
+
+        // Format items array for schema compliance
+        const formattedItems = Array.isArray(items) ? items.map((item: any, index: number) => ({
+          id: item.id || `item_${index + 1}`,
+          description: item.description || item.name || '',
+          quantity: parseFloat(item.quantity || '1'),
+          rate: parseFloat(item.rate || item.price || '0'),
+          amount: parseFloat(item.amount || item.total || (item.quantity * item.rate) || '0')
+        })) : [];
+
+        return {
+          id: estimate.id,
+          businessId: estimate.businessId,
+          clientId: estimate.clientId,
+          title: estimate.title || '',
+          description: estimate.description || '',
+          items: formattedItems,
+          subtotal: estimate.subtotal || '0.00',
+          tax: estimate.taxAmount || '0.00',
+          total: estimate.total || '0.00',
+          status: estimate.status || 'draft',
+          validUntil: estimate.validUntil,
+          notes: estimate.notes || '',
+          shareToken: estimate.shareToken || '',
+          createdAt: estimate.createdAt,
+          clientName: estimate.clientName || 'Unknown Client'
+        };
+      });
+
+      res.json({
+        success: true,
+        data: formattedEstimates,
+        message: `Found ${formattedEstimates.length} estimates for ${req.business.name}`,
+        businessVerification: {
+          businessName: req.business.name,
+          businessId: req.business.id,
+          dataSource: "AUTHENTIC_DATABASE",
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: 'Failed to fetch estimates', details: error.message });
+    }
+  });
+
   // External API endpoints for n8n and other integrations
 
   // Download n8n workflow file
@@ -2419,39 +2543,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // GPT Authentication function
-  function authenticateGPT(req: any, res: any, next: any) {
-    console.log('=== GPT AUTHENTICATION CALLED ===');
-    console.log('Request URL:', req.url);
-    console.log('Request method:', req.method);
-    
-    // For GPT routes, check if already processed by external API middleware
-    if (req.apiKeyAuth) {
-      console.log('Request already processed by external API middleware, skipping');
-      return res.status(403).json({ success: false, error: 'Route conflict detected' });
-    }
-    
-    const apiKey = req.headers['x-api-key'];
-    console.log('API Key present:', !!apiKey);
-    if (!apiKey) return res.status(401).json({ success: false, error: 'API key required' });
-    storage.getBusinessByApiKey(apiKey).then((business: any) => {
-      if (!business) return res.status(401).json({ success: false, error: 'Invalid API key' });
-      console.log('Business authenticated:', business.name);
-      req.business = business;
-      req.gptAuth = true;
-      next();
-    }).catch((error: any) => res.status(500).json({ success: false, error: 'Authentication error' }));
-  }
 
-  // GPT Test endpoint
-  app.get('/api/gpt/test', authenticateGPT, (req: any, res: any) => {
-    res.json({ 
-      success: true, 
-      message: "BizWorx API connectivity test successful", 
-      timestamp: new Date().toISOString(), 
-      version: "2.1.0" 
-    });
-  });
 
   // GPT Clients endpoints
   app.get('/api/gpt/clients', authenticateGPT, async (req: any, res: any) => {
@@ -2518,95 +2610,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // GPT Estimates endpoints - Schema-compliant with complete data structure
-  app.get('/api/gpt/estimates', authenticateGPT, async (req: any, res: any) => {
-    console.log('=== SCHEMA-COMPLIANT GPT ESTIMATES ROUTE EXECUTING ===');
-    console.log('Business ID:', req.business.id);
-    console.log('Business Name:', req.business.name);
-    try {
-      // Use the schema-compliant query from external estimates endpoint
-      const rawEstimates = await db
-        .select({
-          id: estimates.id,
-          businessId: estimates.businessId,
-          clientId: estimates.clientId,
-          estimateNumber: estimates.estimateNumber,
-          title: estimates.title,
-          description: estimates.description,
-          lineItems: estimates.lineItems,
-          subtotal: estimates.subtotal,
-          taxRate: estimates.taxRate,
-          taxAmount: estimates.taxAmount,
-          total: estimates.total,
-          status: estimates.status,
-          validUntil: estimates.validUntil,
-          notes: estimates.notes,
-          shareToken: estimates.shareToken,
-          createdAt: estimates.createdAt,
-          clientName: clients.name
-        })
-        .from(estimates)
-        .leftJoin(clients, eq(estimates.clientId, clients.id))
-        .where(eq(estimates.businessId, req.business.id))
-        .orderBy(desc(estimates.createdAt));
-
-      // Format estimates to match ChatGPT schema expectations
-      const formattedEstimates = rawEstimates.map((estimate: any) => {
-        // Parse lineItems if it's a JSON string
-        let items = [];
-        try {
-          if (typeof estimate.lineItems === 'string') {
-            items = JSON.parse(estimate.lineItems);
-          } else if (Array.isArray(estimate.lineItems)) {
-            items = estimate.lineItems;
-          }
-        } catch (e) {
-          items = [];
-        }
-
-        // Format items array for schema compliance
-        const formattedItems = Array.isArray(items) ? items.map((item: any, index: number) => ({
-          id: item.id || `item_${index + 1}`,
-          description: item.description || item.name || '',
-          quantity: parseFloat(item.quantity || '1'),
-          rate: parseFloat(item.rate || item.price || '0'),
-          amount: parseFloat(item.amount || item.total || (item.quantity * item.rate) || '0')
-        })) : [];
-
-        return {
-          id: estimate.id,
-          businessId: estimate.businessId,
-          clientId: estimate.clientId,
-          title: estimate.title || '',
-          description: estimate.description || '',
-          items: formattedItems,
-          subtotal: estimate.subtotal || '0.00',
-          tax: estimate.taxAmount || '0.00',
-          total: estimate.total || '0.00',
-          status: estimate.status || 'draft',
-          validUntil: estimate.validUntil,
-          notes: estimate.notes || '',
-          shareToken: estimate.shareToken || '',
-          createdAt: estimate.createdAt,
-          clientName: estimate.clientName || 'Unknown Client'
-        };
-      });
-
-      res.json({
-        success: true,
-        data: formattedEstimates,
-        message: `Found ${formattedEstimates.length} estimates for ${req.business.name}`,
-        businessVerification: {
-          businessName: req.business.name,
-          businessId: req.business.id,
-          dataSource: "AUTHENTIC_DATABASE",
-          timestamp: new Date().toISOString()
-        }
-      });
-    } catch (error: any) {
-      res.status(500).json({ success: false, error: 'Failed to fetch estimates', details: error.message });
-    }
-  });
+  // GPT Estimates endpoints - Schema-compliant with complete data structure (moved to line 1571)
 
   app.post('/api/gpt/estimates', authenticateGPT, async (req: any, res: any) => {
     try {
