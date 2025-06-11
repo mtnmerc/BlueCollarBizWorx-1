@@ -254,6 +254,16 @@
       }
     },
     "schemas": {
+      "EstimateItem": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "string"},
+          "description": {"type": "string"},
+          "quantity": {"type": "number"},
+          "rate": {"type": "number"},
+          "amount": {"type": "number"}
+        }
+      },
       "Estimate": {
         "type": "object",
         "properties": {
@@ -262,7 +272,10 @@
           "clientId": {"type": "integer"},
           "title": {"type": "string"},
           "description": {"type": "string"},
-          "items": {"type": "array"},
+          "items": {
+            "type": "array",
+            "items": {"$ref": "#/components/schemas/EstimateItem"}
+          },
           "subtotal": {"type": "number"},
           "tax": {"type": "number"},
           "total": {"type": "number"},
@@ -281,7 +294,10 @@
           "clientId": {"type": "integer"},
           "title": {"type": "string"},
           "description": {"type": "string"},
-          "items": {"type": "array"},
+          "items": {
+            "type": "array",
+            "items": {"$ref": "#/components/schemas/EstimateItem"}
+          },
           "subtotal": {"type": "number"},
           "tax": {"type": "number"},
           "total": {"type": "number"},
@@ -296,7 +312,10 @@
           "clientId": {"type": "integer"},
           "title": {"type": "string"},
           "description": {"type": "string"},
-          "items": {"type": "array"},
+          "items": {
+            "type": "array",
+            "items": {"$ref": "#/components/schemas/EstimateItem"}
+          },
           "subtotal": {"type": "number"},
           "tax": {"type": "number"},
           "total": {"type": "number"},
@@ -345,7 +364,10 @@
               "clientId": {"type": "integer"},
               "title": {"type": "string"},
               "description": {"type": "string"},
-              "items": {"type": "array"},
+              "items": {
+                "type": "array",
+                "items": {"$ref": "#/components/schemas/EstimateItem"}
+              },
               "subtotal": {"type": "number"},
               "tax": {"type": "number"},
               "total": {"type": "number"},
