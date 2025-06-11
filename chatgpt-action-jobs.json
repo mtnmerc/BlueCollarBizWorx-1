@@ -1,0 +1,83 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "BizWorx Jobs API",
+    "description": "Access job data for Flatline Earthworks business",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://bluecollarbizworx.replit.app/api/gpt"
+    }
+  ],
+  "paths": {
+    "/jobs": {
+      "get": {
+        "operationId": "getJobs",
+        "summary": "Get all business jobs",
+        "description": "Returns complete list of jobs for Flatline Earthworks",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "description": "Filter jobs by specific date (YYYY-MM-DD)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "integer" },
+                          "title": { "type": "string" },
+                          "client": { "type": "string" },
+                          "status": { "type": "string" },
+                          "scheduledStart": { "type": "string" },
+                          "scheduledEnd": { "type": "string" },
+                          "address": { "type": "string" }
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  },
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ]
+}
