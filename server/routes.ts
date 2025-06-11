@@ -1723,7 +1723,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create estimate (external API)
-  app.post("/api/external/estimates", authenticateApiKey, async (req, res) => {
+  app.post("/api/external/estimates", authenticateApiKey, async (req, res, next) => {
+    // Skip if this is a GPT request that got misrouted
+    if (req.originalUrl.includes('/api/gpt/')) {
+      return next();
+    }
+    
     try {
       // Generate estimate number
       const now = new Date();
