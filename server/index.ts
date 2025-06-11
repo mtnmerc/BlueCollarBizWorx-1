@@ -86,13 +86,9 @@ app.use((req, res, next) => {
   // Register main API routes first (includes MCP endpoints)
   const server = await registerRoutes(app);
 
-  // Add middleware to ensure API routes are handled before catch-all (but exclude specific routes)
-  app.use('/api/*', (req, res, next) => {
-    // Skip the 404 handler for routes that should be handled elsewhere
-    if (req.path.startsWith('/api/gpt/')) {
-      return next();
-    }
-    // If we reach here, the route wasn't handled by registerRoutes
+  // Add catch-all for unhandled API routes
+  app.use('/api/*', (req, res) => {
+    console.log(`Unhandled API route: ${req.method} ${req.path}`);
     res.status(404).json({ success: false, error: 'API endpoint not found' });
   });
 

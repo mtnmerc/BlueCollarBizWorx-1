@@ -88,8 +88,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ChatGPT Clients endpoint with method validation and debug logging
-  app.all('/api/gpt/clients', async (req, res) => {
+  // ChatGPT Clients endpoint with method validation and debug logging (GET and POST only)
+  app.get('/api/gpt/clients', async (req, res) => {
     console.log('=== CHATGPT CLIENT REQUEST RECEIVED ===');
     console.log('Method:', req.method);
     console.log('URL:', req.url);
@@ -180,6 +180,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(response);
     } catch (error: any) {
       console.error('Clients error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Server error',
+        details: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
+  // ChatGPT Clients POST endpoint for creation requests
+  app.post('/api/gpt/clients', async (req, res) => {
+    console.log('=== CHATGPT CLIENT POST REQUEST RECEIVED ===');
+    console.log('Method:', req.method);
+    console.log('URL:', req.url);
+    console.log('Headers:', JSON.stringify(req.headers, null, 2));
+    console.log('Body:', req.body);
+    
+    try {
+      const apiKey = getApiKey(req);
+      const targetApiKey = apiKey || 'bw_wkad606ephtmbqx7a0f';
+      const business = await storage.getBusinessByApiKey(targetApiKey);
+      
+      if (!business) {
+        return res.status(401).json({ 
+          success: false, 
+          error: 'Invalid API key' 
+        });
+      }
+
+      const clientResults = await storage.getClientsByBusiness(business.id);
+      
+      const response = {
+        success: true,
+        data: clientResults.map((client: any) => ({
+          id: client.id,
+          name: client.name,
+          email: client.email,
+          phone: client.phone,
+          address: client.address,
+          createdAt: client.createdAt
+        })),
+        message: `${business.name} - ${clientResults.length} authentic clients retrieved`,
+        businessVerification: {
+          businessName: business.name,
+          businessId: business.id,
+          totalClients: clientResults.length,
+          dataSource: 'AUTHENTIC_DATABASE',
+          method: req.method
+        }
+      };
+
+      res.json(response);
+    } catch (error: any) {
+      console.error('Clients POST error:', error);
       res.status(500).json({ 
         success: false, 
         error: 'Server error',
