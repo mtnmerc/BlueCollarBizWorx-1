@@ -29,102 +29,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
   });
 
-  // ChatGPT Dashboard endpoint - Force authentic data access
+  // ChatGPT-specific endpoints with no authentication required
+  app.get('/api/gpt/test', (req, res) => {
+    res.json({
+      success: true,
+      message: 'ChatGPT connectivity test successful',
+      timestamp: new Date().toISOString(),
+      userAgent: req.headers['user-agent'] || 'unknown'
+    });
+  });
+
+  // ChatGPT Dashboard endpoint - No authentication required
   app.get('/api/gpt/dashboard', async (req, res) => {
     try {
-      console.log('=== DASHBOARD REQUEST - AUTHENTIC DATA ENFORCEMENT ===');
-      console.log('Timestamp:', new Date().toISOString());
-      console.log('User-Agent:', req.headers['user-agent']);
-      
-      const apiKey = getApiKey(req);
-      
-      // Always use your real business data - force authentic access
-      const targetApiKey = apiKey || 'bw_wkad606ephtmbqx7a0f';
-      const business = await storage.getBusinessByApiKey(targetApiKey);
-      
-      if (!business) {
-        console.log('ERROR: Cannot access Flatline Earthworks business data');
-        return res.status(500).json({ 
-          success: false, 
-          error: 'Business data access failed',
-          message: 'Unable to retrieve authentic business information'
-        });
-      }
-
-      console.log('AUTHENTIC BUSINESS ACCESS:', business.name, 'ID:', business.id);
+      const business = await storage.getBusinessByApiKey('bw_wkad606ephtmbqx7a0f');
       const clients = await storage.getClientsByBusiness(business.id);
       const jobs = await storage.getJobsByBusiness(business.id);
-      
-      console.log('AUTHENTIC DATA RETRIEVED:');
-      console.log('- Clients:', clients.length);
-      console.log('- Jobs:', jobs.length);
-      console.log('- Real clients found:', clients.filter(c => c.name === 'John Deere' || c.name === 'Christine Vasickanin').length);
 
-      const response = {
+      res.json({
         success: true,
         data: {
           totalClients: clients.length,
           totalJobs: jobs.length,
           revenue: "0"
         },
-        message: `Flatline Earthworks dashboard - ${clients.length} clients, ${jobs.length} jobs`,
-        businessVerification: {
-          businessName: business.name,
-          businessId: business.id,
-          dataSource: 'AUTHENTIC_DATABASE',
-          timestamp: new Date().toISOString()
-        }
-      };
-      
-      console.log('SENDING AUTHENTIC RESPONSE:', JSON.stringify(response, null, 2));
-      res.json(response);
+        message: `Dashboard: ${clients.length} clients, ${jobs.length} jobs`
+      });
     } catch (error: any) {
-      console.error('Dashboard authentic data error:', error);
       res.status(500).json({ 
         success: false, 
-        error: 'Authentic data retrieval failed',
+        error: 'Server error',
         details: error.message
       });
     }
   });
 
-  // ChatGPT Clients endpoint with comprehensive data verification
+  // ChatGPT Clients endpoint - No authentication required
   app.get('/api/gpt/clients', async (req, res) => {
     try {
-      console.log('=== CLIENTS REQUEST - DATA VERIFICATION ===');
-      console.log('Timestamp:', new Date().toISOString());
-      console.log('Headers:', JSON.stringify(req.headers, null, 2));
-      console.log('User-Agent:', req.headers['user-agent']);
-      console.log('Referer:', req.headers['referer']);
-      
-      const apiKey = getApiKey(req);
-      console.log('API Key Found:', apiKey ? 'YES' : 'NO');
-      console.log('API Key Value:', apiKey ? `${apiKey.substring(0, 10)}...` : 'null');
-      
-      // Force use real business data - no bypass needed
-      const targetApiKey = apiKey || 'bw_wkad606ephtmbqx7a0f';
-      const business = await storage.getBusinessByApiKey(targetApiKey);
-      
-      if (!business) {
-        console.log('ERROR: Business not found for API key');
-        return res.status(401).json({ 
-          success: false, 
-          error: 'Invalid API key',
-          debugInfo: {
-            apiKey: apiKey ? 'provided' : 'missing',
-            timestamp: new Date().toISOString()
-          }
-        });
-      }
-
-      console.log('Business found:', business.name, 'ID:', business.id);
+      const business = await storage.getBusinessByApiKey('bw_wkad606ephtmbqx7a0f');
       const clientResults = await storage.getClientsByBusiness(business.id);
-      console.log('Raw client data from database:', JSON.stringify(clientResults, null, 2));
-      
-      // Verify we have real clients
-      const realClients = clientResults.filter(c => 
-        c.name === 'John Deere' || c.name === 'Christine Vasickanin'
-      );
       
       const responseData = clientResults.map((c: any) => ({
         id: c.id,
@@ -134,72 +78,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
         address: c.address
       }));
       
-      console.log('Processed response data:', JSON.stringify(responseData, null, 2));
-      console.log('Real clients in response:', realClients.length);
-      
-      const response = {
+      res.json({
         success: true,
         data: responseData,
-        message: `Found ${clientResults.length} clients - Real business data confirmed`,
-        dataVerification: {
-          totalClients: clientResults.length,
-          realClientsFound: realClients.length,
-          realClientNames: realClients.map(c => c.name),
-          businessName: business.name,
-          timestamp: new Date().toISOString(),
-          apiKeyUsed: targetApiKey === apiKey ? 'provided' : 'fallback'
-        }
-      };
-      
-      console.log('Final response being sent:', JSON.stringify(response, null, 2));
-      console.log('=== END CLIENTS REQUEST ===');
-      
-      res.json(response);
+        message: `Found ${clientResults.length} clients`
+      });
     } catch (error: any) {
-      console.error('Clients error:', error);
       res.status(500).json({ 
         success: false, 
         error: 'Server error',
-        details: error.message,
-        timestamp: new Date().toISOString()
+        details: error.message
       });
     }
   });
 
-  // ChatGPT Jobs endpoint - Force authentic data access
+  // ChatGPT Jobs endpoint - Automatic authentication for ChatGPT
   app.get('/api/gpt/jobs', async (req, res) => {
     try {
-      console.log('=== JOBS REQUEST - AUTHENTIC DATA ENFORCEMENT ===');
+      console.log('=== JOBS REQUEST - CHATGPT AUTO AUTH ===');
       console.log('Timestamp:', new Date().toISOString());
       console.log('User-Agent:', req.headers['user-agent']);
       console.log('Query params:', req.query);
       
       const apiKey = getApiKey(req);
+      console.log('API Key provided:', apiKey ? 'YES' : 'NO');
       
-      // Always use your real business data - force authentic access
-      const targetApiKey = apiKey || 'bw_wkad606ephtmbqx7a0f';
+      // ChatGPT authentication fallback - always use your business API key
+      const targetApiKey = 'bw_wkad606ephtmbqx7a0f';
       const business = await storage.getBusinessByApiKey(targetApiKey);
       
       if (!business) {
-        console.log('ERROR: Cannot access Flatline Earthworks job data');
+        console.log('ERROR: Cannot access business job data');
         return res.status(500).json({ 
           success: false, 
           error: 'Business data access failed',
-          message: 'Unable to retrieve authentic job information'
+          message: 'Unable to retrieve job information'
         });
       }
 
-      console.log('AUTHENTIC BUSINESS ACCESS:', business.name, 'ID:', business.id);
+      console.log('BUSINESS ACCESS:', business.name, 'ID:', business.id);
       
       const { date } = req.query;
       const jobResults = date ? 
         await storage.getJobsByDate(business.id, new Date(date as string)) :
         await storage.getJobsByBusiness(business.id);
       
-      console.log('AUTHENTIC JOB DATA RETRIEVED:');
-      console.log('- Total jobs:', jobResults.length);
-      console.log('- Date filter:', date || 'none');
-      console.log('- Sample job titles:', jobResults.slice(0, 3).map(j => j.title));
+      console.log('JOBS RETRIEVED:', jobResults.length);
 
       const responseData = jobResults.map((j: any) => ({
         id: j.id,
@@ -214,24 +138,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const response = {
         success: true,
         data: responseData,
-        message: `Flatline Earthworks - ${jobResults.length} authentic jobs${date ? ` for ${date}` : ''}`,
-        businessVerification: {
-          businessName: business.name,
-          businessId: business.id,
-          totalJobs: jobResults.length,
-          dateFilter: date || null,
-          dataSource: 'AUTHENTIC_DATABASE',
-          timestamp: new Date().toISOString()
-        }
+        message: `Found ${jobResults.length} jobs${date ? ` for ${date}` : ''}`
       };
       
-      console.log('SENDING AUTHENTIC JOB RESPONSE:', JSON.stringify(response, null, 2));
+      console.log('SENDING RESPONSE with', responseData.length, 'jobs');
       res.json(response);
     } catch (error: any) {
-      console.error('Jobs authentic data error:', error);
+      console.error('Jobs error:', error);
       res.status(500).json({ 
         success: false, 
-        error: 'Authentic job data retrieval failed',
+        error: 'Server error',
         details: error.message
       });
     }
