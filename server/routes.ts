@@ -2588,12 +2588,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // GPT Estimates endpoints - Updated to include complete schema data
+  // GPT Estimates endpoints - Schema-compliant with complete data structure
   app.get('/api/gpt/estimates', authenticateGPT, async (req: any, res: any) => {
-    console.log('=== GPT ESTIMATES ROUTE ACCESSED ===');
-    console.log('Business ID:', req.business.id);
     try {
-      // Direct database query with proper joins and formatting
+      // Use the schema-compliant query from external estimates endpoint
       const rawEstimates = await db
         .select({
           id: estimates.id,
@@ -2612,15 +2610,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           notes: estimates.notes,
           shareToken: estimates.shareToken,
           createdAt: estimates.createdAt,
-          clientName: clients.name,
+          clientName: clients.name
         })
         .from(estimates)
         .leftJoin(clients, eq(estimates.clientId, clients.id))
         .where(eq(estimates.businessId, req.business.id))
         .orderBy(desc(estimates.createdAt));
 
-      console.log('Raw estimates from database:', JSON.stringify(rawEstimates, null, 2));
-      
       // Format estimates to match ChatGPT schema expectations
       const formattedEstimates = rawEstimates.map((estimate: any) => {
         // Parse lineItems if it's a JSON string
@@ -2663,21 +2659,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       });
 
-      console.log('Formatted estimates for response:', JSON.stringify(formattedEstimates, null, 2));
-
-      res.json({ 
-        success: true, 
-        data: formattedEstimates, 
-        message: `Found ${rawEstimates.length} estimates for ${req.business.name}`, 
-        businessVerification: { 
-          businessName: req.business.name, 
-          businessId: req.business.id, 
-          dataSource: "AUTHENTIC_DATABASE", 
-          timestamp: new Date().toISOString() 
+      res.json({
+        success: true,
+        data: formattedEstimates,
+        message: `Found ${formattedEstimates.length} estimates for ${req.business.name}`,
+        businessVerification: {
+          businessName: req.business.name,
+          businessId: req.business.id,
+          dataSource: "AUTHENTIC_DATABASE",
+          timestamp: new Date().toISOString()
         }
       });
     } catch (error: any) {
-      console.error('Error in estimates endpoint:', error);
       res.status(500).json({ success: false, error: 'Failed to fetch estimates', details: error.message });
     }
   });
