@@ -1569,91 +1569,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all estimates (external API)
+  // Get all estimates (external API) - simplified for external use only
   app.get("/api/external/estimates", authenticateApiKey, async (req, res) => {
     try {
-      // Use the same schema-compliant query as GPT endpoint
-      const rawEstimates = await db
-        .select({
-          id: estimates.id,
-          businessId: estimates.businessId,
-          clientId: estimates.clientId,
-          estimateNumber: estimates.estimateNumber,
-          title: estimates.title,
-          description: estimates.description,
-          lineItems: estimates.lineItems,
-          subtotal: estimates.subtotal,
-          taxRate: estimates.taxRate,
-          taxAmount: estimates.taxAmount,
-          total: estimates.total,
-          status: estimates.status,
-          validUntil: estimates.validUntil,
-          notes: estimates.notes,
-          shareToken: estimates.shareToken,
-          createdAt: estimates.createdAt,
-          clientName: clients.name
-        })
-        .from(estimates)
-        .leftJoin(clients, eq(estimates.clientId, clients.id))
-        .where(eq(estimates.businessId, req.businessId))
-        .orderBy(desc(estimates.createdAt));
-
-      // Format estimates to match ChatGPT schema expectations
-      const formattedEstimates = rawEstimates.map((estimate: any) => {
-        // Parse lineItems if it's a JSON string
-        let items = [];
-        try {
-          if (typeof estimate.lineItems === 'string') {
-            items = JSON.parse(estimate.lineItems);
-          } else if (Array.isArray(estimate.lineItems)) {
-            items = estimate.lineItems;
-          }
-        } catch (e) {
-          items = [];
-        }
-
-        // Format items array for schema compliance
-        const formattedItems = Array.isArray(items) ? items.map((item: any, index: number) => ({
-          id: item.id || `item_${index + 1}`,
-          description: item.description || item.name || '',
-          quantity: parseFloat(item.quantity || '1'),
-          rate: parseFloat(item.rate || item.price || '0'),
-          amount: parseFloat(item.amount || item.total || (item.quantity * item.rate) || '0')
-        })) : [];
-
-        return {
-          id: estimate.id,
-          businessId: estimate.businessId,
-          clientId: estimate.clientId,
-          title: estimate.title || '',
-          description: estimate.description || '',
-          items: formattedItems,
-          subtotal: estimate.subtotal || '0.00',
-          tax: estimate.taxAmount || '0.00',
-          total: estimate.total || '0.00',
-          status: estimate.status || 'draft',
-          validUntil: estimate.validUntil,
-          notes: estimate.notes || '',
-          shareToken: estimate.shareToken || '',
-          createdAt: estimate.createdAt,
-          clientName: estimate.clientName || 'Unknown Client'
-        };
-      });
-
-      res.json({
-        success: true,
-        data: formattedEstimates,
-        message: `Found ${formattedEstimates.length} estimates`,
-        businessVerification: {
-          businessName: "External API Access",
-          businessId: req.businessId,
-          dataSource: "AUTHENTIC_DATABASE",
-          timestamp: new Date().toISOString()
-        }
-      });
+      const estimates = await storage.getEstimatesByBusiness(req.businessId);
+      res.json(estimates);
     } catch (error: any) {
-      console.error('Error in external estimates endpoint:', error);
-      res.status(500).json({ success: false, error: 'Failed to fetch estimates', details: error.message });
+      res.status(500).json({ error: error.message });
     }
   });
 
