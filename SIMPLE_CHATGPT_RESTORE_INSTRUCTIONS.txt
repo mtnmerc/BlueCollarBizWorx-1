@@ -1,0 +1,63 @@
+COPY AND PASTE THESE INSTRUCTIONS TO ME AFTER ROLLBACK:
+
+Restore ChatGPT Custom GPT integration by adding these 4 API endpoints to server/routes.ts at the end before "return httpServer":
+
+1. Add this authentication function:
+function authenticateGPT(req, res, next) {
+  const apiKey = req.headers['x-api-key'];
+  if (!apiKey) return res.status(401).json({ success: false, error: 'API key required' });
+  storage.getBusinessByApiKey(apiKey).then(business => {
+    if (!business) return res.status(401).json({ success: false, error: 'Invalid API key' });
+    req.business = business;
+    next();
+  }).catch(error => res.status(500).json({ success: false, error: 'Authentication error' }));
+}
+
+2. Add these 4 endpoints:
+
+app.get('/api/gpt/test', authenticateGPT, (req, res) => {
+  res.json({ success: true, message: "BizWorx API connectivity test successful", timestamp: new Date().toISOString(), version: "2.1.0" });
+});
+
+app.get('/api/gpt/clients', authenticateGPT, async (req, res) => {
+  try {
+    const clients = await storage.getClientsByBusiness(req.business.id);
+    res.json({ success: true, data: clients, message: `Found ${clients.length} clients for ${req.business.name}`, businessVerification: { businessName: req.business.name, businessId: req.business.id, dataSource: "AUTHENTIC_DATABASE", timestamp: new Date().toISOString() }});
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Failed to fetch clients' });
+  }
+});
+
+app.get('/api/gpt/jobs', authenticateGPT, async (req, res) => {
+  try {
+    const jobs = await storage.getJobsByBusiness(req.business.id);
+    res.json({ success: true, data: jobs, message: `Found ${jobs.length} jobs for ${req.business.name}`, businessVerification: { businessName: req.business.name, businessId: req.business.id, dataSource: "AUTHENTIC_DATABASE", timestamp: new Date().toISOString() }});
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Failed to fetch jobs' });
+  }
+});
+
+app.get('/api/gpt/dashboard', authenticateGPT, async (req, res) => {
+  try {
+    const clients = await storage.getClientsByBusiness(req.business.id);
+    const jobs = await storage.getJobsByBusiness(req.business.id);
+    const revenue = jobs.reduce((total, job) => total + (parseFloat(job.total || '0')), 0);
+    res.json({ success: true, data: { totalClients: clients.length, totalJobs: jobs.length, revenue: revenue.toString() }, message: `${req.business.name} dashboard - ${clients.length} clients, ${jobs.length} jobs`, businessVerification: { businessName: req.business.name, businessId: req.business.id, dataSource: "AUTHENTIC_DATABASE", timestamp: new Date().toISOString() }});
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Failed to fetch dashboard data' });
+  }
+});
+
+3. Ensure storage.ts has this method:
+async getBusinessByApiKey(apiKey: string): Promise<Business | null> {
+  const [result] = await db.select().from(businesses).where(eq(businesses.apiKey, apiKey));
+  return result || null;
+}
+
+4. Set API key in database:
+UPDATE businesses SET api_key = 'bw_wkad606ephtmbqx7a0f' WHERE id = 1;
+
+5. Test with:
+curl -H "X-API-Key: bw_wkad606ephtmbqx7a0f" https://bluecollarbizworx.replit.app/api/gpt/test
+
+This will restore all ChatGPT Custom GPT functionality with access to your 10 clients and 8 jobs.
