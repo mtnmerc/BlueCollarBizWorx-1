@@ -383,7 +383,7 @@ export function registerGPTRoutes(app: Express) {
         success: true,
         data: {
           ...updatedInvoice,
-          items: req.body.items || JSON.parse(updatedInvoice.lineItems || '[]'),
+          items: req.body.items || JSON.parse(String(updatedInvoice.lineItems || '[]')),
           tax: updatedInvoice.taxAmount
         },
         message: `Invoice "${updatedInvoice.title}" updated successfully`,
