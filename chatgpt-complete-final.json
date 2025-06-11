@@ -27,7 +27,7 @@
                     "success": {
                       "type": "boolean"
                     },
-                    "data": {
+                    "clients": {
                       "type": "array",
                       "items": {
                         "type": "object",
@@ -49,6 +49,9 @@
                           }
                         }
                       }
+                    },
+                    "message": {
+                      "type": "string"
                     }
                   }
                 }

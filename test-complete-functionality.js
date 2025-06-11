@@ -26,9 +26,9 @@ async function testCompleteFunctionality() {
     
     if (clientsResponse.ok) {
       const clientsData = await clientsResponse.json();
-      if (clientsData && clientsData.data && Array.isArray(clientsData.data)) {
-        console.log(`✅ Retrieved ${clientsData.data.length} clients`);
-        console.log('Sample clients:', clientsData.data.slice(0, 3).map(c => `${c.id}: ${c.name}`));
+      if (clientsData && clientsData.clients && Array.isArray(clientsData.clients)) {
+        console.log(`✅ Retrieved ${clientsData.clients.length} clients`);
+        console.log('Sample clients:', clientsData.clients.slice(0, 3).map(c => `${c.id}: ${c.name}`));
       } else {
         console.log('❌ Invalid client data structure:', clientsData);
       }
@@ -84,7 +84,7 @@ async function testCompleteFunctionality() {
     let testClientId = null;
     if (createResponse.ok) {
       const createData = await createResponse.json();
-      testClientId = createData.data.id;
+      testClientId = createData.data ? createData.data.id : createData.id;
       console.log(`✅ Created test client with ID: ${testClientId}`);
     } else {
       console.log('❌ Failed to create test client:', createResponse.status);
@@ -122,7 +122,8 @@ async function testCompleteFunctionality() {
 
       if (verifyResponse.ok) {
         const verifyData = await verifyResponse.json();
-        const stillExists = verifyData.data.find(c => c.id === testClientId);
+        const clients = verifyData.clients || verifyData.data || [];
+        const stillExists = clients.find(c => c.id === testClientId);
         
         if (stillExists) {
           console.log('❌ Client still exists after deletion');
