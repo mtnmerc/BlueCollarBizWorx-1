@@ -264,6 +264,16 @@
       }
     },
     "schemas": {
+      "InvoiceItem": {
+        "type": "object",
+        "properties": {
+          "description": {"type": "string"},
+          "quantity": {"type": "number"},
+          "rate": {"type": "number"},
+          "amount": {"type": "number"}
+        },
+        "required": ["description", "quantity", "rate", "amount"]
+      },
       "Invoice": {
         "type": "object",
         "properties": {
@@ -272,7 +282,10 @@
           "clientId": {"type": "integer"},
           "title": {"type": "string"},
           "description": {"type": "string"},
-          "items": {"type": "array"},
+          "items": {
+            "type": "array",
+            "items": {"$ref": "#/components/schemas/InvoiceItem"}
+          },
           "subtotal": {"type": "number"},
           "tax": {"type": "number"},
           "total": {"type": "number"},
@@ -291,7 +304,10 @@
           "clientId": {"type": "integer"},
           "title": {"type": "string"},
           "description": {"type": "string"},
-          "items": {"type": "array"},
+          "items": {
+            "type": "array",
+            "items": {"$ref": "#/components/schemas/InvoiceItem"}
+          },
           "subtotal": {"type": "number"},
           "tax": {"type": "number"},
           "total": {"type": "number"},
@@ -306,7 +322,10 @@
           "clientId": {"type": "integer"},
           "title": {"type": "string"},
           "description": {"type": "string"},
-          "items": {"type": "array"},
+          "items": {
+            "type": "array",
+            "items": {"$ref": "#/components/schemas/InvoiceItem"}
+          },
           "subtotal": {"type": "number"},
           "tax": {"type": "number"},
           "total": {"type": "number"},
