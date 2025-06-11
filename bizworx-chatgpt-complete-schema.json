@@ -674,9 +674,9 @@
   "components": {
     "securitySchemes": {
       "BearerAuth": {
-        "type": "http",
-        "scheme": "bearer",
-        "bearerFormat": "API_KEY",
+        "type": "apiKey",
+        "in": "header",
+        "name": "Authorization",
         "description": "Bearer token authentication using your business API key"
       }
     },
