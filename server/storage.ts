@@ -270,24 +270,12 @@ export class DatabaseStorage implements IStorage {
     return job;
   }
 
-  async getJobsByBusiness(businessId: number): Promise<any[]> {
-    const jobsWithRelations = await this.db
-      .select({
-        job: jobs,
-        client: clients,
-        assignedUser: users
-      })
+  async getJobsByBusiness(businessId: number): Promise<Job[]> {
+    return await this.db
+      .select()
       .from(jobs)
-      .leftJoin(clients, eq(jobs.clientId, clients.id))
-      .leftJoin(users, eq(jobs.assignedUserId, users.id))
       .where(eq(jobs.businessId, businessId))
       .orderBy(desc(jobs.scheduledStart));
-
-    return jobsWithRelations.map(row => ({
-      ...row.job,
-      client: row.client,
-      assignedUser: row.assignedUser
-    }));
   }
 
   async getJobsByDate(businessId: number, date: Date): Promise<any[]> {
