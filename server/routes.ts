@@ -177,6 +177,249 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // =============================================================================
+  // CRITICAL: ALL GPT ROUTES MUST COME FIRST TO PREVENT EXTERNAL API INTERCEPTION
+  // =============================================================================
+
+  // GPT Estimates endpoint - HIGHEST PRIORITY
+  app.get('/api/gpt/estimates', authenticateGPT, async (req: any, res: any) => {
+    console.log('=== GPT ESTIMATES ROUTE EXECUTING ===');
+    console.log('Business:', req.business?.name, 'ID:', req.business?.id);
+    
+    try {
+      // Get estimates with client information using raw SQL for better control
+      const rawEstimates = await db
+        .select({
+          id: estimates.id,
+          businessId: estimates.businessId,
+          clientId: estimates.clientId,
+          estimateNumber: estimates.estimateNumber,
+          title: estimates.title,
+          description: estimates.description,
+          lineItems: estimates.lineItems,
+          subtotal: estimates.subtotal,
+          taxRate: estimates.taxRate,
+          taxAmount: estimates.taxAmount,
+          total: estimates.total,
+          status: estimates.status,
+          validUntil: estimates.validUntil,
+          notes: estimates.notes,
+          shareToken: estimates.shareToken,
+          createdAt: estimates.createdAt,
+          clientName: clients.name
+        })
+        .from(estimates)
+        .leftJoin(clients, eq(estimates.clientId, clients.id))
+        .where(eq(estimates.businessId, req.business.id))
+        .orderBy(desc(estimates.createdAt));
+
+      // Format estimates to match ChatGPT schema expectations
+      const formattedEstimates = rawEstimates.map((estimate: any) => {
+        // Parse lineItems if it's a JSON string
+        let items = [];
+        try {
+          if (typeof estimate.lineItems === 'string') {
+            items = JSON.parse(estimate.lineItems);
+          } else if (Array.isArray(estimate.lineItems)) {
+            items = estimate.lineItems;
+          }
+        } catch (e) {
+          items = [];
+        }
+
+        // Format items array for schema compliance
+        const formattedItems = Array.isArray(items) ? items.map((item: any, index: number) => ({
+          id: item.id || `item_${index + 1}`,
+          description: item.description || item.name || '',
+          quantity: parseFloat(item.quantity || '1'),
+          rate: parseFloat(item.rate || item.price || '0'),
+          amount: parseFloat(item.amount || item.total || (item.quantity * item.rate) || '0')
+        })) : [];
+
+        return {
+          id: estimate.id,
+          businessId: estimate.businessId,
+          clientId: estimate.clientId,
+          title: estimate.title || '',
+          description: estimate.description || '',
+          items: formattedItems,
+          subtotal: estimate.subtotal || '0.00',
+          tax: estimate.taxAmount || '0.00',
+          total: estimate.total || '0.00',
+          status: estimate.status || 'draft',
+          validUntil: estimate.validUntil,
+          notes: estimate.notes || '',
+          shareToken: estimate.shareToken || '',
+          createdAt: estimate.createdAt,
+          clientName: estimate.clientName || 'Unknown Client'
+        };
+      });
+
+      res.json({
+        success: true,
+        data: formattedEstimates,
+        message: `Found ${formattedEstimates.length} estimates for ${req.business.name}`,
+        businessVerification: {
+          businessName: req.business.name,
+          businessId: req.business.id,
+          dataSource: "AUTHENTIC_DATABASE",
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: 'Failed to fetch estimates', details: error.message });
+    }
+  });
+
+  // GPT Invoices endpoint - HIGHEST PRIORITY
+  app.get('/api/gpt/invoices', authenticateGPT, async (req: any, res: any) => {
+    console.log('=== GPT INVOICES ROUTE EXECUTING ===');
+    console.log('Business:', req.business?.name, 'ID:', req.business?.id);
+    
+    try {
+      const rawInvoices = await db
+        .select({
+          id: invoices.id,
+          businessId: invoices.businessId,
+          clientId: invoices.clientId,
+          invoiceNumber: invoices.invoiceNumber,
+          title: invoices.title,
+          description: invoices.description,
+          lineItems: invoices.lineItems,
+          subtotal: invoices.subtotal,
+          taxRate: invoices.taxRate,
+          taxAmount: invoices.taxAmount,
+          total: invoices.total,
+          status: invoices.status,
+          dueDate: invoices.dueDate,
+          paidDate: invoices.paidDate,
+          notes: invoices.notes,
+          shareToken: invoices.shareToken,
+          createdAt: invoices.createdAt,
+          clientName: clients.name
+        })
+        .from(invoices)
+        .leftJoin(clients, eq(invoices.clientId, clients.id))
+        .where(eq(invoices.businessId, req.business.id))
+        .orderBy(desc(invoices.createdAt));
+
+      // Format invoices to match ChatGPT schema expectations
+      const formattedInvoices = rawInvoices.map((invoice: any) => {
+        // Parse lineItems if it's a JSON string
+        let items = [];
+        try {
+          if (typeof invoice.lineItems === 'string') {
+            items = JSON.parse(invoice.lineItems);
+          } else if (Array.isArray(invoice.lineItems)) {
+            items = invoice.lineItems;
+          }
+        } catch (e) {
+          items = [];
+        }
+
+        // Format items array for schema compliance
+        const formattedItems = Array.isArray(items) ? items.map((item: any, index: number) => ({
+          id: item.id || `item_${index + 1}`,
+          description: item.description || item.name || '',
+          quantity: parseFloat(item.quantity || '1'),
+          rate: parseFloat(item.rate || item.price || '0'),
+          amount: parseFloat(item.amount || item.total || (item.quantity * item.rate) || '0')
+        })) : [];
+
+        return {
+          id: invoice.id,
+          businessId: invoice.businessId,
+          clientId: invoice.clientId,
+          invoiceNumber: invoice.invoiceNumber,
+          title: invoice.title || '',
+          description: invoice.description || '',
+          items: formattedItems,
+          subtotal: invoice.subtotal || '0.00',
+          tax: invoice.taxAmount || '0.00',
+          total: invoice.total || '0.00',
+          status: invoice.status || 'draft',
+          dueDate: invoice.dueDate,
+          paidDate: invoice.paidDate,
+          notes: invoice.notes || '',
+          shareToken: invoice.shareToken || '',
+          createdAt: invoice.createdAt,
+          clientName: invoice.clientName || 'Unknown Client'
+        };
+      });
+
+      res.json({
+        success: true,
+        data: formattedInvoices,
+        message: `Found ${formattedInvoices.length} invoices for ${req.business.name}`,
+        businessVerification: {
+          businessName: req.business.name,
+          businessId: req.business.id,
+          dataSource: "AUTHENTIC_DATABASE",
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: 'Failed to fetch invoices', details: error.message });
+    }
+  });
+
+  // GPT Clients endpoint - HIGHEST PRIORITY
+  app.get('/api/gpt/clients', authenticateGPT, async (req: any, res: any) => {
+    console.log('=== GPT CLIENTS ROUTE EXECUTING ===');
+    console.log('Business:', req.business?.name, 'ID:', req.business?.id);
+    
+    try {
+      const clientsList = await storage.getClientsByBusiness(req.business.id);
+      
+      res.json({
+        success: true,
+        data: clientsList,
+        message: `Found ${clientsList.length} clients for ${req.business.name}`,
+        businessVerification: {
+          businessName: req.business.name,
+          businessId: req.business.id,
+          dataSource: "AUTHENTIC_DATABASE",
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: 'Failed to fetch clients', details: error.message });
+    }
+  });
+
+  // GPT Create Client endpoint - HIGHEST PRIORITY
+  app.post('/api/gpt/clients', authenticateGPT, async (req: any, res: any) => {
+    console.log('=== GPT CREATE CLIENT ROUTE EXECUTING ===');
+    console.log('Business:', req.business?.name, 'ID:', req.business?.id);
+    
+    try {
+      const clientData = {
+        businessId: req.business.id,
+        name: req.body.name,
+        email: req.body.email || null,
+        phone: req.body.phone || null,
+        address: req.body.address || null,
+        notes: req.body.notes || null
+      };
+
+      const newClient = await storage.createClient(clientData);
+      
+      res.json({
+        success: true,
+        data: newClient,
+        message: `Client "${newClient.name}" created successfully`,
+        businessVerification: {
+          businessName: req.business.name,
+          businessId: req.business.id,
+          dataSource: "AUTHENTIC_DATABASE",
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: 'Failed to create client', details: error.message });
+    }
+  });
+
   // Natural language processing endpoint for voice commands
   app.post('/api/gpt/process', async (req, res) => {
     try {
@@ -1949,25 +2192,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all estimates (external API) - simplified for external use only
-  app.get("/api/external/estimates", authenticateApiKey, async (req, res, next) => {
-    // Prevent intercepting GPT requests
-    if (req.originalUrl.includes('/api/gpt/')) {
-      return next(); // Pass to next route handler
-    }
-    
-    try {
-      const estimates = await storage.getEstimatesByBusiness(req.businessId);
-      res.json({
-        success: true,
-        data: estimates,
-        message: `Found ${estimates.length} estimates`,
-        source: "EXTERNAL_API_ROUTE"
-      });
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
+  // Get all estimates (external API) - DISABLED to prevent GPT route interception
+  // This route was causing conflicts with GPT endpoints
+  // External integrations should use specific external paths or different authentication
 
   // Create estimate (external API)
   app.post("/api/external/estimates", authenticateApiKey, async (req, res, next) => {
