@@ -3254,6 +3254,318 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // GPT Authentication function
+  function authenticateGPT(req: any, res: any, next: any) {
+    const apiKey = req.headers['x-api-key'];
+    if (!apiKey) return res.status(401).json({ success: false, error: 'API key required' });
+    storage.getBusinessByApiKey(apiKey).then((business: any) => {
+      if (!business) return res.status(401).json({ success: false, error: 'Invalid API key' });
+      req.business = business;
+      next();
+    }).catch((error: any) => res.status(500).json({ success: false, error: 'Authentication error' }));
+  }
+
+  // GPT Test endpoint
+  app.get('/api/gpt/test', authenticateGPT, (req: any, res: any) => {
+    res.json({ 
+      success: true, 
+      message: "BizWorx API connectivity test successful", 
+      timestamp: new Date().toISOString(), 
+      version: "2.1.0" 
+    });
+  });
+
+  // GPT Clients endpoints
+  app.get('/api/gpt/clients', authenticateGPT, async (req: any, res: any) => {
+    try {
+      const clients = await storage.getClientsByBusiness(req.business.id);
+      res.json({ 
+        success: true, 
+        data: clients, 
+        message: `Found ${clients.length} clients for ${req.business.name}`, 
+        businessVerification: { 
+          businessName: req.business.name, 
+          businessId: req.business.id, 
+          dataSource: "AUTHENTIC_DATABASE", 
+          timestamp: new Date().toISOString() 
+        }
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: 'Failed to fetch clients' });
+    }
+  });
+
+  app.post('/api/gpt/clients', authenticateGPT, async (req: any, res: any) => {
+    try {
+      const clientData = {
+        businessId: req.business.id,
+        ...req.body
+      };
+      const client = await storage.createClient(clientData);
+      res.json({ 
+        success: true, 
+        data: client, 
+        message: `Client ${client.name} created successfully` 
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: 'Failed to create client' });
+    }
+  });
+
+  app.put('/api/gpt/clients/:id', authenticateGPT, async (req: any, res: any) => {
+    try {
+      const clientId = parseInt(req.params.id);
+      const updates = req.body;
+      const client = await storage.updateClient(clientId, updates);
+      res.json({ 
+        success: true, 
+        data: client, 
+        message: `Client updated successfully` 
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: 'Failed to update client' });
+    }
+  });
+
+  app.delete('/api/gpt/clients/:id', authenticateGPT, async (req: any, res: any) => {
+    try {
+      const clientId = parseInt(req.params.id);
+      await storage.deleteClient(clientId);
+      res.json({ 
+        success: true, 
+        message: `Client deleted successfully` 
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: 'Failed to delete client' });
+    }
+  });
+
+  // GPT Estimates endpoints
+  app.get('/api/gpt/estimates', authenticateGPT, async (req: any, res: any) => {
+    try {
+      const estimates = await storage.getEstimatesByBusiness(req.business.id);
+      res.json({ 
+        success: true, 
+        data: estimates, 
+        message: `Found ${estimates.length} estimates for ${req.business.name}`, 
+        businessVerification: { 
+          businessName: req.business.name, 
+          businessId: req.business.id, 
+          dataSource: "AUTHENTIC_DATABASE", 
+          timestamp: new Date().toISOString() 
+        }
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: 'Failed to fetch estimates' });
+    }
+  });
+
+  app.post('/api/gpt/estimates', authenticateGPT, async (req: any, res: any) => {
+    try {
+      const estimateData = {
+        businessId: req.business.id,
+        ...req.body
+      };
+      const estimate = await storage.createEstimate(estimateData);
+      res.json({ 
+        success: true, 
+        data: estimate, 
+        message: `Estimate created successfully` 
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: 'Failed to create estimate' });
+    }
+  });
+
+  app.put('/api/gpt/estimates/:id', authenticateGPT, async (req: any, res: any) => {
+    try {
+      const estimateId = parseInt(req.params.id);
+      const updates = req.body;
+      const estimate = await storage.updateEstimate(estimateId, updates);
+      res.json({ 
+        success: true, 
+        data: estimate, 
+        message: `Estimate updated successfully` 
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: 'Failed to update estimate' });
+    }
+  });
+
+  app.delete('/api/gpt/estimates/:id', authenticateGPT, async (req: any, res: any) => {
+    try {
+      const estimateId = parseInt(req.params.id);
+      await storage.deleteEstimate(estimateId);
+      res.json({ 
+        success: true, 
+        message: `Estimate deleted successfully` 
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: 'Failed to delete estimate' });
+    }
+  });
+
+  // GPT Invoices endpoints
+  app.get('/api/gpt/invoices', authenticateGPT, async (req: any, res: any) => {
+    try {
+      const invoices = await storage.getInvoicesByBusiness(req.business.id);
+      res.json({ 
+        success: true, 
+        data: invoices, 
+        message: `Found ${invoices.length} invoices for ${req.business.name}`, 
+        businessVerification: { 
+          businessName: req.business.name, 
+          businessId: req.business.id, 
+          dataSource: "AUTHENTIC_DATABASE", 
+          timestamp: new Date().toISOString() 
+        }
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: 'Failed to fetch invoices' });
+    }
+  });
+
+  app.post('/api/gpt/invoices', authenticateGPT, async (req: any, res: any) => {
+    try {
+      const invoiceData = {
+        businessId: req.business.id,
+        ...req.body
+      };
+      const invoice = await storage.createInvoice(invoiceData);
+      res.json({ 
+        success: true, 
+        data: invoice, 
+        message: `Invoice created successfully` 
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: 'Failed to create invoice' });
+    }
+  });
+
+  app.put('/api/gpt/invoices/:id', authenticateGPT, async (req: any, res: any) => {
+    try {
+      const invoiceId = parseInt(req.params.id);
+      const updates = req.body;
+      const invoice = await storage.updateInvoice(invoiceId, updates);
+      res.json({ 
+        success: true, 
+        data: invoice, 
+        message: `Invoice updated successfully` 
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: 'Failed to update invoice' });
+    }
+  });
+
+  app.delete('/api/gpt/invoices/:id', authenticateGPT, async (req: any, res: any) => {
+    try {
+      const invoiceId = parseInt(req.params.id);
+      await storage.deleteInvoice(invoiceId);
+      res.json({ 
+        success: true, 
+        message: `Invoice deleted successfully` 
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: 'Failed to delete invoice' });
+    }
+  });
+
+  // GPT Jobs and Scheduling endpoints
+  app.get('/api/gpt/jobs', authenticateGPT, async (req: any, res: any) => {
+    try {
+      const jobs = await storage.getJobsByBusiness(req.business.id);
+      res.json({ 
+        success: true, 
+        data: jobs, 
+        message: `Found ${jobs.length} jobs for ${req.business.name}`, 
+        businessVerification: { 
+          businessName: req.business.name, 
+          businessId: req.business.id, 
+          dataSource: "AUTHENTIC_DATABASE", 
+          timestamp: new Date().toISOString() 
+        }
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: 'Failed to fetch jobs' });
+    }
+  });
+
+  app.post('/api/gpt/jobs', authenticateGPT, async (req: any, res: any) => {
+    try {
+      const jobData = {
+        businessId: req.business.id,
+        ...req.body
+      };
+      const job = await storage.createJob(jobData);
+      res.json({ 
+        success: true, 
+        data: job, 
+        message: `Job created successfully` 
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: 'Failed to create job' });
+    }
+  });
+
+  app.put('/api/gpt/jobs/:id', authenticateGPT, async (req: any, res: any) => {
+    try {
+      const jobId = parseInt(req.params.id);
+      const updates = req.body;
+      const job = await storage.updateJob(jobId, updates);
+      res.json({ 
+        success: true, 
+        data: job, 
+        message: `Job updated successfully` 
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: 'Failed to update job' });
+    }
+  });
+
+  app.delete('/api/gpt/jobs/:id', authenticateGPT, async (req: any, res: any) => {
+    try {
+      const jobId = parseInt(req.params.id);
+      await storage.deleteJob(jobId);
+      res.json({ 
+        success: true, 
+        message: `Job deleted successfully` 
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: 'Failed to delete job' });
+    }
+  });
+
+  // GPT Dashboard endpoint
+  app.get('/api/gpt/dashboard', authenticateGPT, async (req: any, res: any) => {
+    try {
+      const clients = await storage.getClientsByBusiness(req.business.id);
+      const jobs = await storage.getJobsByBusiness(req.business.id);
+      const invoices = await storage.getInvoicesByBusiness(req.business.id);
+      const estimates = await storage.getEstimatesByBusiness(req.business.id);
+      const revenue = invoices.reduce((total: number, invoice: any) => total + (parseFloat(invoice.total || '0')), 0);
+      
+      res.json({ 
+        success: true, 
+        data: { 
+          totalClients: clients.length, 
+          totalJobs: jobs.length, 
+          totalInvoices: invoices.length,
+          totalEstimates: estimates.length,
+          revenue: revenue.toString() 
+        }, 
+        message: `${req.business.name} dashboard - ${clients.length} clients, ${jobs.length} jobs`, 
+        businessVerification: { 
+          businessName: req.business.name, 
+          businessId: req.business.id, 
+          dataSource: "AUTHENTIC_DATABASE", 
+          timestamp: new Date().toISOString() 
+        }
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: 'Failed to fetch dashboard data' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

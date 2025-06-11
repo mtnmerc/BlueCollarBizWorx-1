@@ -18,6 +18,7 @@ export interface IStorage {
   createBusiness(business: InsertBusiness): Promise<Business>;
   getBusinessByEmail(email: string): Promise<Business | undefined>;
   getBusinessById(id: number): Promise<Business | undefined>;
+  getBusinessByApiKey(apiKey: string): Promise<Business | null>;
   getAllBusinesses(): Promise<Business[]>;
   updateBusiness(id: number, business: Partial<InsertBusiness>): Promise<Business>;
 
@@ -33,6 +34,7 @@ export interface IStorage {
   getClientsByBusiness(businessId: number): Promise<Client[]>;
   getClientById(id: number): Promise<Client | undefined>;
   updateClient(id: number, client: Partial<InsertClient>): Promise<Client>;
+  deleteClient(id: number): Promise<void>;
 
   // Service methods
   createService(service: InsertService): Promise<Service>;
@@ -193,6 +195,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(clients.id, id))
       .returning();
     return updatedClient;
+  }
+
+  async deleteClient(id: number): Promise<void> {
+    await this.db.delete(clients).where(eq(clients.id, id));
   }
 
   // Service methods
