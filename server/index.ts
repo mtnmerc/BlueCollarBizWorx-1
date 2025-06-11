@@ -86,6 +86,15 @@ app.use((req, res, next) => {
   // Register main API routes first (includes MCP endpoints)
   const server = await registerRoutes(app);
 
+  // Add specific handler for /getClients before any catch-all routes
+  app.all('/getClients', (req, res) => {
+    res.status(404).json({ 
+      success: false, 
+      error: 'getClients endpoint moved to /api/gpt/clients',
+      redirect: '/api/gpt/clients'
+    });
+  });
+
   // Add middleware to ensure API routes are handled before catch-all
   app.use('/gpt/*', (req, res, next) => {
     // If we reach here, the route wasn't handled by registerRoutes

@@ -189,6 +189,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Add /getClients endpoint that ChatGPT is trying to call
+  app.get('/getClients', async (req, res) => {
+    try {
+      console.log('=== CHATGPT /getClients REQUEST ===');
+      console.log('Method:', req.method);
+      console.log('Headers:', JSON.stringify(req.headers, null, 2));
+      
+      const apiKey = getApiKey(req);
+      const targetApiKey = apiKey || 'bw_wkad606ephtmbqx7a0f';
+      const business = await storage.getBusinessByApiKey(targetApiKey);
+      
+      if (!business) {
+        return res.status(401).json({ 
+          success: false, 
+          error: 'Invalid API key' 
+        });
+      }
+
+      const clientResults = await storage.getClientsByBusiness(business.id);
+      
+      res.json({
+        success: true,
+        clients: clientResults.map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          email: c.email,
+          phone: c.phone,
+          address: c.address
+        })),
+        message: `Found ${clientResults.length} clients for ${business.name}`
+      });
+    } catch (error: any) {
+      console.error('getClients error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to retrieve clients',
+        details: error.message
+      });
+    }
+  });
+
+  app.post('/getClients', async (req, res) => {
+    try {
+      console.log('=== CHATGPT POST /getClients REQUEST ===');
+      console.log('Body:', JSON.stringify(req.body, null, 2));
+      
+      const apiKey = getApiKey(req);
+      const targetApiKey = apiKey || 'bw_wkad606ephtmbqx7a0f';
+      const business = await storage.getBusinessByApiKey(targetApiKey);
+      
+      if (!business) {
+        return res.status(401).json({ 
+          success: false, 
+          error: 'Invalid API key' 
+        });
+      }
+
+      const clientResults = await storage.getClientsByBusiness(business.id);
+      
+      res.json({
+        success: true,
+        clients: clientResults.map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          email: c.email,
+          phone: c.phone,
+          address: c.address
+        })),
+        message: `Found ${clientResults.length} clients for ${business.name}`
+      });
+    } catch (error: any) {
+      console.error('POST getClients error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to retrieve clients',
+        details: error.message
+      });
+    }
+  });
+
   // ChatGPT Client Creation endpoint - separate from listing
   app.post('/api/gpt/clients/create', async (req, res) => {
     try {
