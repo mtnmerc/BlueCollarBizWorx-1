@@ -88,8 +88,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ChatGPT Clients endpoint with comprehensive data verification
-  app.get('/api/gpt/clients', async (req, res) => {
+  // ChatGPT Clients endpoint with method validation and debug logging
+  app.all('/api/gpt/clients', async (req, res) => {
+    console.log('=== CHATGPT CLIENT REQUEST RECEIVED ===');
+    console.log('Method:', req.method);
+    console.log('URL:', req.url);
+    console.log('Headers:', JSON.stringify(req.headers, null, 2));
+    console.log('Query params:', req.query);
+    console.log('Body:', req.body);
+    console.log('Content-Type:', req.headers['content-type']);
+    console.log('User-Agent:', req.headers['user-agent']);
+    
+    // Only allow GET requests for client listing
+    if (req.method !== 'GET') {
+      console.log('❌ REJECTING: Wrong HTTP method');
+      return res.status(405).json({
+        success: false,
+        error: `Method Not Allowed. Expected GET, received ${req.method}`,
+        allowedMethods: ['GET'],
+        debugInfo: {
+          receivedMethod: req.method,
+          timestamp: new Date().toISOString(),
+          userAgent: req.headers['user-agent']
+        }
+      });
+    }
     try {
       console.log('=== CLIENTS REQUEST - DATA VERIFICATION ===');
       console.log('Timestamp:', new Date().toISOString());

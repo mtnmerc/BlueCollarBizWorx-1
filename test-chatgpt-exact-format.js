@@ -1,65 +1,77 @@
 import fetch from 'node-fetch';
 
 const BASE_URL = 'https://bluecollarbizworx.replit.app';
-const API_KEY = 'bw_wkad606ephtmbqx7a0f';
 
 async function testChatGPTExactFormat() {
-  console.log('Testing exact ChatGPT request format...\n');
+  console.log('Testing with ChatGPT exact format...\n');
   
-  // Test what happens when no auth is provided (like ChatGPT might be doing)
-  console.log('1. Testing request WITHOUT authentication (simulating ChatGPT error):');
+  // Test 1: Exact ChatGPT headers format
+  console.log('1. Testing with ChatGPT User-Agent and headers:');
   try {
-    const response1 = await fetch(`${BASE_URL}/api/gpt/dashboard`, {
+    const response = await fetch(`${BASE_URL}/api/gpt/clients`, {
       method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
-        'User-Agent': 'Mozilla/5.0 (compatible; ChatGPT)'
+        'X-API-Key': 'bw_wkad606ephtmbqx7a0f',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 ChatGPT/1.0',
+        'Accept': 'application/json',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Cache-Control': 'no-cache'
       }
     });
     
-    const result1 = await response1.text();
-    console.log('Status:', response1.status);
-    console.log('Response:', result1);
-    
+    console.log('Status:', response.status);
+    const text = await response.text();
+    console.log('Response length:', text.length);
+    if (response.status === 400) {
+      console.log('400 Error response:', text);
+    } else {
+      console.log('Success - clients returned');
+    }
   } catch (error) {
-    console.error('Error:', error.message);
+    console.error('Test 1 error:', error.message);
   }
   
-  console.log('\n2. Testing no-auth endpoint (should work):');
+  // Test 2: Try POST method (what ChatGPT might be doing incorrectly)
+  console.log('\n2. Testing POST method (potential ChatGPT mistake):');
   try {
-    const response2 = await fetch(`${BASE_URL}/api/gpt/test`, {
-      method: 'GET',
+    const response = await fetch(`${BASE_URL}/api/gpt/clients`, {
+      method: 'POST',
       headers: {
+        'X-API-Key': 'bw_wkad606ephtmbqx7a0f',
         'Content-Type': 'application/json',
-        'User-Agent': 'Mozilla/5.0 (compatible; ChatGPT)'
-      }
+        'User-Agent': 'ChatGPT/1.0'
+      },
+      body: JSON.stringify({})
     });
     
-    const result2 = await response2.json();
-    console.log('Status:', response2.status);
-    console.log('Response:', JSON.stringify(result2, null, 2));
-    
+    console.log('Status:', response.status);
+    const text = await response.text();
+    console.log('Response:', text);
   } catch (error) {
-    console.error('Error:', error.message);
+    console.error('Test 2 error:', error.message);
   }
   
-  console.log('\n3. Testing with correct X-API-Key (should work):');
+  // Test 3: Different content-type
+  console.log('\n3. Testing with different content-type:');
   try {
-    const response3 = await fetch(`${BASE_URL}/api/gpt/dashboard`, {
+    const response = await fetch(`${BASE_URL}/api/gpt/clients`, {
       method: 'GET',
       headers: {
-        'X-API-Key': API_KEY,
-        'Content-Type': 'application/json',
-        'User-Agent': 'Mozilla/5.0 (compatible; ChatGPT)'
+        'X-API-Key': 'bw_wkad606ephtmbqx7a0f',
+        'Content-Type': 'text/plain',
+        'User-Agent': 'ChatGPT/1.0'
       }
     });
     
-    const result3 = await response3.json();
-    console.log('Status:', response3.status);
-    console.log('Response:', JSON.stringify(result3, null, 2));
-    
+    console.log('Status:', response.status);
+    const text = await response.text();
+    if (text.length < 200) {
+      console.log('Response:', text);
+    } else {
+      console.log('Large response received, clients likely returned');
+    }
   } catch (error) {
-    console.error('Error:', error.message);
+    console.error('Test 3 error:', error.message);
   }
 }
 
