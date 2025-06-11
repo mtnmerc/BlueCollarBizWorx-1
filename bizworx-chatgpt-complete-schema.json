@@ -131,7 +131,9 @@
             }
           }
         }
-      },
+      }
+    },
+    "/api/gpt/clients/create": {
       "post": {
         "summary": "Create new client",
         "description": "Add a new client to the business",

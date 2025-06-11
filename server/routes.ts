@@ -189,6 +189,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ChatGPT Client Creation endpoint - separate from listing
+  app.post('/api/gpt/clients/create', async (req, res) => {
+    try {
+      console.log('=== CLIENT CREATE REQUEST ===');
+      console.log('Body:', JSON.stringify(req.body, null, 2));
+      
+      const apiKey = getApiKey(req);
+      const targetApiKey = apiKey || 'bw_wkad606ephtmbqx7a0f';
+      const business = await storage.getBusinessByApiKey(targetApiKey);
+      
+      if (!business) {
+        return res.status(401).json({ 
+          success: false, 
+          error: 'Invalid API key' 
+        });
+      }
+
+      const { name, email, phone, address } = req.body;
+      
+      if (!name) {
+        return res.status(400).json({
+          success: false,
+          error: 'Client name is required'
+        });
+      }
+
+      const newClient = await storage.createClient({
+        name,
+        email: email || '',
+        phone: phone || '',
+        address: address || '',
+        businessId: business.id
+      });
+
+      console.log('Client created:', newClient);
+
+      res.json({
+        success: true,
+        data: newClient,
+        message: `Client "${name}" created successfully`
+      });
+    } catch (error: any) {
+      console.error('Client creation error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to create client',
+        details: error.message
+      });
+    }
+  });
+
   // ChatGPT Jobs endpoint - Force authentic data access
   app.get('/api/gpt/jobs', async (req, res) => {
     try {
