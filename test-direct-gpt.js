@@ -1,4 +1,4 @@
-const https = require('https');
+import https from 'https';
 
 function makeRequest(path, headers = {}) {
   return new Promise((resolve, reject) => {
