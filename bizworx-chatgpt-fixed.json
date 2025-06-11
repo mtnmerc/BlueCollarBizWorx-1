@@ -1,67 +1,36 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "BizWorx Business Management API",
-    "description": "Comprehensive API for blue-collar business management including clients, jobs, invoices, estimates, team management, and time tracking. Optimized for voice commands through ChatGPT Custom GPT integration.",
-    "version": "2.1.0"
+    "title": "BizWorx API",
+    "description": "Business management for blue-collar services",
+    "version": "1.0.0"
   },
   "servers": [
     {
-      "url": "https://bluecollarbizworx.replit.app",
-      "description": "Production BizWorx Server"
-    }
-  ],
-  "security": [
-    {
-      "ApiKeyAuth": []
+      "url": "http://localhost:5000"
     }
   ],
   "paths": {
     "/api/gpt/clients": {
       "get": {
-        "summary": "Get all clients",
-        "description": "Retrieve all clients for the business",
         "operationId": "getClients",
+        "summary": "Get all clients",
         "responses": {
           "200": {
-            "description": "Clients retrieved successfully",
+            "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": { "type": "boolean" },
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/Client"
-                      }
-                    },
-                    "message": { "type": "string" }
-                  },
-                  "required": ["success", "data", "message"]
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized - Invalid API key",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "type": "object"
                 }
               }
             }
           }
         }
-      }
-    },
-    "/api/gpt/clients/create": {
+      },
       "post": {
-        "summary": "Create new client",
-        "description": "Add a new client to the business",
         "operationId": "createClient",
+        "summary": "Create new client",
         "requestBody": {
           "required": true,
           "content": {
@@ -70,10 +39,10 @@
                 "type": "object",
                 "required": ["name"],
                 "properties": {
-                  "name": { "type": "string", "description": "Client name" },
-                  "email": { "type": "string", "format": "email" },
-                  "phone": { "type": "string" },
-                  "address": { "type": "string" }
+                  "name": {"type": "string"},
+                  "phone": {"type": "string"},
+                  "email": {"type": "string"},
+                  "address": {"type": "string"}
                 }
               }
             }
@@ -81,16 +50,11 @@
         },
         "responses": {
           "200": {
-            "description": "Client created successfully",
+            "description": "Client created",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": { "type": "boolean" },
-                    "data": { "$ref": "#/components/schemas/Client" },
-                    "message": { "type": "string" }
-                  }
+                  "type": "object"
                 }
               }
             }
@@ -100,47 +64,58 @@
     },
     "/api/gpt/jobs": {
       "get": {
-        "summary": "Get all jobs",
-        "description": "Retrieve all jobs for the business. Optional date parameter to filter by specific date",
         "operationId": "getJobs",
+        "summary": "Get jobs",
         "parameters": [
           {
             "name": "date",
             "in": "query",
-            "description": "Filter jobs by date (YYYY-MM-DD format)",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "format": "date"
-            }
+            "schema": {"type": "string"}
           }
         ],
         "responses": {
           "200": {
-            "description": "Jobs retrieved successfully",
+            "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": { "type": "boolean" },
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/Job"
-                      }
-                    },
-                    "message": { "type": "string" },
-                    "businessVerification": {
-                      "type": "object",
-                      "properties": {
-                        "businessName": { "type": "string" },
-                        "businessId": { "type": "integer" },
-                        "totalJobs": { "type": "integer" },
-                        "dataSource": { "type": "string" }
-                      }
-                    }
-                  }
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createJob",
+        "summary": "Create new job",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["clientId", "title"],
+                "properties": {
+                  "clientId": {"type": "integer"},
+                  "title": {"type": "string"},
+                  "description": {"type": "string"},
+                  "address": {"type": "string"},
+                  "scheduledStart": {"type": "string"},
+                  "scheduledEnd": {"type": "string"},
+                  "estimatedAmount": {"type": "string"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Job created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
                 }
               }
             }
@@ -148,30 +123,59 @@
         }
       }
     },
-    "/api/gpt/dashboard": {
+    "/api/gpt/revenue": {
       "get": {
-        "summary": "Get dashboard overview",
-        "description": "Retrieve business dashboard with key metrics",
-        "operationId": "getDashboard",
+        "operationId": "getRevenue",
+        "summary": "Get revenue stats",
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "schema": {"type": "string"}
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Dashboard data retrieved successfully",
+            "description": "Revenue data",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": { "type": "boolean" },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "totalClients": { "type": "integer" },
-                        "totalJobs": { "type": "integer" },
-                        "revenue": { "type": "number" }
-                      }
-                    },
-                    "message": { "type": "string" }
-                  }
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/gpt/invoices": {
+      "post": {
+        "operationId": "createInvoice",
+        "summary": "Create invoice",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["clientId", "title", "total"],
+                "properties": {
+                  "clientId": {"type": "integer"},
+                  "title": {"type": "string"},
+                  "total": {"type": "string"},
+                  "subtotal": {"type": "string"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Invoice created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
                 }
               }
             }
@@ -185,43 +189,13 @@
       "ApiKeyAuth": {
         "type": "apiKey",
         "in": "header",
-        "name": "X-API-Key",
-        "description": "API key for authentication. Use: bw_wkad606ephtmbqx7a0f"
-      }
-    },
-    "schemas": {
-      "Client": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "integer" },
-          "name": { "type": "string" },
-          "email": { "type": "string" },
-          "phone": { "type": "string" },
-          "address": { "type": "string", "nullable": true }
-        },
-        "required": ["id", "name", "email", "phone"]
-      },
-      "Job": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "integer" },
-          "title": { "type": "string" },
-          "client": { "type": "string" },
-          "status": { "type": "string" },
-          "scheduledStart": { "type": "string", "format": "date-time", "nullable": true },
-          "scheduledEnd": { "type": "string", "format": "date-time", "nullable": true },
-          "address": { "type": "string", "nullable": true }
-        },
-        "required": ["id", "title", "status"]
-      },
-      "Error": {
-        "type": "object",
-        "properties": {
-          "success": { "type": "boolean" },
-          "error": { "type": "string" }
-        },
-        "required": ["success", "error"]
+        "name": "X-API-Key"
       }
     }
-  }
+  },
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ]
 }

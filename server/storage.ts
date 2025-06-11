@@ -643,6 +643,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Additional business and job management methods
+  async getAllBusinesses(): Promise<Business[]> {
+    return await this.db.select().from(businesses);
+  }
 
   async getIncompleteJobsForDate(businessId: number, date: Date): Promise<Job[]> {
     const nextDay = new Date(date);
