@@ -86,12 +86,6 @@ app.use((req, res, next) => {
   // Register main API routes first (includes MCP endpoints)
   const server = await registerRoutes(app);
 
-  // Add catch-all for unhandled API routes
-  app.use('/api/*', (req, res) => {
-    console.log(`Unhandled API route: ${req.method} ${req.path}`);
-    res.status(404).json({ success: false, error: 'API endpoint not found' });
-  });
-
   // Add comprehensive error handler for JSON responses
   app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
     console.error("Server Error:", err);
