@@ -1,4 +1,4 @@
-const https = require('https');
+import https from 'https';
 
 async function testEndpoint(url, headers, description) {
   return new Promise((resolve, reject) => {
