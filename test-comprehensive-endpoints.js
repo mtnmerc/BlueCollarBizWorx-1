@@ -1,4 +1,4 @@
-const fetch = require('node-fetch');
+import fetch from 'node-fetch';
 
 const BASE_URL = 'http://localhost:5000';
 const API_KEY = 'bw_wkad606ephtmbqx7a0f';
