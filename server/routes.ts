@@ -46,10 +46,25 @@ const authenticateApiKey = async (req: any, res: any, next: any) => {
 const getApiKey = (req: any): string | null => {
   const headers = req.headers;
   
-  // ChatGPT Custom GPT sends X-API-Key which Express normalizes to x-api-key
-  const xApiKey = headers['x-api-key'];
-  if (xApiKey && typeof xApiKey === 'string' && xApiKey.trim() && xApiKey !== 'undefined') {
-    return xApiKey.trim();
+  // Debug logging for ChatGPT troubleshooting
+  console.log('Headers received:', Object.keys(headers));
+  console.log('x-api-key:', headers['x-api-key']);
+  console.log('X-API-Key:', headers['X-API-Key']);
+  console.log('authorization:', headers.authorization);
+  
+  // Try multiple header variations that ChatGPT might use
+  const apiKeyHeaders = [
+    headers['x-api-key'],
+    headers['X-API-Key'],
+    headers['X-Api-Key'],
+    headers['x-API-key']
+  ];
+  
+  for (const apiKey of apiKeyHeaders) {
+    if (apiKey && typeof apiKey === 'string' && apiKey.trim() && apiKey !== 'undefined') {
+      console.log('Found API key:', apiKey.substring(0, 10) + '...');
+      return apiKey.trim();
+    }
   }
   
   // Fallback to Authorization Bearer for other clients
@@ -57,10 +72,12 @@ const getApiKey = (req: any): string | null => {
   if (authHeader && typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
     const token = authHeader.replace('Bearer ', '').trim();
     if (token && token !== 'undefined') {
+      console.log('Found Bearer token:', token.substring(0, 10) + '...');
       return token;
     }
   }
   
+  console.log('No valid API key found in headers');
   return null;
 };
 
