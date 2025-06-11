@@ -17,7 +17,7 @@
     }
   ],
   "paths": {
-    "/getClients": {
+    "/api/gpt/clients": {
       "get": {
         "summary": "Get all business clients",
         "description": "Returns complete list of clients for Flatline Earthworks business",
@@ -44,16 +44,7 @@
                         }
                       }
                     },
-                    "message": { "type": "string" },
-                    "businessVerification": {
-                      "type": "object",
-                      "properties": {
-                        "businessName": { "type": "string" },
-                        "businessId": { "type": "integer" },
-                        "totalClients": { "type": "integer" },
-                        "dataSource": { "type": "string" }
-                      }
-                    }
+                    "message": { "type": "string" }
                   }
                 }
               }
@@ -62,7 +53,7 @@
         }
       }
     },
-    "/getJobs": {
+    "/api/gpt/jobs": {
       "get": {
         "summary": "Get all business jobs",
         "description": "Returns complete list of jobs for Flatline Earthworks business",
@@ -103,16 +94,7 @@
                         }
                       }
                     },
-                    "message": { "type": "string" },
-                    "businessVerification": {
-                      "type": "object",
-                      "properties": {
-                        "businessName": { "type": "string" },
-                        "businessId": { "type": "integer" },
-                        "totalJobs": { "type": "integer" },
-                        "dataSource": { "type": "string" }
-                      }
-                    }
+                    "message": { "type": "string" }
                   }
                 }
               }
@@ -174,7 +156,7 @@
         }
       }
     },
-    "/getDashboard": {
+    "/api/gpt/dashboard": {
       "get": {
         "summary": "Get business dashboard metrics",
         "description": "Returns key business metrics and overview for Flatline Earthworks",
@@ -196,15 +178,7 @@
                         "revenue": { "type": "number" }
                       }
                     },
-                    "message": { "type": "string" },
-                    "businessVerification": {
-                      "type": "object",
-                      "properties": {
-                        "businessName": { "type": "string" },
-                        "businessId": { "type": "integer" },
-                        "dataSource": { "type": "string" }
-                      }
-                    }
+                    "message": { "type": "string" }
                   }
                 }
               }
