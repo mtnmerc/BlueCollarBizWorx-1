@@ -13,7 +13,7 @@
   ],
   "security": [
     {
-      "BearerAuth": []
+      "ApiKeyAuth": []
     }
   ],
   "paths": {
@@ -673,11 +673,11 @@
   },
   "components": {
     "securitySchemes": {
-      "BearerAuth": {
+      "ApiKeyAuth": {
         "type": "apiKey",
         "in": "header",
-        "name": "Authorization",
-        "description": "Bearer token authentication using your business API key"
+        "name": "X-API-Key",
+        "description": "API key for business authentication. Use your business API key generated in the BizWorx dashboard."
       }
     },
     "schemas": {
