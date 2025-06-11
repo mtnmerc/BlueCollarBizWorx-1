@@ -11,7 +11,7 @@
     }
   ],
   "paths": {
-    "/getJobs": {
+    "/api/gpt/jobs": {
       "get": {
         "operationId": "getJobs",
         "summary": "Get all jobs",

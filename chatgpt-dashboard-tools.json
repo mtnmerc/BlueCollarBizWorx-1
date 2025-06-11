@@ -11,7 +11,7 @@
     }
   ],
   "paths": {
-    "/getDashboard": {
+    "/api/gpt/dashboard": {
       "get": {
         "operationId": "getDashboard",
         "summary": "Get dashboard metrics",
