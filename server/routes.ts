@@ -424,37 +424,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all estimates endpoint
-  app.get('/api/gpt/estimates', async (req, res) => {
-    try {
-      const apiKey = getApiKey(req);
-      if (!apiKey || apiKey === 'undefined') {
-        return res.status(401).json({ success: false, error: 'API key required' });
-      }
 
-      const business = await storage.getBusinessByApiKey(apiKey);
-      if (!business) {
-        return res.status(401).json({ success: false, error: 'Invalid API key' });
-      }
-
-      const estimates = await storage.getEstimatesByBusiness(business.id);
-      res.json({
-        success: true,
-        data: estimates.map((e: any) => ({
-          id: e.id,
-          estimateNumber: e.estimateNumber,
-          title: e.title,
-          client: e.client?.name,
-          total: e.total,
-          status: e.status,
-          validUntil: e.validUntil
-        })),
-        message: `Found ${estimates.length} estimates`
-      });
-    } catch (error) {
-      res.status(500).json({ success: false, error: 'Failed to get estimates' });
-    }
-  });
 
   // Get all services endpoint
   app.get('/api/gpt/services', async (req, res) => {
