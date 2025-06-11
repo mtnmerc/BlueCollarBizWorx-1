@@ -2696,6 +2696,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Dashboard stats endpoint for frontend
+  app.get('/api/dashboard/stats', authenticateSession, async (req, res) => {
+    try {
+      const businessId = req.session.businessId;
+      
+      const [clients, jobs, invoices] = await Promise.all([
+        storage.getClientsByBusiness(businessId),
+        storage.getJobsByBusiness(businessId),
+        storage.getInvoicesByBusiness(businessId)
+      ]);
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      const todaysJobs = jobs.filter((job: any) => {
+        if (!job.scheduledStart) return false;
+        const jobDate = new Date(job.scheduledStart);
+        return jobDate >= today && jobDate < tomorrow;
+      });
+
+      const recentInvoices = invoices
+        .sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+        .slice(0, 5);
+
+      const totalRevenue = invoices
+        .filter((inv: any) => inv.status === 'paid')
+        .reduce((sum: number, inv: any) => sum + (parseFloat(inv.total || '0') || 0), 0);
+
+      const teamMembers = await storage.getUsersByBusiness(businessId);
+
+      res.json({
+        revenue: {
+          total: totalRevenue,
+          count: invoices.filter((inv: any) => inv.status === 'paid').length
+        },
+        todaysJobs: todaysJobs.map((job: any) => ({
+          id: job.id,
+          title: job.title,
+          client: job.client?.name || 'Unknown Client',
+          scheduledStart: job.scheduledStart,
+          scheduledEnd: job.scheduledEnd,
+          status: job.status,
+          address: job.address
+        })),
+        recentInvoices: recentInvoices.map((inv: any) => ({
+          id: inv.id,
+          invoiceNumber: inv.invoiceNumber,
+          client: inv.client?.name || 'Unknown Client',
+          total: inv.total,
+          status: inv.status,
+          createdAt: inv.createdAt
+        })),
+        teamMembers: teamMembers.map((member: any) => ({
+          id: member.id,
+          firstName: member.firstName,
+          lastName: member.lastName,
+          role: member.role
+        }))
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: 'Failed to retrieve dashboard stats' });
+    }
+  });
+
   // Get jobs for a specific date (external API)
   app.get("/api/external/jobs/date/:date", authenticateApiKey, async (req, res) => {
     try {
