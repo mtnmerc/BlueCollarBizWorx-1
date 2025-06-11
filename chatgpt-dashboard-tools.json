@@ -1,0 +1,79 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "BizWorx - Dashboard and Analytics Tools",
+    "description": "Business dashboard, metrics and analytics for Flatline Earthworks",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://bluecollarbizworx.replit.app"
+    }
+  ],
+  "paths": {
+    "/getDashboard": {
+      "get": {
+        "operationId": "getDashboard",
+        "summary": "Get dashboard metrics",
+        "description": "Retrieve dashboard metrics and business statistics for Flatline Earthworks",
+        "responses": {
+          "200": {
+            "description": "Dashboard metrics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "totalClients": {
+                          "type": "integer"
+                        },
+                        "totalJobs": {
+                          "type": "integer"
+                        },
+                        "activeJobs": {
+                          "type": "integer"
+                        },
+                        "totalRevenue": {
+                          "type": "number"
+                        },
+                        "completedJobs": {
+                          "type": "integer"
+                        },
+                        "pendingJobs": {
+                          "type": "integer"
+                        },
+                        "revenue": {
+                          "type": "number"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "API_KEY"
+      }
+    }
+  },
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ]
+}

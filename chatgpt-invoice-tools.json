@@ -1,0 +1,310 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "BizWorx - Invoice Management Tools",
+    "description": "Complete invoice operations for Flatline Earthworks business",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://bluecollarbizworx.replit.app"
+    }
+  ],
+  "paths": {
+    "/api/gpt/invoices": {
+      "get": {
+        "operationId": "getInvoices",
+        "summary": "Get all invoices",
+        "description": "Retrieve all invoices for Flatline Earthworks business",
+        "responses": {
+          "200": {
+            "description": "List of invoices",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer"
+                          },
+                          "invoiceNumber": {
+                            "type": "string"
+                          },
+                          "clientId": {
+                            "type": "integer"
+                          },
+                          "clientName": {
+                            "type": "string"
+                          },
+                          "amount": {
+                            "type": "number"
+                          },
+                          "status": {
+                            "type": "string"
+                          },
+                          "dueDate": {
+                            "type": "string"
+                          },
+                          "createdDate": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createInvoice",
+        "summary": "Create a new invoice",
+        "description": "Generate a new invoice for Flatline Earthworks business",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["clientId", "amount", "description"],
+                "properties": {
+                  "clientId": {
+                    "type": "integer",
+                    "description": "Client ID for this invoice"
+                  },
+                  "amount": {
+                    "type": "number",
+                    "description": "Invoice amount"
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "Invoice description or services provided"
+                  },
+                  "dueDate": {
+                    "type": "string",
+                    "format": "date",
+                    "description": "Invoice due date"
+                  },
+                  "jobId": {
+                    "type": "integer",
+                    "description": "Associated job ID if applicable"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Invoice created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer"
+                        },
+                        "invoiceNumber": {
+                          "type": "string"
+                        },
+                        "clientId": {
+                          "type": "integer"
+                        },
+                        "amount": {
+                          "type": "number"
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "dueDate": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/gpt/invoices/{id}": {
+      "put": {
+        "operationId": "updateInvoice",
+        "summary": "Update an invoice",
+        "description": "Update an existing invoice for Flatline Earthworks business",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "The ID of the invoice to update",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "number",
+                    "description": "Invoice amount"
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "Invoice description"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": ["draft", "sent", "paid", "overdue", "cancelled"],
+                    "description": "Invoice status"
+                  },
+                  "dueDate": {
+                    "type": "string",
+                    "format": "date",
+                    "description": "Invoice due date"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Invoice updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer"
+                        },
+                        "invoiceNumber": {
+                          "type": "string"
+                        },
+                        "amount": {
+                          "type": "number"
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "dueDate": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/gpt/invoices/{id}/send": {
+      "post": {
+        "operationId": "sendInvoice",
+        "summary": "Send an invoice",
+        "description": "Send an invoice to the client via email",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "The ID of the invoice to send",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Invoice sent successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "invoiceId": {
+                          "type": "integer"
+                        },
+                        "sentTo": {
+                          "type": "string"
+                        },
+                        "sentDate": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "API_KEY"
+      }
+    }
+  },
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ]
+}
