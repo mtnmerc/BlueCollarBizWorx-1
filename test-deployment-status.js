@@ -1,74 +1,105 @@
-import https from 'https';
+import fetch from 'node-fetch';
+
+const BASE_URL = 'https://bluecollarbizworx.replit.app';
 
 async function testEndpoint(path, headers = {}) {
-  return new Promise((resolve, reject) => {
-    const options = {
-      hostname: 'bluecollarbizworx.replit.app',
-      port: 443,
-      path: path,
-      method: 'GET',
+  try {
+    const response = await fetch(`${BASE_URL}${path}`, {
       headers: {
+        'X-API-Key': 'bw_wkad606ephtmbqx7a0f',
         'Content-Type': 'application/json',
         ...headers
       }
+    });
+    
+    const text = await response.text();
+    let data = null;
+    
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      // Not JSON
+    }
+    
+    return {
+      status: response.status,
+      data: data,
+      rawText: text.substring(0, 100)
     };
-
-    const req = https.request(options, (res) => {
-      let body = '';
-      res.on('data', (chunk) => {
-        body += chunk;
-      });
-      res.on('end', () => {
-        try {
-          const result = JSON.parse(body);
-          resolve({ status: res.statusCode, data: result });
-        } catch (e) {
-          resolve({ status: res.statusCode, data: body });
-        }
-      });
-    });
-
-    req.on('error', (e) => {
-      reject(e);
-    });
-
-    req.end();
-  });
+  } catch (error) {
+    return {
+      status: 'ERROR',
+      error: error.message
+    };
+  }
 }
 
 async function checkDeploymentStatus() {
-  console.log('Checking deployment status...\n');
-
-  try {
-    // Test health endpoint
-    console.log('1. Testing /health endpoint...');
-    const health = await testEndpoint('/health');
-    console.log(`Status: ${health.status}`);
-    console.log(`Response:`, JSON.stringify(health.data, null, 2));
-    console.log('');
-
-    // Test GPT endpoint without API key
-    console.log('2. Testing /gpt/clients without API key...');
-    const noKey = await testEndpoint('/gpt/clients');
-    console.log(`Status: ${noKey.status}`);
-    console.log(`Response:`, JSON.stringify(noKey.data, null, 2));
-    console.log('');
-
-    // Test GPT endpoint with invalid API key
-    console.log('3. Testing /gpt/clients with invalid API key...');
-    const invalidKey = await testEndpoint('/gpt/clients', { 'X-API-Key': 'invalid-key' });
-    console.log(`Status: ${invalidKey.status}`);
-    console.log(`Response:`, JSON.stringify(invalidKey.data, null, 2));
-    console.log('');
-
-    console.log('Deployment Status Summary:');
-    console.log('- Server is running and accessible');
-    console.log('- GPT endpoints are properly secured with API key authentication');
-    console.log('- Your existing API key will work with ChatGPT integration');
-    console.log('- No redeployment needed');
-
-  } catch (error) {
-    console.error('Test failed:', error.message);
+  console.log('Checking current deployment status for ChatGPT integration...\n');
+  
+  const tests = [
+    { path: '/api/gpt/test', name: 'Test endpoint' },
+    { path: '/api/gpt/clients', name: 'Clients endpoint' },
+    { path: '/api/gpt/jobs', name: 'Jobs endpoint' },
+    { path: '/api/gpt/dashboard', name: 'Dashboard endpoint' }
+  ];
+  
+  const results = [];
+  
+  for (const test of tests) {
+    const result = await testEndpoint(test.path);
+    results.push({
+      name: test.name,
+      path: test.path,
+      status: result.status,
+      working: result.status === 200,
+      hasData: result.data?.success === true
+    });
+    
+    console.log(`${test.name} (${test.path}): ${result.status}`);
+    if (result.status === 200 && result.data) {
+      if (result.data.data && Array.isArray(result.data.data)) {
+        console.log(`  Data count: ${result.data.data.length}`);
+      }
+      if (result.data.message) {
+        console.log(`  Message: ${result.data.message}`);
+      }
+    } else if (result.status === 404) {
+      console.log(`  ❌ Not found - endpoint not registered`);
+    }
+  }
+  
+  console.log('\nSummary:');
+  const working = results.filter(r => r.working);
+  const broken = results.filter(r => !r.working);
+  
+  console.log(`Working endpoints: ${working.length}/${results.length}`);
+  console.log(`Broken endpoints: ${broken.length}`);
+  
+  if (broken.length > 0) {
+    console.log('\nBroken endpoints:');
+    broken.forEach(b => {
+      console.log(`- ${b.name}: ${b.status}`);
+    });
+  }
+  
+  if (working.length === results.length) {
+    console.log('\n✅ All endpoints working - ChatGPT integration should function');
+  } else {
+    console.log('\n⚠️ Some endpoints need attention');
+  }
+  
+  // Test authentic data access
+  console.log('\nChecking authentic data access:');
+  const clientResult = await testEndpoint('/api/gpt/clients');
+  if (clientResult.status === 200 && clientResult.data?.data) {
+    const realClients = clientResult.data.data.filter(c => 
+      c.name === 'John Deere' || c.name === 'Christine Vasickanin'
+    );
+    console.log(`Real clients accessible: ${realClients.length}`);
+    realClients.forEach(client => {
+      console.log(`- ${client.name}: ${client.email}`);
+    });
   }
 }
 

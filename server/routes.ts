@@ -320,6 +320,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ChatGPT Test endpoint for connectivity verification
+  app.get('/api/gpt/test', (req, res) => {
+    res.json({
+      success: true,
+      message: 'BizWorx API connectivity test successful',
+      timestamp: new Date().toISOString(),
+      version: '2.1.0'
+    });
+  });
+
   // ChatGPT Jobs endpoint - Force authentic data access
   app.get('/api/gpt/jobs', async (req, res) => {
     try {

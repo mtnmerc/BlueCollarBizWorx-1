@@ -1,0 +1,171 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "BizWorx Business Management API",
+    "description": "Business management API for Flatline Earthworks - provides access to real client and job data",
+    "version": "2.1.0"
+  },
+  "servers": [
+    {
+      "url": "https://bluecollarbizworx.replit.app",
+      "description": "Live BizWorx Server"
+    }
+  ],
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "paths": {
+    "/api/gpt/clients": {
+      "get": {
+        "summary": "Get all business clients",
+        "description": "Returns complete list of clients for Flatline Earthworks business",
+        "operationId": "getClients",
+        "responses": {
+          "200": {
+            "description": "Client list retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "integer" },
+                          "name": { "type": "string" },
+                          "email": { "type": "string" },
+                          "phone": { "type": "string" },
+                          "address": { "type": "string", "nullable": true }
+                        }
+                      }
+                    },
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "error": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/gpt/jobs": {
+      "get": {
+        "summary": "Get all business jobs",
+        "description": "Returns complete list of jobs for Flatline Earthworks business",
+        "operationId": "getJobs",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "description": "Filter jobs by specific date (YYYY-MM-DD)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Job list retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "integer" },
+                          "title": { "type": "string" },
+                          "client": { "type": "string" },
+                          "status": { "type": "string" },
+                          "scheduledStart": { "type": "string", "nullable": true },
+                          "scheduledEnd": { "type": "string", "nullable": true },
+                          "address": { "type": "string", "nullable": true }
+                        }
+                      }
+                    },
+                    "message": { "type": "string" },
+                    "businessVerification": {
+                      "type": "object",
+                      "properties": {
+                        "businessName": { "type": "string" },
+                        "businessId": { "type": "integer" },
+                        "totalJobs": { "type": "integer" },
+                        "dataSource": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/gpt/dashboard": {
+      "get": {
+        "summary": "Get business dashboard metrics",
+        "description": "Returns key business metrics and overview for Flatline Earthworks",
+        "operationId": "getDashboard",
+        "responses": {
+          "200": {
+            "description": "Dashboard metrics retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "totalClients": { "type": "integer" },
+                        "totalJobs": { "type": "integer" },
+                        "revenue": { "type": "number" }
+                      }
+                    },
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "API key for authentication"
+      }
+    }
+  }
+}
