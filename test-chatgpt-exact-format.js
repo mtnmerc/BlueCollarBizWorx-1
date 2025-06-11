@@ -4,53 +4,62 @@ const BASE_URL = 'https://bluecollarbizworx.replit.app';
 const API_KEY = 'bw_wkad606ephtmbqx7a0f';
 
 async function testChatGPTExactFormat() {
-  console.log('Testing exact ChatGPT authorization format...\n');
+  console.log('Testing exact ChatGPT request format...\n');
   
+  // Test what happens when no auth is provided (like ChatGPT might be doing)
+  console.log('1. Testing request WITHOUT authentication (simulating ChatGPT error):');
   try {
-    // Test with Bearer prefix as ChatGPT sends it
-    console.log('1. Testing with Bearer prefix (ChatGPT format)...');
-    const response = await fetch(`${BASE_URL}/api/gpt/debug`, {
+    const response1 = await fetch(`${BASE_URL}/api/gpt/dashboard`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${API_KEY}`,
         'Content-Type': 'application/json',
-        'User-Agent': 'ChatGPT/1.0'
+        'User-Agent': 'Mozilla/5.0 (compatible; ChatGPT)'
       }
     });
     
-    const result = await response.json();
-    console.log(`Status: ${response.status}`);
-    console.log('Authorization header received:', result.headers?.authorization);
-    
-    if (response.status === 200) {
-      console.log('✅ Bearer format authentication working!');
-      
-      // Test actual endpoint
-      console.log('\n2. Testing dashboard with Bearer format...');
-      const dashboardResponse = await fetch(`${BASE_URL}/api/gpt/dashboard`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${API_KEY}`,
-          'Content-Type': 'application/json',
-          'User-Agent': 'ChatGPT/1.0'
-        }
-      });
-      
-      const dashboardResult = await dashboardResponse.json();
-      console.log(`Dashboard Status: ${dashboardResponse.status}`);
-      
-      if (dashboardResponse.status === 200) {
-        console.log('✅ ChatGPT Bearer authentication fully working!');
-        console.log('Dashboard data:', dashboardResult.data);
-      } else {
-        console.log('❌ Dashboard endpoint failed:', dashboardResult);
-      }
-    } else {
-      console.log('❌ Bearer authentication failed:', result);
-    }
+    const result1 = await response1.text();
+    console.log('Status:', response1.status);
+    console.log('Response:', result1);
     
   } catch (error) {
-    console.error('Request failed:', error.message);
+    console.error('Error:', error.message);
+  }
+  
+  console.log('\n2. Testing no-auth endpoint (should work):');
+  try {
+    const response2 = await fetch(`${BASE_URL}/api/gpt/test`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (compatible; ChatGPT)'
+      }
+    });
+    
+    const result2 = await response2.json();
+    console.log('Status:', response2.status);
+    console.log('Response:', JSON.stringify(result2, null, 2));
+    
+  } catch (error) {
+    console.error('Error:', error.message);
+  }
+  
+  console.log('\n3. Testing with correct X-API-Key (should work):');
+  try {
+    const response3 = await fetch(`${BASE_URL}/api/gpt/dashboard`, {
+      method: 'GET',
+      headers: {
+        'X-API-Key': API_KEY,
+        'Content-Type': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (compatible; ChatGPT)'
+      }
+    });
+    
+    const result3 = await response3.json();
+    console.log('Status:', response3.status);
+    console.log('Response:', JSON.stringify(result3, null, 2));
+    
+  } catch (error) {
+    console.error('Error:', error.message);
   }
 }
 

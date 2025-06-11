@@ -92,6 +92,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // No-auth test endpoint for ChatGPT connectivity testing
+  app.get('/api/gpt/test', (req, res) => {
+    console.log('=== CHATGPT TEST REQUEST (NO AUTH) ===');
+    console.log('Headers:', JSON.stringify(req.headers, null, 2));
+    console.log('=======================================');
+    
+    res.json({
+      success: true,
+      message: 'ChatGPT connectivity test successful',
+      timestamp: new Date().toISOString(),
+      headersReceived: Object.keys(req.headers),
+      userAgent: req.headers['user-agent'] || 'unknown'
+    });
+  });
+
   // Debug endpoint to capture ChatGPT headers
   app.all('/api/gpt/debug', (req, res) => {
     console.log('=== CHATGPT DEBUG REQUEST ===');
@@ -99,6 +114,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log('Headers:', JSON.stringify(req.headers, null, 2));
     console.log('Body:', req.body);
     console.log('Query:', req.query);
+    
+    // Check for API key in various formats
+    const apiKeyFound = getApiKey(req);
+    console.log('API Key Found:', apiKeyFound ? 'YES' : 'NO');
+    if (apiKeyFound) {
+      console.log('API Key Preview:', apiKeyFound.substring(0, 10) + '...');
+    }
     console.log('=============================');
     
     res.json({
@@ -107,7 +129,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       method: req.method,
       body: req.body,
       query: req.query,
-      message: 'Debug info captured'
+      apiKeyFound: !!apiKeyFound,
+      apiKeyPreview: apiKeyFound ? apiKeyFound.substring(0, 10) + '...' : null,
+      message: 'Debug info captured - check server logs for details'
     });
   });
 

@@ -17,6 +17,31 @@
     }
   ],
   "paths": {
+    "/api/gpt/test": {
+      "get": {
+        "summary": "Test connectivity without authentication",
+        "description": "Simple connectivity test that doesn't require authentication - used to verify ChatGPT can reach the API",
+        "operationId": "testConnectivity",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Connectivity test successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "message": { "type": "string" },
+                    "timestamp": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/gpt/debug": {
       "get": {
         "summary": "Debug authentication headers",
