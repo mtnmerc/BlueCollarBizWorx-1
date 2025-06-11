@@ -18,6 +18,11 @@ const authenticateSession = (req: any, res: any, next: any) => {
 
 // API Key authentication middleware for external services like n8n
 const authenticateApiKey = async (req: any, res: any, next: any) => {
+  // Skip external API authentication for GPT routes
+  if (req.url.includes('/api/gpt/')) {
+    return next();
+  }
+
   const apiKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
 
   if (!apiKey) {
@@ -2500,18 +2505,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Test endpoint to verify server changes
-  app.get('/api/gpt/test', authenticateGPT, async (req: any, res: any) => {
-    res.json({ 
-      success: true, 
-      message: `Server timestamp: ${new Date().toISOString()}`,
-      businessId: req.business.id,
-      businessName: req.business.name
-    });
-  });
-
   // GPT Estimates endpoints - Schema-compliant with complete data structure
   app.get('/api/gpt/estimates', authenticateGPT, async (req: any, res: any) => {
+    console.log('=== SCHEMA-COMPLIANT GPT ESTIMATES ROUTE EXECUTING ===');
+    console.log('Business ID:', req.business.id);
+    console.log('Business Name:', req.business.name);
     try {
       // Use the schema-compliant query from external estimates endpoint
       const rawEstimates = await db
