@@ -558,5 +558,374 @@ export function registerGPTRoutes(app: Express) {
     }
   });
 
+  // GPT CREATE JOB - Schema compliant
+  app.post('/api/gpt/jobs', authenticateGPT, async (req: any, res: any) => {
+    console.log('=== GPT FINAL CREATE JOB HANDLER ===');
+    
+    try {
+      const business = req.business;
+      console.log('GPT FINAL: Creating job for business:', business.name);
+      
+      const jobData = {
+        businessId: business.id,
+        clientId: req.body.clientId,
+        assignedUserId: req.body.assignedUserId || null,
+        title: req.body.title,
+        description: req.body.description || '',
+        address: req.body.address || '',
+        scheduledStart: req.body.scheduledStart ? new Date(req.body.scheduledStart) : null,
+        scheduledEnd: req.body.scheduledEnd ? new Date(req.body.scheduledEnd) : null,
+        status: req.body.status || 'scheduled',
+        priority: req.body.priority || 'medium',
+        jobType: req.body.jobType || '',
+        estimatedAmount: req.body.estimatedAmount?.toString() || '0.00',
+        notes: req.body.notes || ''
+      };
+
+      const newJob = await storage.createJob(jobData);
+      
+      console.log('GPT FINAL: Created job', newJob.id);
+      
+      res.json({
+        success: true,
+        data: newJob,
+        message: `Job "${newJob.title}" created successfully`,
+        businessVerification: {
+          businessName: business.name,
+          businessId: business.id,
+          dataSource: "AUTHENTIC_DATABASE",
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (error: any) {
+      console.error('GPT FINAL Create Job error:', error);
+      res.status(500).json({ success: false, error: 'Failed to create job', details: error.message });
+    }
+  });
+
+  // GPT UPDATE JOB - Schema compliant
+  app.put('/api/gpt/jobs/:id', authenticateGPT, async (req: any, res: any) => {
+    console.log('=== GPT FINAL UPDATE JOB HANDLER ===');
+    
+    try {
+      const business = req.business;
+      const jobId = parseInt(req.params.id);
+      console.log('GPT FINAL: Updating job', jobId, 'for business:', business.name);
+      
+      // Verify job belongs to business
+      const existingJob = await storage.getJobById(jobId);
+      if (!existingJob || existingJob.businessId !== business.id) {
+        return res.status(404).json({ success: false, error: 'Job not found' });
+      }
+
+      const updateData: any = {};
+      if (req.body.clientId !== undefined) updateData.clientId = req.body.clientId;
+      if (req.body.assignedUserId !== undefined) updateData.assignedUserId = req.body.assignedUserId;
+      if (req.body.title !== undefined) updateData.title = req.body.title;
+      if (req.body.description !== undefined) updateData.description = req.body.description;
+      if (req.body.address !== undefined) updateData.address = req.body.address;
+      if (req.body.scheduledStart !== undefined) updateData.scheduledStart = req.body.scheduledStart ? new Date(req.body.scheduledStart) : null;
+      if (req.body.scheduledEnd !== undefined) updateData.scheduledEnd = req.body.scheduledEnd ? new Date(req.body.scheduledEnd) : null;
+      if (req.body.status !== undefined) updateData.status = req.body.status;
+      if (req.body.priority !== undefined) updateData.priority = req.body.priority;
+      if (req.body.jobType !== undefined) updateData.jobType = req.body.jobType;
+      if (req.body.estimatedAmount !== undefined) updateData.estimatedAmount = req.body.estimatedAmount.toString();
+      if (req.body.notes !== undefined) updateData.notes = req.body.notes;
+
+      const updatedJob = await storage.updateJob(jobId, updateData);
+      
+      console.log('GPT FINAL: Updated job', updatedJob.id);
+      
+      res.json({
+        success: true,
+        data: updatedJob,
+        message: `Job "${updatedJob.title}" updated successfully`,
+        businessVerification: {
+          businessName: business.name,
+          businessId: business.id,
+          dataSource: "AUTHENTIC_DATABASE",
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (error: any) {
+      console.error('GPT FINAL Update Job error:', error);
+      res.status(500).json({ success: false, error: 'Failed to update job', details: error.message });
+    }
+  });
+
+  // GPT GET JOB BY ID - Schema compliant
+  app.get('/api/gpt/jobs/:id', authenticateGPT, async (req: any, res: any) => {
+    console.log('=== GPT FINAL GET JOB BY ID HANDLER ===');
+    
+    try {
+      const business = req.business;
+      const jobId = parseInt(req.params.id);
+      console.log('GPT FINAL: Getting job', jobId, 'for business:', business.name);
+      
+      const job = await storage.getJobById(jobId);
+      if (!job || job.businessId !== business.id) {
+        return res.status(404).json({ success: false, error: 'Job not found' });
+      }
+      
+      console.log('GPT FINAL: Returning job', job.id);
+      
+      res.json({
+        success: true,
+        data: job,
+        message: `Job "${job.title}" retrieved successfully`,
+        businessVerification: {
+          businessName: business.name,
+          businessId: business.id,
+          dataSource: "AUTHENTIC_DATABASE",
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (error: any) {
+      console.error('GPT FINAL Get Job error:', error);
+      res.status(500).json({ success: false, error: 'Failed to get job', details: error.message });
+    }
+  });
+
+  // GPT DELETE JOB - Schema compliant
+  app.delete('/api/gpt/jobs/:id', authenticateGPT, async (req: any, res: any) => {
+    console.log('=== GPT FINAL DELETE JOB HANDLER ===');
+    
+    try {
+      const business = req.business;
+      const jobId = parseInt(req.params.id);
+      console.log('GPT FINAL: Deleting job', jobId, 'for business:', business.name);
+      
+      // Verify job belongs to business
+      const existingJob = await storage.getJobById(jobId);
+      if (!existingJob || existingJob.businessId !== business.id) {
+        return res.status(404).json({ success: false, error: 'Job not found' });
+      }
+
+      await storage.deleteJob(jobId);
+      
+      console.log('GPT FINAL: Deleted job', jobId);
+      
+      res.json({
+        success: true,
+        message: `Job "${existingJob.title}" deleted successfully`,
+        businessVerification: {
+          businessName: business.name,
+          businessId: business.id,
+          dataSource: "AUTHENTIC_DATABASE",
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (error: any) {
+      console.error('GPT FINAL Delete Job error:', error);
+      res.status(500).json({ success: false, error: 'Failed to delete job', details: error.message });
+    }
+  });
+
+  // GPT CREATE ESTIMATE - Schema compliant
+  app.post('/api/gpt/estimates', authenticateGPT, async (req: any, res: any) => {
+    console.log('=== GPT FINAL CREATE ESTIMATE HANDLER ===');
+    
+    try {
+      const business = req.business;
+      console.log('GPT FINAL: Creating estimate for business:', business.name);
+      
+      const estimateData = {
+        businessId: business.id,
+        clientId: req.body.clientId,
+        title: req.body.title,
+        description: req.body.description || '',
+        lineItems: JSON.stringify(req.body.items || []),
+        subtotal: req.body.subtotal?.toString() || '0.00',
+        taxRate: req.body.taxRate?.toString() || '0.00',
+        taxAmount: req.body.tax?.toString() || '0.00',
+        total: req.body.total?.toString() || '0.00',
+        status: req.body.status || 'draft',
+        validUntil: req.body.validUntil ? new Date(req.body.validUntil) : undefined,
+        notes: req.body.notes || '',
+        shareToken: `est_${Math.random().toString(36).substring(2, 15)}`,
+        estimateNumber: `EST-${Date.now()}`
+      };
+
+      const newEstimate = await storage.createEstimate(estimateData);
+      
+      console.log('GPT FINAL: Created estimate', newEstimate.id);
+      
+      res.json({
+        success: true,
+        data: {
+          ...newEstimate,
+          items: req.body.items || [],
+          tax: newEstimate.taxAmount
+        },
+        message: `Estimate "${newEstimate.title}" created successfully`,
+        businessVerification: {
+          businessName: business.name,
+          businessId: business.id,
+          dataSource: "AUTHENTIC_DATABASE",
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (error: any) {
+      console.error('GPT FINAL Create Estimate error:', error);
+      res.status(500).json({ success: false, error: 'Failed to create estimate', details: error.message });
+    }
+  });
+
+  // GPT UPDATE ESTIMATE - Schema compliant
+  app.put('/api/gpt/estimates/:id', authenticateGPT, async (req: any, res: any) => {
+    console.log('=== GPT FINAL UPDATE ESTIMATE HANDLER ===');
+    
+    try {
+      const business = req.business;
+      const estimateId = parseInt(req.params.id);
+      console.log('GPT FINAL: Updating estimate', estimateId, 'for business:', business.name);
+      
+      // Verify estimate belongs to business
+      const existingEstimate = await storage.getEstimateById(estimateId);
+      if (!existingEstimate || existingEstimate.businessId !== business.id) {
+        return res.status(404).json({ success: false, error: 'Estimate not found' });
+      }
+
+      const updateData: any = {};
+      if (req.body.clientId !== undefined) updateData.clientId = req.body.clientId;
+      if (req.body.title !== undefined) updateData.title = req.body.title;
+      if (req.body.description !== undefined) updateData.description = req.body.description;
+      if (req.body.items !== undefined) updateData.lineItems = JSON.stringify(req.body.items);
+      if (req.body.subtotal !== undefined) updateData.subtotal = req.body.subtotal.toString();
+      if (req.body.tax !== undefined) updateData.taxAmount = req.body.tax.toString();
+      if (req.body.total !== undefined) updateData.total = req.body.total.toString();
+      if (req.body.status !== undefined) updateData.status = req.body.status;
+      if (req.body.validUntil !== undefined) updateData.validUntil = req.body.validUntil ? new Date(req.body.validUntil) : undefined;
+      if (req.body.notes !== undefined) updateData.notes = req.body.notes;
+
+      const updatedEstimate = await storage.updateEstimate(estimateId, updateData);
+      
+      console.log('GPT FINAL: Updated estimate', updatedEstimate.id);
+      
+      res.json({
+        success: true,
+        data: {
+          ...updatedEstimate,
+          items: req.body.items || JSON.parse(String(updatedEstimate.lineItems || '[]')),
+          tax: updatedEstimate.taxAmount
+        },
+        message: `Estimate "${updatedEstimate.title}" updated successfully`,
+        businessVerification: {
+          businessName: business.name,
+          businessId: business.id,
+          dataSource: "AUTHENTIC_DATABASE",
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (error: any) {
+      console.error('GPT FINAL Update Estimate error:', error);
+      res.status(500).json({ success: false, error: 'Failed to update estimate', details: error.message });
+    }
+  });
+
+  // GPT GET ESTIMATE BY ID - Schema compliant
+  app.get('/api/gpt/estimates/:id', authenticateGPT, async (req: any, res: any) => {
+    console.log('=== GPT FINAL GET ESTIMATE BY ID HANDLER ===');
+    
+    try {
+      const business = req.business;
+      const estimateId = parseInt(req.params.id);
+      console.log('GPT FINAL: Getting estimate', estimateId, 'for business:', business.name);
+      
+      const estimate = await storage.getEstimateById(estimateId);
+      if (!estimate || estimate.businessId !== business.id) {
+        return res.status(404).json({ success: false, error: 'Estimate not found' });
+      }
+
+      // Format estimate items
+      let items = [];
+      try {
+        if (typeof estimate.lineItems === 'string') {
+          items = JSON.parse(estimate.lineItems);
+        } else if (Array.isArray(estimate.lineItems)) {
+          items = estimate.lineItems;
+        }
+      } catch (e) {
+        items = [];
+      }
+
+      const formattedItems = Array.isArray(items) ? items.map((item: any, index: number) => ({
+        id: item.id || `item_${index + 1}`,
+        description: item.description || item.name || '',
+        quantity: parseFloat(item.quantity || '1'),
+        rate: parseFloat(item.rate || item.price || '0'),
+        amount: parseFloat(item.amount || item.total || (item.quantity * item.rate) || '0')
+      })) : [];
+
+      const formattedEstimate = {
+        id: estimate.id,
+        businessId: estimate.businessId,
+        clientId: estimate.clientId,
+        title: estimate.title || '',
+        description: estimate.description || '',
+        items: formattedItems,
+        subtotal: estimate.subtotal || '0.00',
+        tax: estimate.taxAmount || '0.00',
+        total: estimate.total || '0.00',
+        status: estimate.status || 'draft',
+        validUntil: estimate.validUntil,
+        shareToken: estimate.shareToken || '',
+        createdAt: estimate.createdAt
+      };
+      
+      console.log('GPT FINAL: Returning estimate', estimate.id);
+      
+      res.json({
+        success: true,
+        data: formattedEstimate,
+        message: `Estimate "${estimate.title}" retrieved successfully`,
+        businessVerification: {
+          businessName: business.name,
+          businessId: business.id,
+          dataSource: "AUTHENTIC_DATABASE",
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (error: any) {
+      console.error('GPT FINAL Get Estimate error:', error);
+      res.status(500).json({ success: false, error: 'Failed to get estimate', details: error.message });
+    }
+  });
+
+  // GPT DELETE ESTIMATE - Schema compliant
+  app.delete('/api/gpt/estimates/:id', authenticateGPT, async (req: any, res: any) => {
+    console.log('=== GPT FINAL DELETE ESTIMATE HANDLER ===');
+    
+    try {
+      const business = req.business;
+      const estimateId = parseInt(req.params.id);
+      console.log('GPT FINAL: Deleting estimate', estimateId, 'for business:', business.name);
+      
+      // Verify estimate belongs to business
+      const existingEstimate = await storage.getEstimateById(estimateId);
+      if (!existingEstimate || existingEstimate.businessId !== business.id) {
+        return res.status(404).json({ success: false, error: 'Estimate not found' });
+      }
+
+      await storage.deleteEstimate(estimateId);
+      
+      console.log('GPT FINAL: Deleted estimate', estimateId);
+      
+      res.json({
+        success: true,
+        message: `Estimate "${existingEstimate.title}" deleted successfully`,
+        businessVerification: {
+          businessName: business.name,
+          businessId: business.id,
+          dataSource: "AUTHENTIC_DATABASE",
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (error: any) {
+      console.error('GPT FINAL Delete Estimate error:', error);
+      res.status(500).json({ success: false, error: 'Failed to delete estimate', details: error.message });
+    }
+  });
+
   console.log('GPT FINAL: All schema-compliant routes registered');
 }
