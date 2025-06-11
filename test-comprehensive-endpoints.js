@@ -1,6 +1,6 @@
 import fetch from 'node-fetch';
 
-const BASE_URL = 'http://localhost:5000';
+const BASE_URL = 'https://bluecollarbizworx.replit.app';
 const API_KEY = 'bw_wkad606ephtmbqx7a0f';
 
 async function testEndpoint(path, method = 'GET', data = null) {
