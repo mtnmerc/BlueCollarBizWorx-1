@@ -28,9 +28,9 @@ async function testDirectDelete() {
     
     // Try to delete the first client using direct endpoint
     const clientToDelete = data.data[0];
-    console.log(`\n2. Attempting to delete client via /api/deleteClient/${clientToDelete.id}`);
+    console.log(`\n2. Attempting to delete client via /api/gpt/clients/${clientToDelete.id}`);
     
-    const deleteResponse = await fetch(`${BASE_URL}/api/deleteClient/${clientToDelete.id}`, {
+    const deleteResponse = await fetch(`${BASE_URL}/api/gpt/clients/${clientToDelete.id}`, {
       method: 'DELETE',
       headers: {
         'Authorization': 'Bearer bw_wkad606ephtmbqx7a0f',
