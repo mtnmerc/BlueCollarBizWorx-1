@@ -86,16 +86,12 @@ app.use((req, res, next) => {
   // Register main API routes first (includes MCP endpoints)
   const server = await registerRoutes(app);
 
-  // Add final catch-all handler for unmatched routes
-  app.use((req, res) => {
-    console.log(`Unmatched route: ${req.method} ${req.path}`);
-    res.status(404).json({ 
-      success: false, 
-      error: 'API endpoint not found',
-      method: req.method,
-      path: req.path 
-    });
-  });
+  // Setup static file serving and frontend routing AFTER API routes
+  if (app.get("env") === "development") {
+    await setupVite(app, server);
+  } else {
+    serveStatic(app);
+  }
 
   // Add comprehensive error handler for JSON responses
   app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
@@ -104,7 +100,7 @@ app.use((req, res, next) => {
     const message = err.message || "Internal Server Error";
     
     // Always return JSON for API endpoints
-    if (req.path.startsWith('/api/') || req.path.startsWith('/gpt/')) {
+    if (req.path.startsWith('/api/') || req.path.startsWith('/gpt/') || req.path.startsWith('/getClients') || req.path.startsWith('/getJobs') || req.path.startsWith('/getDashboard') || req.path.startsWith('/deleteClient')) {
       return res.status(status).json({ 
         success: false,
         error: message,
@@ -125,6 +121,7 @@ app.use((req, res, next) => {
           'GET /getClients',
           'GET /getJobs', 
           'GET /getDashboard',
+          'DELETE /api/gpt/clients/:id',
           'GET /api/gpt/clients',
           'GET /api/gpt/jobs',
           'GET /api/gpt/dashboard'
@@ -133,15 +130,6 @@ app.use((req, res, next) => {
     }
     res.status(404).send('Not Found');
   });
-
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
-  }
 
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client.

@@ -13,6 +13,11 @@ async function testSimpleDelete() {
       }
     });
     
+    if (!clientsResponse.ok) {
+      console.log('Failed to fetch clients:', clientsResponse.status);
+      return;
+    }
+    
     const clientsData = await clientsResponse.json();
     console.log(`Found ${clientsData.data.length} clients`);
     
