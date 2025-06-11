@@ -1,5 +1,5 @@
 {
-  "openapi": "3.0.0",
+  "openapi": "3.1.0",
   "info": {
     "title": "BizWorx Business Management API",
     "description": "Comprehensive API for blue-collar business management including clients, jobs, invoices, estimates, team management, and time tracking. Optimized for voice commands through ChatGPT Custom GPT integration.",
