@@ -1578,7 +1578,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/external/estimates", authenticateApiKey, async (req, res) => {
     try {
       const estimates = await storage.getEstimatesByBusiness(req.businessId);
-      res.json(estimates);
+      res.json({
+        success: true,
+        data: estimates,
+        message: `Found ${estimates.length} estimates`,
+        source: "EXTERNAL_API_ROUTE"
+      });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -2419,6 +2424,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log('=== GPT AUTHENTICATION CALLED ===');
     console.log('Request URL:', req.url);
     console.log('Request method:', req.method);
+    
+    // For GPT routes, check if already processed by external API middleware
+    if (req.apiKeyAuth) {
+      console.log('Request already processed by external API middleware, skipping');
+      return res.status(403).json({ success: false, error: 'Route conflict detected' });
+    }
+    
     const apiKey = req.headers['x-api-key'];
     console.log('API Key present:', !!apiKey);
     if (!apiKey) return res.status(401).json({ success: false, error: 'API key required' });
@@ -2426,6 +2438,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!business) return res.status(401).json({ success: false, error: 'Invalid API key' });
       console.log('Business authenticated:', business.name);
       req.business = business;
+      req.gptAuth = true;
       next();
     }).catch((error: any) => res.status(500).json({ success: false, error: 'Authentication error' }));
   }
