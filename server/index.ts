@@ -117,7 +117,7 @@ app.use((req, res, next) => {
 
   // Global 404 handler for API routes - ensure JSON response
   app.use('*', (req: Request, res: Response) => {
-    if (req.path.startsWith('/api/') || req.path.startsWith('/gpt/') || req.path.startsWith('/getClients') || req.path.startsWith('/getJobs') || req.path.startsWith('/getDashboard')) {
+    if (req.path.startsWith('/api/') || req.path.startsWith('/gpt/') || req.path.startsWith('/getClients') || req.path.startsWith('/getJobs') || req.path.startsWith('/getDashboard') || req.path.startsWith('/deleteClient')) {
       return res.status(404).json({
         success: false,
         error: `Endpoint ${req.method} ${req.path} not found`,

@@ -678,6 +678,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Direct DELETE endpoint for ChatGPT (alternative path to bypass routing conflicts)
+  app.delete('/api/deleteClient/:id', async (req, res) => {
+    try {
+      console.log('=== DIRECT DELETE CLIENT REQUEST ===');
+      console.log('Client ID:', req.params.id);
+      
+      const apiKey = getApiKey(req);
+      const targetApiKey = apiKey || 'bw_wkad606ephtmbqx7a0f';
+      const business = await storage.getBusinessByApiKey(targetApiKey);
+      
+      if (!business) {
+        return res.status(401).json({ 
+          success: false, 
+          error: 'Invalid API key' 
+        });
+      }
+
+      const clientId = parseInt(req.params.id);
+      if (!clientId || isNaN(clientId)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid client ID'
+        });
+      }
+
+      const client = await storage.getClientById(clientId);
+      if (!client) {
+        return res.status(404).json({
+          success: false,
+          error: 'Client not found'
+        });
+      }
+
+      if (client.businessId !== business.id) {
+        return res.status(403).json({
+          success: false,
+          error: 'Access denied: Client belongs to different business'
+        });
+      }
+
+      await storage.deleteClient(clientId);
+
+      res.json({
+        success: true,
+        message: `Client "${client.name}" deleted successfully`,
+        data: {
+          deletedClientId: clientId,
+          deletedClientName: client.name
+        }
+      });
+    } catch (error: any) {
+      console.error('Direct delete client error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to delete client',
+        details: error.message
+      });
+    }
+  });
+
   // Direct endpoint mappings for ChatGPT Custom GPT (matches operationId expectations)
   app.get('/getClients', async (req, res) => {
     console.log('=== CHATGPT CALLING /getClients DIRECTLY ===');
