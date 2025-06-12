@@ -6,8 +6,51 @@ import { db } from "./db";
 import { estimates, invoices, clients, jobs, services, timeEntries, users } from "@shared/schema";
 import { eq, desc, and, gte, lte, sql, isNull } from "drizzle-orm";
 import passport from "passport";
+import { Strategy as LocalStrategy } from "passport-local";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  
+  // Configure passport local strategy
+  passport.use(new LocalStrategy(
+    {
+      usernameField: 'email',
+      passwordField: 'pin'
+    },
+    async (email: string, pin: string, done: any) => {
+      try {
+        const business = await storage.getBusinessByEmail(email);
+        if (!business) {
+          return done(null, false, { message: 'Business not found' });
+        }
+
+        const user = await storage.getUserByPin(business.id, pin);
+        if (!user) {
+          return done(null, false, { message: 'Invalid PIN' });
+        }
+
+        return done(null, { ...user, businessId: business.id });
+      } catch (error) {
+        return done(error);
+      }
+    }
+  ));
+
+  passport.serializeUser((user: any, done) => {
+    done(null, user.id);
+  });
+
+  passport.deserializeUser(async (id: any, done) => {
+    try {
+      const user = await storage.getUserById(id);
+      done(null, user);
+    } catch (error) {
+      done(error);
+    }
+  });
+
+  // Initialize passport
+  app.use(passport.initialize());
+  app.use(passport.session());
   
   // =============================================================================
   // SOLUTION: Register ONLY schema-compliant GPT routes - eliminates duplicates
@@ -54,18 +97,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email: req.body.email,
         phone: req.body.phone || null,
         address: req.body.address || null,
+        password: req.body.ownerPin, // Use owner PIN as business password
         apiKey: `bw_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 10)}`
       };
 
       const business = await storage.createBusiness(businessData);
       
+      const ownerName = req.body.ownerName || 'Business Owner';
+      const nameParts = ownerName.split(' ');
       const userData = {
         businessId: business.id,
-        name: req.body.ownerName,
+        username: req.body.email, // Use email as username
+        firstName: nameParts[0] || 'Business',
+        lastName: nameParts.slice(1).join(' ') || 'Owner',
         email: req.body.email,
-        role: 'owner' as const,
         pin: req.body.ownerPin,
-        hourlyRate: req.body.ownerHourlyRate || "25.00"
+        role: 'owner'
       };
 
       const user = await storage.createUser(userData);
