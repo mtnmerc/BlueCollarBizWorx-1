@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "wouter";
 import { useForm } from "react-hook-form";
@@ -9,8 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Users } from "lucide-react";
+import { ArrowLeft, Users, Trash2 } from "lucide-react";
 import { Link } from "wouter";
 
 const clientSchema = z.object({
@@ -71,6 +72,30 @@ export default function ClientEdit() {
       toast({
         title: "Error",
         description: error.message || "Failed to update client",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteClientMutation = useMutation({
+    mutationFn: () => fetch(`/api/clients/${id}`, {
+      method: "DELETE",
+    }).then(res => {
+      if (!res.ok) throw new Error("Failed to delete client");
+      return res.json();
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      toast({
+        title: "Client Deleted",
+        description: "Client has been deleted successfully.",
+      });
+      window.location.href = "/clients";
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete client",
         variant: "destructive",
       });
     },
@@ -201,6 +226,45 @@ export default function ClientEdit() {
                       Cancel
                     </Button>
                   </Link>
+                </div>
+
+                {/* Delete Client Section */}
+                <div className="pt-6 border-t border-border">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-medium text-foreground">Delete Client</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Permanently delete this client and all associated data.
+                      </p>
+                    </div>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="sm">
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete Client
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the client
+                            "{client?.name}" and all associated jobs, invoices, and estimates.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => deleteClientMutation.mutate()}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            disabled={deleteClientMutation.isPending}
+                          >
+                            {deleteClientMutation.isPending ? "Deleting..." : "Delete Client"}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </div>
               </form>
             </Form>
