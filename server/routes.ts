@@ -74,6 +74,138 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ success: true, user: req.user });
   });
 
+  // Business login endpoint (frontend expects this)
+  app.post("/api/auth/business/login", async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      const business = await storage.getBusinessByEmail(email);
+      
+      if (!business || business.password !== password) {
+        return res.status(401).json({ success: false, error: "Invalid credentials" });
+      }
+
+      // Set session
+      (req.session as any).businessId = business.id;
+      
+      res.json({ 
+        success: true, 
+        business: {
+          id: business.id,
+          name: business.name,
+          email: business.email,
+          phone: business.phone,
+          address: business.address
+        }
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // User login endpoint (PIN-based)
+  app.post("/api/auth/user/login", async (req, res) => {
+    try {
+      const { pin } = req.body;
+      const businessId = (req.session as any).businessId;
+      
+      if (!businessId) {
+        return res.status(401).json({ success: false, error: "Business not selected" });
+      }
+
+      const user = await storage.getUserByPin(businessId, pin);
+      if (!user) {
+        return res.status(401).json({ success: false, error: "Invalid PIN" });
+      }
+
+      // Set user session
+      (req.session as any).userId = user.id;
+      (req.session as any).role = user.role;
+      
+      res.json({ 
+        success: true, 
+        user: {
+          id: user.id,
+          businessId: user.businessId,
+          username: user.username,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role
+        }
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // Business registration endpoint
+  app.post("/api/auth/business/register", async (req, res) => {
+    try {
+      const businessData = {
+        name: req.body.name,
+        email: req.body.email,
+        phone: req.body.phone || null,
+        address: req.body.address || null,
+        password: req.body.password,
+        apiKey: `bw_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 10)}`
+      };
+
+      const business = await storage.createBusiness(businessData);
+      
+      // Set session
+      (req.session as any).businessId = business.id;
+      
+      res.json({ 
+        success: true, 
+        business: {
+          id: business.id,
+          name: business.name,
+          email: business.email,
+          phone: business.phone,
+          address: business.address
+        }
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // Get current auth state
+  app.get("/api/auth/me", (req, res) => {
+    const session = req.session as any;
+    
+    if (session.userId && session.businessId) {
+      // User is fully authenticated
+      storage.getUserById(session.userId).then(user => {
+        if (user) {
+          storage.getBusinessById(session.businessId).then(business => {
+            res.json({
+              success: true,
+              user: {
+                id: user.id,
+                businessId: user.businessId,
+                username: user.username,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                role: user.role
+              },
+              business: business ? {
+                id: business.id,
+                name: business.name,
+                email: business.email,
+                phone: business.phone,
+                address: business.address
+              } : undefined
+            });
+          });
+        } else {
+          res.status(401).json({ success: false, error: "Not authenticated" });
+        }
+      });
+    } else {
+      res.status(401).json({ success: false, error: "Not authenticated" });
+    }
+  });
+
   app.post("/auth/logout", (req, res) => {
     req.logout((err) => {
       if (err) return res.status(500).json({ success: false, error: "Logout failed" });
@@ -81,12 +213,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  app.get("/auth/me", (req, res) => {
-    if (req.isAuthenticated()) {
-      res.json({ success: true, user: req.user });
-    } else {
-      res.status(401).json({ success: false, error: "Not authenticated" });
-    }
+  app.post("/api/auth/logout", (req, res) => {
+    req.session.destroy((err) => {
+      if (err) return res.status(500).json({ success: false, error: "Logout failed" });
+      res.json({ success: true });
+    });
   });
 
   // Business setup routes
