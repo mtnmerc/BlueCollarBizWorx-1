@@ -77,9 +77,7 @@ app.use((req, res, next) => {
 
 
 
-  // Import and register the complete GPT routes (includes all endpoints including PUT)
-  const { registerGPTRoutes } = await import("./gpt-routes-final");
-  registerGPTRoutes(app);
+  // GPT routes are registered in server/routes.ts to ensure proper authentication order
 
   // Health check
   app.get('/health', (req, res) => {
