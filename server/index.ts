@@ -77,11 +77,20 @@ app.use((req, res, next) => {
 
 
 
-  // Import and register all routes (includes main app routes AND GPT routes)
-  const { registerRoutes } = await import("./routes");
-  await registerRoutes(app);
+  // Import and register the complete GPT routes (includes all endpoints including PUT)
+  const { registerGPTRoutes } = await import("./gpt-routes-final");
+  registerGPTRoutes(app);
 
-  console.log('DIRECT SERVER: All routes registered successfully');
+  // Health check
+  app.get('/health', (req, res) => {
+    res.json({ 
+      status: 'ok', 
+      timestamp: new Date().toISOString(),
+      message: 'BizWorx server with direct GPT routes'
+    });
+  });
+
+  console.log('DIRECT SERVER: GPT routes registered with highest priority');
 
   // Add error handler after routes
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
