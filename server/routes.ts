@@ -84,19 +84,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ success: false, error: "Invalid credentials" });
       }
 
-      // Set session
-      (req.session as any).businessId = business.id;
+      // Check if there's an owner user for this business (auto-login)
+      const users = await storage.getUsersByBusiness(business.id);
+      const ownerUser = users.find(user => user.role === 'owner');
       
-      res.json({ 
-        success: true, 
-        business: {
-          id: business.id,
-          name: business.name,
-          email: business.email,
-          phone: business.phone,
-          address: business.address
-        }
-      });
+      if (ownerUser) {
+        // Auto-login the owner user
+        (req.session as any).businessId = business.id;
+        (req.session as any).userId = ownerUser.id;
+        (req.session as any).role = ownerUser.role;
+        
+        res.json({ 
+          success: true, 
+          user: {
+            id: ownerUser.id,
+            businessId: ownerUser.businessId,
+            username: ownerUser.username,
+            firstName: ownerUser.firstName,
+            lastName: ownerUser.lastName,
+            role: ownerUser.role
+          },
+          business: {
+            id: business.id,
+            name: business.name,
+            email: business.email,
+            phone: business.phone,
+            address: business.address
+          }
+        });
+      } else {
+        // Business exists but no owner user - need setup
+        (req.session as any).businessId = business.id;
+        res.json({ 
+          success: true,
+          setupMode: true,
+          business: {
+            id: business.id,
+            name: business.name,
+            email: business.email,
+            phone: business.phone,
+            address: business.address
+          }
+        });
+      }
     } catch (error: any) {
       res.status(500).json({ success: false, error: error.message });
     }
