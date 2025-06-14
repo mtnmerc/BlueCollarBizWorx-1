@@ -28,12 +28,4 @@ export default defineConfig({
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
   },
-  server: {
-    hmr: false,  // Disables hot reload but prevents cycling
-    port: 5000,
-    host: "0.0.0.0",
-    watch: {
-      usePolling: true, // forces file watcher to pick up changes
-    },
-  },
 });
