@@ -8,7 +8,7 @@ import { registerGPTRoutes } from "./gpt-routes-final";
 
 const app = express();
 
-// Configure passport BEFORE express setup
+// Configure passport first
 passport.use(new LocalStrategy(
   { usernameField: 'email', passwordField: 'pin' },
   async (email: string, pin: string, done) => {
@@ -54,7 +54,7 @@ app.use(session({
   },
 }));
 
-// Initialize passport AFTER session
+// Initialize passport
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -113,187 +113,6 @@ app.use((req, res, next) => {
     }
   });
 
-  // Business setup routes
-  app.post("/api/business/setup", async (req, res) => {
-    try {
-      const businessData = {
-        name: req.body.name,
-        email: req.body.email,
-        password: req.body.ownerPin,
-        phone: req.body.phone || null,
-        address: req.body.address || null,
-        apiKey: `bw_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 10)}`
-      };
-
-      const business = await storage.createBusiness(businessData);
-      
-      const nameParts = req.body.ownerName.split(' ');
-      const firstName = nameParts[0] || req.body.ownerName;
-      const lastName = nameParts.slice(1).join(' ') || '';
-      
-      const userData = {
-        businessId: business.id,
-        username: req.body.email,
-        firstName: firstName,
-        lastName: lastName,
-        email: req.body.email,
-        role: 'owner',
-        pin: req.body.ownerPin,
-      };
-
-      const user = await storage.createUser(userData);
-
-      (req.session as any).userId = user.id;
-      (req.session as any).businessId = business.id;
-      (req.session as any).role = user.role;
-
-      res.json({ 
-        success: true, 
-        business, 
-        user,
-        message: `Business "${business.name}" created successfully!`
-      });
-    } catch (error: any) {
-      console.error('Business setup error:', error);
-      res.status(500).json({ success: false, error: error.message });
-    }
-  });
-
-  // Client management routes
-  app.get("/api/clients", async (req, res) => {
-    try {
-      if (!(req.session as any).businessId) {
-        return res.status(401).json({ success: false, error: "Not authenticated" });
-      }
-      
-      const clients = await storage.getClientsByBusiness((req.session as any).businessId);
-      res.json({ success: true, data: clients });
-    } catch (error: any) {
-      res.status(500).json({ success: false, error: error.message });
-    }
-  });
-
-  app.post("/api/clients", async (req, res) => {
-    try {
-      if (!(req.session as any).businessId) {
-        return res.status(401).json({ success: false, error: "Not authenticated" });
-      }
-
-      const clientData = {
-        businessId: (req.session as any).businessId,
-        name: req.body.name,
-        email: req.body.email || null,
-        phone: req.body.phone || null,
-        address: req.body.address || null,
-        notes: req.body.notes || null
-      };
-
-      const client = await storage.createClient(clientData);
-      res.json({ success: true, data: client });
-    } catch (error: any) {
-      res.status(500).json({ success: false, error: error.message });
-    }
-  });
-
-  // Job management routes
-  app.get("/api/jobs", async (req, res) => {
-    try {
-      if (!(req.session as any).businessId) {
-        return res.status(401).json({ success: false, error: "Not authenticated" });
-      }
-      
-      const jobs = await storage.getJobsByBusiness((req.session as any).businessId);
-      res.json({ success: true, data: jobs });
-    } catch (error: any) {
-      res.status(500).json({ success: false, error: error.message });
-    }
-  });
-
-  app.post("/api/jobs", async (req, res) => {
-    try {
-      if (!(req.session as any).businessId) {
-        return res.status(401).json({ success: false, error: "Not authenticated" });
-      }
-
-      const jobData = {
-        businessId: (req.session as any).businessId,
-        clientId: req.body.clientId,
-        assignedUserId: req.body.assignedUserId || null,
-        title: req.body.title,
-        description: req.body.description || null,
-        address: req.body.address || null,
-        scheduledStart: req.body.scheduledStart ? new Date(req.body.scheduledStart) : null,
-        scheduledEnd: req.body.scheduledEnd ? new Date(req.body.scheduledEnd) : null,
-        status: req.body.status || 'scheduled',
-        priority: req.body.priority || 'medium',
-        jobType: req.body.jobType || 'service',
-        estimatedAmount: req.body.estimatedAmount || null,
-        notes: req.body.notes || null
-      };
-
-      const job = await storage.createJob(jobData);
-      res.json({ success: true, data: job });
-    } catch (error: any) {
-      res.status(500).json({ success: false, error: error.message });
-    }
-  });
-
-  // Service management routes
-  app.get("/api/services", async (req, res) => {
-    try {
-      if (!(req.session as any).businessId) {
-        return res.status(401).json({ success: false, error: "Not authenticated" });
-      }
-      
-      const services = await storage.getServicesByBusiness((req.session as any).businessId);
-      res.json({ success: true, data: services });
-    } catch (error: any) {
-      res.status(500).json({ success: false, error: error.message });
-    }
-  });
-
-  // Estimate management routes
-  app.get("/api/estimates", async (req, res) => {
-    try {
-      if (!(req.session as any).businessId) {
-        return res.status(401).json({ success: false, error: "Not authenticated" });
-      }
-      
-      const estimates = await storage.getEstimatesByBusiness((req.session as any).businessId);
-      res.json({ success: true, data: estimates });
-    } catch (error: any) {
-      res.status(500).json({ success: false, error: error.message });
-    }
-  });
-
-  // Invoice management routes
-  app.get("/api/invoices", async (req, res) => {
-    try {
-      if (!(req.session as any).businessId) {
-        return res.status(401).json({ success: false, error: "Not authenticated" });
-      }
-      
-      const invoices = await storage.getInvoicesByBusiness((req.session as any).businessId);
-      res.json({ success: true, data: invoices });
-    } catch (error: any) {
-      res.status(500).json({ success: false, error: error.message });
-    }
-  });
-
-  // Time tracking routes
-  app.get("/api/time-entries", async (req, res) => {
-    try {
-      if (!(req.session as any).businessId) {
-        return res.status(401).json({ success: false, error: "Not authenticated" });
-      }
-      
-      const timeEntries = await storage.getTimeEntriesByUser((req.session as any).userId);
-      res.json({ success: true, data: timeEntries });
-    } catch (error: any) {
-      res.status(500).json({ success: false, error: error.message });
-    }
-  });
-
   // Error handler
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
@@ -313,8 +132,8 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  const port = 5000;
+  const port = Number(process.env.PORT) || 5000;
   server.listen(port, "0.0.0.0", () => {
     log(`serving on port ${port}`);
   });
-})();// Server restart trigger
+})();
