@@ -107,8 +107,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const clientData = {
-        ...req.body,
-        businessId: (req.session as any).businessId
+        businessId: (req.session as any).businessId,
+        name: req.body.name,
+        email: req.body.email || null,
+        phone: req.body.phone || null,
+        address: req.body.address || null,
+        notes: req.body.notes || null
       };
 
       const client = await storage.createClient(clientData);
@@ -118,7 +122,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Estimate routes
+  // Job management routes
+  app.get("/api/jobs", async (req, res) => {
+    try {
+      if (!(req.session as any).businessId) {
+        return res.status(401).json({ success: false, error: "Not authenticated" });
+      }
+      
+      const jobs = await storage.getJobsByBusiness((req.session as any).businessId);
+      res.json({ success: true, data: jobs });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  app.post("/api/jobs", async (req, res) => {
+    try {
+      if (!(req.session as any).businessId) {
+        return res.status(401).json({ success: false, error: "Not authenticated" });
+      }
+
+      const jobData = {
+        businessId: (req.session as any).businessId,
+        clientId: req.body.clientId,
+        assignedUserId: req.body.assignedUserId || null,
+        title: req.body.title,
+        description: req.body.description || null,
+        address: req.body.address || null,
+        scheduledStart: req.body.scheduledStart ? new Date(req.body.scheduledStart) : null,
+        scheduledEnd: req.body.scheduledEnd ? new Date(req.body.scheduledEnd) : null,
+        status: req.body.status || 'scheduled',
+        priority: req.body.priority || 'medium',
+        jobType: req.body.jobType || 'service',
+        estimatedAmount: req.body.estimatedAmount || null,
+        notes: req.body.notes || null
+      };
+
+      const job = await storage.createJob(jobData);
+      res.json({ success: true, data: job });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // Service management routes
+  app.get("/api/services", async (req, res) => {
+    try {
+      if (!(req.session as any).businessId) {
+        return res.status(401).json({ success: false, error: "Not authenticated" });
+      }
+      
+      const services = await storage.getServicesByBusiness((req.session as any).businessId);
+      res.json({ success: true, data: services });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // Estimate management routes
   app.get("/api/estimates", async (req, res) => {
     try {
       if (!(req.session as any).businessId) {
@@ -132,25 +193,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/estimates", async (req, res) => {
-    try {
-      if (!(req.session as any).businessId) {
-        return res.status(401).json({ success: false, error: "Not authenticated" });
-      }
-
-      const estimateData = {
-        ...req.body,
-        businessId: (req.session as any).businessId
-      };
-
-      const estimate = await storage.createEstimate(estimateData);
-      res.json({ success: true, data: estimate });
-    } catch (error: any) {
-      res.status(500).json({ success: false, error: error.message });
-    }
-  });
-
-  // Invoice routes
+  // Invoice management routes
   app.get("/api/invoices", async (req, res) => {
     try {
       if (!(req.session as any).businessId) {
@@ -164,25 +207,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/invoices", async (req, res) => {
+  // Time tracking routes
+  app.get("/api/time-entries", async (req, res) => {
     try {
       if (!(req.session as any).businessId) {
         return res.status(401).json({ success: false, error: "Not authenticated" });
       }
-
-      const invoiceData = {
-        ...req.body,
-        businessId: (req.session as any).businessId
-      };
-
-      const invoice = await storage.createInvoice(invoiceData);
-      res.json({ success: true, data: invoice });
+      
+      const timeEntries = await storage.getTimeEntriesByBusiness((req.session as any).businessId);
+      res.json({ success: true, data: timeEntries });
     } catch (error: any) {
       res.status(500).json({ success: false, error: error.message });
     }
   });
 
-  // Create HTTP server
-  const server = createServer(app);
-  return server;
+  const httpServer = createServer(app);
+  return httpServer;
 }
