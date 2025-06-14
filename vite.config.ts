@@ -28,4 +28,11 @@ export default defineConfig({
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
   },
+  server: {
+    port: 443, // Replit sometimes requires this for SSL
+    host: "0.0.0.0",
+    watch: {
+      usePolling: true, // forces file watcher to pick up changes
+    },
+  },
 });
