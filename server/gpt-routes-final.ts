@@ -9,13 +9,13 @@ function authenticateGPT(req: any, res: any, next: any) {
   console.log('=== GPT FINAL AUTH ===');
   console.log('Method:', req.method, 'URL:', req.url);
   console.log('X-API-Key:', req.headers['x-api-key'] ? 'Present' : 'Missing');
-  
+
   const apiKey = req.headers['x-api-key'];
   if (!apiKey) {
     console.log('GPT FINAL: No API key provided');
     return res.status(401).json({ success: false, error: 'API key required' });
   }
-  
+
   storage.getBusinessByApiKey(apiKey).then((business: any) => {
     if (!business) {
       console.log('GPT FINAL: Invalid API key');
@@ -36,7 +36,7 @@ export function registerGPTRoutes(app: Express) {
   // GPT ESTIMATES - Schema compliant with items arrays
   app.get('/api/gpt/estimates', authenticateGPT, async (req: any, res: any) => {
     console.log('=== GPT FINAL ESTIMATES HANDLER ===');
-    
+
     try {
       const business = req.business;
       console.log('GPT FINAL: Processing estimates for business:', business.name);
@@ -142,7 +142,7 @@ export function registerGPTRoutes(app: Express) {
   // GPT INVOICES - Schema compliant with items arrays
   app.get('/api/gpt/invoices', authenticateGPT, async (req: any, res: any) => {
     console.log('=== GPT FINAL INVOICES HANDLER ===');
-    
+
     try {
       const business = req.business;
       console.log('GPT FINAL: Processing invoices for business:', business.name);
@@ -234,15 +234,15 @@ export function registerGPTRoutes(app: Express) {
   // GPT CLIENTS - Schema compliant
   app.get('/api/gpt/clients', authenticateGPT, async (req: any, res: any) => {
     console.log('=== GPT FINAL CLIENTS HANDLER ===');
-    
+
     try {
       const business = req.business;
       console.log('GPT FINAL: Processing clients for business:', business.name);
-      
+
       const clientsList = await storage.getClientsByBusiness(business.id);
-      
+
       console.log('GPT FINAL: Returning', clientsList.length, 'clients with business verification');
-      
+
       res.json({
         success: true,
         data: clientsList,
@@ -263,11 +263,11 @@ export function registerGPTRoutes(app: Express) {
   // GPT CREATE CLIENT - Schema compliant
   app.post('/api/gpt/clients', authenticateGPT, async (req: any, res: any) => {
     console.log('=== GPT FINAL CREATE CLIENT HANDLER ===');
-    
+
     try {
       const business = req.business;
       console.log('GPT FINAL: Creating client for business:', business.name);
-      
+
       const clientData = {
         businessId: business.id,
         name: req.body.name,
@@ -278,9 +278,9 @@ export function registerGPTRoutes(app: Express) {
       };
 
       const newClient = await storage.createClient(clientData);
-      
+
       console.log('GPT FINAL: Created client', newClient.name);
-      
+
       res.json({
         success: true,
         data: newClient,
@@ -301,11 +301,11 @@ export function registerGPTRoutes(app: Express) {
   // GPT CREATE INVOICE - Schema compliant
   app.post('/api/gpt/invoices', authenticateGPT, async (req: any, res: any) => {
     console.log('=== GPT FINAL CREATE INVOICE HANDLER ===');
-    
+
     try {
       const business = req.business;
       console.log('GPT FINAL: Creating invoice for business:', business.name);
-      
+
       const invoiceData = {
         businessId: business.id,
         clientId: req.body.clientId,
@@ -324,9 +324,9 @@ export function registerGPTRoutes(app: Express) {
       };
 
       const newInvoice = await storage.createInvoice(invoiceData);
-      
+
       console.log('GPT FINAL: Created invoice', newInvoice.id);
-      
+
       res.json({
         success: true,
         data: {
@@ -351,12 +351,12 @@ export function registerGPTRoutes(app: Express) {
   // GPT UPDATE INVOICE - Schema compliant
   app.put('/api/gpt/invoices/:id', authenticateGPT, async (req: any, res: any) => {
     console.log('=== GPT FINAL UPDATE INVOICE HANDLER ===');
-    
+
     try {
       const business = req.business;
       const invoiceId = parseInt(req.params.id);
       console.log('GPT FINAL: Updating invoice', invoiceId, 'for business:', business.name);
-      
+
       // Verify invoice belongs to business
       const existingInvoice = await storage.getInvoiceById(invoiceId);
       if (!existingInvoice || existingInvoice.businessId !== business.id) {
@@ -376,9 +376,9 @@ export function registerGPTRoutes(app: Express) {
       if (req.body.notes !== undefined) updateData.notes = req.body.notes;
 
       const updatedInvoice = await storage.updateInvoice(invoiceId, updateData);
-      
+
       console.log('GPT FINAL: Updated invoice', updatedInvoice.id);
-      
+
       res.json({
         success: true,
         data: {
@@ -403,12 +403,12 @@ export function registerGPTRoutes(app: Express) {
   // GPT GET INVOICE BY ID - Schema compliant
   app.get('/api/gpt/invoices/:id', authenticateGPT, async (req: any, res: any) => {
     console.log('=== GPT FINAL GET INVOICE BY ID HANDLER ===');
-    
+
     try {
       const business = req.business;
       const invoiceId = parseInt(req.params.id);
       console.log('GPT FINAL: Getting invoice', invoiceId, 'for business:', business.name);
-      
+
       const invoice = await storage.getInvoiceById(invoiceId);
       if (!invoice || invoice.businessId !== business.id) {
         return res.status(404).json({ success: false, error: 'Invoice not found' });
@@ -449,9 +449,9 @@ export function registerGPTRoutes(app: Express) {
         shareToken: invoice.shareToken || '',
         createdAt: invoice.createdAt
       };
-      
+
       console.log('GPT FINAL: Returning invoice', invoice.id);
-      
+
       res.json({
         success: true,
         data: formattedInvoice,
@@ -472,12 +472,12 @@ export function registerGPTRoutes(app: Express) {
   // GPT DELETE INVOICE - Schema compliant
   app.delete('/api/gpt/invoices/:id', authenticateGPT, async (req: any, res: any) => {
     console.log('=== GPT FINAL DELETE INVOICE HANDLER ===');
-    
+
     try {
       const business = req.business;
       const invoiceId = parseInt(req.params.id);
       console.log('GPT FINAL: Deleting invoice', invoiceId, 'for business:', business.name);
-      
+
       // Verify invoice belongs to business
       const existingInvoice = await storage.getInvoiceById(invoiceId);
       if (!existingInvoice || existingInvoice.businessId !== business.id) {
@@ -485,9 +485,9 @@ export function registerGPTRoutes(app: Express) {
       }
 
       await storage.deleteInvoice(invoiceId);
-      
+
       console.log('GPT FINAL: Deleted invoice', invoiceId);
-      
+
       res.json({
         success: true,
         message: `Invoice "${existingInvoice.title}" deleted successfully`,
@@ -507,7 +507,7 @@ export function registerGPTRoutes(app: Express) {
   // GPT JOBS - Schema compliant
   app.get('/api/gpt/jobs', authenticateGPT, async (req: any, res: any) => {
     console.log('=== GPT FINAL JOBS HANDLER ===');
-    
+
     try {
       const business = req.business;
       console.log('GPT FINAL: Processing jobs for business:', business.name);
@@ -561,11 +561,11 @@ export function registerGPTRoutes(app: Express) {
   // GPT CREATE JOB - Schema compliant
   app.post('/api/gpt/jobs', authenticateGPT, async (req: any, res: any) => {
     console.log('=== GPT FINAL CREATE JOB HANDLER ===');
-    
+
     try {
       const business = req.business;
       console.log('GPT FINAL: Creating job for business:', business.name);
-      
+
       const jobData = {
         businessId: business.id,
         clientId: req.body.clientId,
@@ -583,9 +583,9 @@ export function registerGPTRoutes(app: Express) {
       };
 
       const newJob = await storage.createJob(jobData);
-      
+
       console.log('GPT FINAL: Created job', newJob.id);
-      
+
       res.json({
         success: true,
         data: newJob,
@@ -606,12 +606,12 @@ export function registerGPTRoutes(app: Express) {
   // GPT UPDATE JOB - Schema compliant
   app.put('/api/gpt/jobs/:id', authenticateGPT, async (req: any, res: any) => {
     console.log('=== GPT FINAL UPDATE JOB HANDLER ===');
-    
+
     try {
       const business = req.business;
       const jobId = parseInt(req.params.id);
       console.log('GPT FINAL: Updating job', jobId, 'for business:', business.name);
-      
+
       // Verify job belongs to business
       const existingJob = await storage.getJobById(jobId);
       if (!existingJob || existingJob.businessId !== business.id) {
@@ -633,9 +633,9 @@ export function registerGPTRoutes(app: Express) {
       if (req.body.notes !== undefined) updateData.notes = req.body.notes;
 
       const updatedJob = await storage.updateJob(jobId, updateData);
-      
+
       console.log('GPT FINAL: Updated job', updatedJob.id);
-      
+
       res.json({
         success: true,
         data: updatedJob,
@@ -656,19 +656,19 @@ export function registerGPTRoutes(app: Express) {
   // GPT GET JOB BY ID - Schema compliant
   app.get('/api/gpt/jobs/:id', authenticateGPT, async (req: any, res: any) => {
     console.log('=== GPT FINAL GET JOB BY ID HANDLER ===');
-    
+
     try {
       const business = req.business;
       const jobId = parseInt(req.params.id);
       console.log('GPT FINAL: Getting job', jobId, 'for business:', business.name);
-      
+
       const job = await storage.getJobById(jobId);
       if (!job || job.businessId !== business.id) {
         return res.status(404).json({ success: false, error: 'Job not found' });
       }
-      
+
       console.log('GPT FINAL: Returning job', job.id);
-      
+
       res.json({
         success: true,
         data: job,
@@ -689,12 +689,12 @@ export function registerGPTRoutes(app: Express) {
   // GPT DELETE JOB - Schema compliant
   app.delete('/api/gpt/jobs/:id', authenticateGPT, async (req: any, res: any) => {
     console.log('=== GPT FINAL DELETE JOB HANDLER ===');
-    
+
     try {
       const business = req.business;
       const jobId = parseInt(req.params.id);
       console.log('GPT FINAL: Deleting job', jobId, 'for business:', business.name);
-      
+
       // Verify job belongs to business
       const existingJob = await storage.getJobById(jobId);
       if (!existingJob || existingJob.businessId !== business.id) {
@@ -702,9 +702,9 @@ export function registerGPTRoutes(app: Express) {
       }
 
       await storage.deleteJob(jobId);
-      
+
       console.log('GPT FINAL: Deleted job', jobId);
-      
+
       res.json({
         success: true,
         message: `Job "${existingJob.title}" deleted successfully`,
@@ -724,11 +724,11 @@ export function registerGPTRoutes(app: Express) {
   // GPT CREATE ESTIMATE - Schema compliant
   app.post('/api/gpt/estimates', authenticateGPT, async (req: any, res: any) => {
     console.log('=== GPT FINAL CREATE ESTIMATE HANDLER ===');
-    
+
     try {
       const business = req.business;
       console.log('GPT FINAL: Creating estimate for business:', business.name);
-      
+
       const estimateData = {
         businessId: business.id,
         clientId: req.body.clientId,
@@ -747,9 +747,9 @@ export function registerGPTRoutes(app: Express) {
       };
 
       const newEstimate = await storage.createEstimate(estimateData);
-      
+
       console.log('GPT FINAL: Created estimate', newEstimate.id);
-      
+
       res.json({
         success: true,
         data: {
@@ -774,12 +774,12 @@ export function registerGPTRoutes(app: Express) {
   // GPT UPDATE ESTIMATE - Schema compliant
   app.put('/api/gpt/estimates/:id', authenticateGPT, async (req: any, res: any) => {
     console.log('=== GPT FINAL UPDATE ESTIMATE HANDLER ===');
-    
+
     try {
       const business = req.business;
       const estimateId = parseInt(req.params.id);
       console.log('GPT FINAL: Updating estimate', estimateId, 'for business:', business.name);
-      
+
       // Verify estimate belongs to business
       const existingEstimate = await storage.getEstimateById(estimateId);
       if (!existingEstimate || existingEstimate.businessId !== business.id) {
@@ -799,9 +799,9 @@ export function registerGPTRoutes(app: Express) {
       if (req.body.notes !== undefined) updateData.notes = req.body.notes;
 
       const updatedEstimate = await storage.updateEstimate(estimateId, updateData);
-      
+
       console.log('GPT FINAL: Updated estimate', updatedEstimate.id);
-      
+
       res.json({
         success: true,
         data: {
@@ -826,12 +826,12 @@ export function registerGPTRoutes(app: Express) {
   // GPT GET ESTIMATE BY ID - Schema compliant
   app.get('/api/gpt/estimates/:id', authenticateGPT, async (req: any, res: any) => {
     console.log('=== GPT FINAL GET ESTIMATE BY ID HANDLER ===');
-    
+
     try {
       const business = req.business;
       const estimateId = parseInt(req.params.id);
       console.log('GPT FINAL: Getting estimate', estimateId, 'for business:', business.name);
-      
+
       const estimate = await storage.getEstimateById(estimateId);
       if (!estimate || estimate.businessId !== business.id) {
         return res.status(404).json({ success: false, error: 'Estimate not found' });
@@ -872,9 +872,9 @@ export function registerGPTRoutes(app: Express) {
         shareToken: estimate.shareToken || '',
         createdAt: estimate.createdAt
       };
-      
+
       console.log('GPT FINAL: Returning estimate', estimate.id);
-      
+
       res.json({
         success: true,
         data: formattedEstimate,
@@ -895,12 +895,12 @@ export function registerGPTRoutes(app: Express) {
   // GPT DELETE ESTIMATE - Schema compliant
   app.delete('/api/gpt/estimates/:id', authenticateGPT, async (req: any, res: any) => {
     console.log('=== GPT FINAL DELETE ESTIMATE HANDLER ===');
-    
+
     try {
       const business = req.business;
       const estimateId = parseInt(req.params.id);
       console.log('GPT FINAL: Deleting estimate', estimateId, 'for business:', business.name);
-      
+
       // Verify estimate belongs to business
       const existingEstimate = await storage.getEstimateById(estimateId);
       if (!existingEstimate || existingEstimate.businessId !== business.id) {
@@ -908,9 +908,9 @@ export function registerGPTRoutes(app: Express) {
       }
 
       await storage.deleteEstimate(estimateId);
-      
+
       console.log('GPT FINAL: Deleted estimate', estimateId);
-      
+
       res.json({
         success: true,
         message: `Estimate "${existingEstimate.title}" deleted successfully`,
