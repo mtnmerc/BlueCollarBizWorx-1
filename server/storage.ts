@@ -28,6 +28,9 @@ export interface IStorage {
   getUsersByBusiness(businessId: number): Promise<User[]>;
   getUserById(id: number): Promise<User | undefined>;
   updateUser(id: number, user: Partial<InsertUser>): Promise<User>;
+  
+  // Authentication methods
+  authenticateUser(email: string, password: string): Promise<User | null>;
 
   // Client methods
   createClient(client: InsertClient): Promise<Client>;
@@ -164,6 +167,19 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, id))
       .returning();
     return updatedUser;
+  }
+
+  async authenticateUser(email: string, password: string): Promise<User | null> {
+    // For the demo business, check against predefined admin credentials
+    if (email === "admin@flatlineearthworks.com" && password === "admin123") {
+      const [user] = await this.db
+        .select()
+        .from(users)
+        .where(and(eq(users.email, email), eq(users.businessId, 1)))
+        .limit(1);
+      return user || null;
+    }
+    return null;
   }
 
   // Client methods

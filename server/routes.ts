@@ -1,5 +1,6 @@
 
 import type { Express } from "express";
+import passport from "passport";
 import { storage } from "./storage";
 import { db } from "./db";
 import { estimates, invoices, clients, jobs } from "@shared/schema";
@@ -43,8 +44,8 @@ export function registerRoutes(app: Express) {
   });
 
   // Authentication routes
-  app.post('/api/auth/login', (req, res, next) => {
-    req.body.passport.authenticate('local', (err: any, user: any, info: any) => {
+  app.post('/api/login', (req, res, next) => {
+    passport.authenticate('local', (err: any, user: any, info: any) => {
       if (err) return next(err);
       if (!user) {
         return res.status(401).json({ success: false, error: info?.message || 'Invalid credentials' });

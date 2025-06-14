@@ -47,8 +47,8 @@ passport.use(
     { usernameField: "email" },
     async (email, password, done) => {
       try {
-        const { authenticateUser } = await import("./storage");
-        const user = await authenticateUser(email, password);
+        const { storage } = await import("./storage");
+        const user = await storage.authenticateUser(email, password);
         return done(null, user);
       } catch (error: any) {
         return done(null, false, { message: error.message });
