@@ -103,7 +103,7 @@ app.use((req, res, next) => {
   });
 
   app.get("/auth/me", (req, res) => {
-    if (req.isAuthenticated()) {
+    if (req.isAuthenticated && req.isAuthenticated()) {
       res.json({ success: true, user: req.user });
     } else {
       res.status(401).json({ success: false, error: "Not authenticated" });
