@@ -3,11 +3,39 @@ import session from "express-session";
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { storage } from "./storage";
+import { registerGPTRoutes } from "./gpt-routes-final";
+import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
-// Configure passport
+// CORS configuration for GPT access
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-API-Key');
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+});
+
+// Session configuration
+app.use(session({
+  secret: process.env.SESSION_SECRET || "bizworx-session-secret-change-in-production",
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: false,
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000,
+  },
+}));
+
+// Passport authentication configuration
 passport.use(new LocalStrategy(
   { usernameField: 'email', passwordField: 'pin' },
   async (email: string, pin: string, done) => {
@@ -37,71 +65,56 @@ passport.deserializeUser(async (id: number, done) => {
   }
 });
 
-// Express middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: false, limit: '10mb' }));
-
-// Session configuration
-app.use(session({
-  secret: process.env.SESSION_SECRET || "bizworx-session-secret-change-in-production",
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: false,
-    httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000,
-  },
-}));
-
-// Initialize passport
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Basic routes for rollback testing
-app.get("/api/health", (req, res) => {
-  res.json({ status: "ok", timestamp: new Date().toISOString() });
-});
+// Request logging middleware
+app.use((req, res, next) => {
+  const start = Date.now();
+  const path = req.path;
+  let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
-app.get("/", (req, res) => {
-  res.json({ 
-    status: "BizWorx Server Running", 
-    version: "1.0.0",
-    timestamp: new Date().toISOString() 
+  const originalResJson = res.json;
+  res.json = function (bodyJson, ...args) {
+    capturedJsonResponse = bodyJson;
+    return originalResJson.apply(res, [bodyJson, ...args]);
+  };
+
+  res.on("finish", () => {
+    const duration = Date.now() - start;
+    if (path.startsWith("/api")) {
+      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
+      if (capturedJsonResponse) {
+        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+      }
+
+      if (logLine.length > 80) {
+        logLine = logLine.slice(0, 79) + "…";
+      }
+
+      log(logLine);
+    }
   });
-});
 
-// Authentication routes
-app.post("/auth/login", passport.authenticate("local"), (req, res) => {
-  res.json({ success: true, user: req.user });
-});
-
-app.post("/auth/logout", (req, res) => {
-  req.logout((err) => {
-    if (err) return res.status(500).json({ success: false, error: "Logout failed" });
-    res.json({ success: true });
-  });
-});
-
-app.get("/auth/me", (req, res) => {
-  if (req.isAuthenticated && req.isAuthenticated()) {
-    res.json({ success: true, user: req.user });
-  } else {
-    res.status(401).json({ success: false, error: "Not authenticated" });
-  }
-});
-
-// Error handler
-app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-  const status = err.status || err.statusCode || 500;
-  const message = err.message || "Internal Server Error";
-  res.status(status).json({ message });
-  console.error("Error:", err);
+  next();
 });
 
 (async () => {
-  // Create HTTP server
-  const { createServer } = await import("http");
-  const server = createServer(app);
+  // Register GPT routes with highest priority
+  console.log('Registering GPT routes for ChatGPT integration');
+  registerGPTRoutes(app);
+
+  // Register standard application routes
+  console.log('Registering standard application routes');
+  const server = await registerRoutes(app);
+
+  // Error handler
+  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    const status = err.status || err.statusCode || 500;
+    const message = err.message || "Internal Server Error";
+    res.status(status).json({ message });
+    console.error("Error:", err);
+  });
 
   // Setup vite
   if (app.get("env") === "development") {
@@ -112,6 +125,6 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
 
   const port = Number(process.env.PORT) || 5000;
   server.listen(port, "0.0.0.0", () => {
-    log(`serving on port ${port}`);
+    log(`BizWorx server running on port ${port} with ChatGPT integration`);
   });
 })();

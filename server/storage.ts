@@ -177,12 +177,11 @@ class DatabaseStorage {
   }
 
   async getJobsByBusiness(businessId: number): Promise<Job[]> {
-    const result = await this.db
+    return await this.db
       .select()
       .from(jobs)
       .where(eq(jobs.businessId, businessId))
       .orderBy(desc(jobs.createdAt));
-    return result;
   }
 
   async getJobsByUser(userId: number): Promise<Job[]> {
@@ -215,20 +214,20 @@ class DatabaseStorage {
     return newEstimate;
   }
 
-  async getEstimatesByBusiness(businessId: number): Promise<Estimate[]> {
-    return await this.db
-      .select()
-      .from(estimates)
-      .where(eq(estimates.businessId, businessId))
-      .orderBy(desc(estimates.createdAt));
-  }
-
   async getEstimateById(id: number): Promise<Estimate | undefined> {
     const [estimate] = await this.db
       .select()
       .from(estimates)
       .where(eq(estimates.id, id));
     return estimate || undefined;
+  }
+
+  async getEstimatesByBusiness(businessId: number): Promise<Estimate[]> {
+    return await this.db
+      .select()
+      .from(estimates)
+      .where(eq(estimates.businessId, businessId))
+      .orderBy(desc(estimates.createdAt));
   }
 
   async updateEstimate(id: number, estimate: Partial<InsertEstimate>): Promise<Estimate> {
@@ -253,20 +252,20 @@ class DatabaseStorage {
     return newInvoice;
   }
 
-  async getInvoicesByBusiness(businessId: number): Promise<Invoice[]> {
-    return await this.db
-      .select()
-      .from(invoices)
-      .where(eq(invoices.businessId, businessId))
-      .orderBy(desc(invoices.createdAt));
-  }
-
   async getInvoiceById(id: number): Promise<Invoice | undefined> {
     const [invoice] = await this.db
       .select()
       .from(invoices)
       .where(eq(invoices.id, id));
     return invoice || undefined;
+  }
+
+  async getInvoicesByBusiness(businessId: number): Promise<Invoice[]> {
+    return await this.db
+      .select()
+      .from(invoices)
+      .where(eq(invoices.businessId, businessId))
+      .orderBy(desc(invoices.createdAt));
   }
 
   async updateInvoice(id: number, invoice: Partial<InsertInvoice>): Promise<Invoice> {
@@ -331,6 +330,49 @@ class DatabaseStorage {
       .from(payrollSettings)
       .where(eq(payrollSettings.businessId, businessId));
     return settings || undefined;
+  }
+
+  // Additional methods for time tracking and reporting
+  async getTimeEntriesByBusiness(businessId: number): Promise<TimeEntry[]> {
+    return await this.db
+      .select({
+        id: timeEntries.id,
+        businessId: timeEntries.businessId,
+        userId: timeEntries.userId,
+        jobId: timeEntries.jobId,
+        clockIn: timeEntries.clockIn,
+        clockOut: timeEntries.clockOut,
+        breakStart: timeEntries.breakStart,
+        breakEnd: timeEntries.breakEnd,
+        totalHours: timeEntries.totalHours,
+        notes: timeEntries.notes,
+        createdAt: timeEntries.createdAt,
+        users: {
+          id: users.id,
+          businessId: users.businessId,
+          username: users.username,
+          pin: users.pin,
+          role: users.role,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          phone: users.phone,
+          email: users.email,
+          isActive: users.isActive,
+          createdAt: users.createdAt,
+        }
+      })
+      .from(timeEntries)
+      .leftJoin(users, eq(timeEntries.userId, users.id))
+      .where(eq(timeEntries.businessId, businessId))
+      .orderBy(desc(timeEntries.clockIn));
+  }
+
+  async getJobsWithDetails(businessId: number): Promise<Job[]> {
+    return await this.db
+      .select()
+      .from(jobs)
+      .where(eq(jobs.businessId, businessId))
+      .orderBy(desc(jobs.createdAt));
   }
 }
 
