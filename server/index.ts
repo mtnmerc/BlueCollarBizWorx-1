@@ -3,26 +3,22 @@ import session from "express-session";
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { storage } from "./storage";
-import { db } from "./db";
-import { estimates, invoices, clients, jobs, services, timeEntries, users } from "@shared/schema";
-import { eq, desc, and, gte, lte, sql, isNull } from "drizzle-orm";
 import { setupVite, serveStatic, log } from "./vite";
 import { registerGPTRoutes } from "./gpt-routes-final";
-import cors from 'cors';
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
-// Use simple memory session store for now (works in both dev and production)
+// Configure session
 app.use(session({
   secret: process.env.SESSION_SECRET || "bizworx-session-secret-change-in-production",
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: false, // Allow HTTP for now
+    secure: false,
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000, // Default 24 hours, can be extended per login
+    maxAge: 24 * 60 * 60 * 1000,
   },
 }));
 
@@ -59,6 +55,7 @@ passport.deserializeUser(async (id: number, done) => {
 app.use(passport.initialize());
 app.use(passport.session());
 
+// Request logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -90,31 +87,8 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Add CORS middleware first
-  app.use(cors({
-    origin: true,
-    credentials: true
-  }));
-
-  // Add debug middleware to log all API requests
-  app.use((req, res, next) => {
-    if (req.path.startsWith('/api/') || req.path.startsWith('/gpt/')) {
-      console.log(`API Request: ${req.method} ${req.path} from ${req.ip || req.connection.remoteAddress}`);
-    }
-    next();
-  });
-
   // Register GPT routes first
   registerGPTRoutes(app);
-
-  // Health check endpoint
-  app.get('/health', (req, res) => {
-    res.json({ 
-      status: 'ok', 
-      timestamp: new Date().toISOString(),
-      message: 'BizWorx server running'
-    });
-  });
 
   // Authentication routes
   app.post("/auth/login", passport.authenticate("local"), (req, res) => {
@@ -142,6 +116,7 @@ app.use((req, res, next) => {
       const businessData = {
         name: req.body.name,
         email: req.body.email,
+        password: req.body.ownerPin, // Use PIN as password
         phone: req.body.phone || null,
         address: req.body.address || null,
         apiKey: `bw_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 10)}`
@@ -149,13 +124,19 @@ app.use((req, res, next) => {
 
       const business = await storage.createBusiness(businessData);
       
+      // Split name into first and last
+      const nameParts = req.body.ownerName.split(' ');
+      const firstName = nameParts[0] || req.body.ownerName;
+      const lastName = nameParts.slice(1).join(' ') || '';
+      
       const userData = {
         businessId: business.id,
-        name: req.body.ownerName,
+        username: req.body.email,
+        firstName: firstName,
+        lastName: lastName,
         email: req.body.email,
-        role: 'owner' as const,
+        role: 'owner',
         pin: req.body.ownerPin,
-        hourlyRate: req.body.ownerHourlyRate || "25.00"
       };
 
       const user = await storage.createUser(userData);
@@ -304,14 +285,14 @@ app.use((req, res, next) => {
         return res.status(401).json({ success: false, error: "Not authenticated" });
       }
       
-      const timeEntries = await storage.getTimeEntriesByBusiness((req.session as any).businessId);
+      const timeEntries = await storage.getTimeEntriesByUser((req.session as any).userId);
       res.json({ success: true, data: timeEntries });
     } catch (error: any) {
       res.status(500).json({ success: false, error: error.message });
     }
   });
 
-  // Add error handler after routes
+  // Error handler
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
@@ -323,18 +304,13 @@ app.use((req, res, next) => {
   const { createServer } = await import("http");
   const server = createServer(app);
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
+  // Setup vite
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
   const port = 5000;
   server.listen(port, "0.0.0.0", () => {
     log(`serving on port ${port}`);
