@@ -1,29 +1,26 @@
+
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import { storage } from "./storage";
-import { db } from "./db";
-import { estimates, invoices, clients } from "@shared/schema";
-import { eq, desc } from "drizzle-orm";
 import { setupVite, serveStatic, log } from "./vite";
-import cors from 'cors';
-import { createProxyMiddleware } from 'http-proxy-middleware';
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
-// Use simple memory session store for now (works in both dev and production)
+// Session configuration
 app.use(session({
   secret: process.env.SESSION_SECRET || "bizworx-session-secret-change-in-production",
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: false, // Allow HTTP for now
+    secure: false,
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000, // Default 24 hours, can be extended per login
+    maxAge: 24 * 60 * 60 * 1000,
   },
 }));
 
+// Request logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -55,44 +52,118 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Add CORS middleware first
-  app.use(cors({
-    origin: true,
-    credentials: true
-  }));
-
-  // Add debug middleware to log all API requests
-  app.use((req, res, next) => {
-    if (req.path.startsWith('/api/') || req.path.startsWith('/gpt/')) {
-      console.log(`API Request: ${req.method} ${req.path} from ${req.ip || req.connection.remoteAddress}`);
-    }
-    next();
-  });
-
-
-
-  // MCP functionality consolidated in server/routes.ts
-
-
-
-
-
-  // Import and register the complete GPT routes (includes all endpoints including PUT)
-  const { registerGPTRoutes } = await import("./gpt-routes-final");
-  registerGPTRoutes(app);
-
   // Health check
   app.get('/health', (req, res) => {
     res.json({ 
       status: 'ok', 
       timestamp: new Date().toISOString(),
-      message: 'BizWorx server with direct GPT routes'
+      message: 'BizWorx server running clean'
     });
   });
 
-  console.log('DIRECT SERVER: GPT routes registered with highest priority');
+  // Authentication routes
+  app.post("/api/auth/business/login", async (req, res) => {
+    try {
+      const { businessName, pin } = req.body;
+      
+      if (!businessName || !pin) {
+        return res.status(400).json({ success: false, error: "Business name and PIN required" });
+      }
 
-  // Add error handler after routes
+      const business = await storage.getBusinessByName(businessName);
+      if (!business) {
+        return res.status(401).json({ success: false, error: "Business not found" });
+      }
+
+      const user = await storage.getUserByBusinessAndPin(business.id, pin);
+      if (!user) {
+        return res.status(401).json({ success: false, error: "Invalid PIN" });
+      }
+
+      (req.session as any).userId = user.id;
+      (req.session as any).businessId = business.id;
+      (req.session as any).role = user.role;
+
+      res.json({ 
+        success: true, 
+        user: { 
+          id: user.id, 
+          name: user.name, 
+          role: user.role 
+        },
+        business: {
+          id: business.id,
+          name: business.name
+        }
+      });
+    } catch (error: any) {
+      console.error('Login error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  app.get("/api/auth/me", (req, res) => {
+    if ((req.session as any).userId) {
+      res.json({ 
+        success: true, 
+        user: { 
+          id: (req.session as any).userId,
+          role: (req.session as any).role 
+        }
+      });
+    } else {
+      res.status(401).json({ success: false, error: "Not authenticated" });
+    }
+  });
+
+  app.post("/api/auth/logout", (req, res) => {
+    req.session.destroy((err) => {
+      if (err) return res.status(500).json({ success: false, error: "Logout failed" });
+      res.json({ success: true });
+    });
+  });
+
+  // Business setup routes
+  app.post("/api/business/setup", async (req, res) => {
+    try {
+      const businessData = {
+        name: req.body.name,
+        email: req.body.email,
+        phone: req.body.phone || null,
+        address: req.body.address || null,
+        apiKey: `bw_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 10)}`
+      };
+
+      const business = await storage.createBusiness(businessData);
+      
+      const userData = {
+        businessId: business.id,
+        name: req.body.ownerName,
+        email: req.body.email,
+        role: 'owner' as const,
+        pin: req.body.ownerPin,
+        hourlyRate: req.body.ownerHourlyRate || "25.00"
+      };
+
+      const user = await storage.createUser(userData);
+
+      (req.session as any).userId = user.id;
+      (req.session as any).businessId = business.id;
+      (req.session as any).role = user.role;
+
+      res.json({ 
+        success: true, 
+        business, 
+        user,
+        message: `Business "${business.name}" created successfully!`
+      });
+    } catch (error: any) {
+      console.error('Business setup error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // Error handler
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
@@ -104,20 +175,15 @@ app.use((req, res, next) => {
   const { createServer } = await import("http");
   const server = createServer(app);
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
+  // Setup Vite only in development
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
   const port = 5000;
   server.listen(port, "0.0.0.0", () => {
-    log(`serving on port ${port}`);
+    log(`Clean server running on port ${port}`);
   });
 })();
