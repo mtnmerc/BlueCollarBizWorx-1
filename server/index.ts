@@ -261,9 +261,120 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Register standard application routes
+const registerAppRoutes = async () => {
+  // Authentication routes (session-based)
+  app.post("/auth/login", async (req, res) => {
+    try {
+      const { email, pin } = req.body;
+      const user = await storage.getUserByEmailAndPin(email, pin);
+      if (user) {
+        (req.session as any).userId = user.id;
+        (req.session as any).businessId = user.businessId;
+        (req.session as any).role = user.role;
+        res.json({ success: true, user });
+      } else {
+        res.status(401).json({ success: false, error: "Invalid email or PIN" });
+      }
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  app.post("/auth/logout", (req, res) => {
+    req.session.destroy((err) => {
+      if (err) return res.status(500).json({ success: false, error: "Logout failed" });
+      res.json({ success: true });
+    });
+  });
+
+  app.get("/auth/me", (req, res) => {
+    if ((req.session as any).userId) {
+      res.json({ success: true, user: { id: (req.session as any).userId } });
+    } else {
+      res.status(401).json({ success: false, error: "Not authenticated" });
+    }
+  });
+
+  // Business setup
+  app.post("/api/business/setup", async (req, res) => {
+    try {
+      const businessData = {
+        name: req.body.name,
+        email: req.body.email,
+        phone: req.body.phone || null,
+        address: req.body.address || null,
+        apiKey: `bw_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 10)}`
+      };
+
+      const business = await storage.createBusiness(businessData);
+      
+      const userData = {
+        businessId: business.id,
+        name: req.body.ownerName,
+        email: req.body.email,
+        role: 'owner' as const,
+        pin: req.body.ownerPin,
+        hourlyRate: req.body.ownerHourlyRate || "25.00"
+      };
+
+      const user = await storage.createUser(userData);
+
+      (req.session as any).userId = user.id;
+      (req.session as any).businessId = business.id;
+      (req.session as any).role = user.role;
+
+      res.json({ 
+        success: true, 
+        business, 
+        user,
+        message: `Business "${business.name}" created successfully!`
+      });
+    } catch (error: any) {
+      console.error('Business setup error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // Client management (session-based)
+  app.get("/api/clients", async (req, res) => {
+    try {
+      if (!(req.session as any).businessId) {
+        return res.status(401).json({ success: false, error: "Not authenticated" });
+      }
+      
+      const clients = await storage.getClientsByBusiness((req.session as any).businessId);
+      res.json({ success: true, data: clients });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  app.post("/api/clients", async (req, res) => {
+    try {
+      if (!(req.session as any).businessId) {
+        return res.status(401).json({ success: false, error: "Not authenticated" });
+      }
+
+      const clientData = {
+        ...req.body,
+        businessId: (req.session as any).businessId
+      };
+
+      const client = await storage.createClient(clientData);
+      res.json({ success: true, data: client });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+};
+
 console.log('ChatGPT integration routes registered successfully');
 
 (async () => {
+  // Register app routes
+  await registerAppRoutes();
+  
   // Error handler
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
