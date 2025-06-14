@@ -187,7 +187,7 @@ export class DatabaseStorage implements IStorage {
     return await this.db
       .select()
       .from(clients)
-      .where(and(eq(clients.businessId, businessId), eq(clients.isActive, true)));
+      .where(eq(clients.businessId, businessId));
   }
 
   async getClientById(id: number): Promise<Client | undefined> {
@@ -251,57 +251,15 @@ export class DatabaseStorage implements IStorage {
     return job;
   }
 
-  async getJobsByBusiness(businessId: number): Promise<any[]> {
+  async getJobsByBusiness(businessId: number): Promise<Job[]> {
     return await this.db
-      .select({
-        id: jobs.id,
-        businessId: jobs.businessId,
-        clientId: jobs.clientId,
-        clientName: clients.name,
-        assignedUserId: jobs.assignedUserId,
-        assignedUserName: users.firstName,
-        title: jobs.title,
-        description: jobs.description,
-        address: jobs.address,
-        scheduledStart: jobs.scheduledStart,
-        scheduledEnd: jobs.scheduledEnd,
-        actualStart: jobs.actualStart,
-        actualEnd: jobs.actualEnd,
-        status: jobs.status,
-        priority: jobs.priority,
-        jobType: jobs.jobType,
-        estimatedAmount: jobs.estimatedAmount,
-        actualAmount: jobs.actualAmount,
-        notes: jobs.notes,
-        createdAt: jobs.createdAt,
-        updatedAt: jobs.updatedAt,
-        isRecurring: jobs.isRecurring,
-        recurringPattern: jobs.recurringPattern,
-        recurringEndDate: jobs.recurringEndDate,
-        parentJobId: jobs.parentJobId,
-        isCompleted: jobs.isCompleted,
-        completedAt: jobs.completedAt,
-        materials: jobs.materials,
-        laborHours: jobs.laborHours,
-        equipmentUsed: jobs.equipmentUsed,
-        weatherConditions: jobs.weatherConditions,
-        clientSignature: jobs.clientSignature,
-        photos: jobs.photos,
-        invoiceId: jobs.invoiceId,
-        estimateId: jobs.estimateId,
-        timeTrackingEnabled: jobs.timeTrackingEnabled,
-        gpsTrackingEnabled: jobs.gpsTrackingEnabled,
-        requiresPhotos: jobs.requiresPhotos,
-        customFields: jobs.customFields
-      })
+      .select()
       .from(jobs)
-      .leftJoin(clients, eq(jobs.clientId, clients.id))
-      .leftJoin(users, eq(jobs.assignedUserId, users.id))
       .where(eq(jobs.businessId, businessId))
       .orderBy(desc(jobs.createdAt));
   }
 
-  async getJobsByDate(businessId: number, date: Date): Promise<any[]> {
+  async getJobsByDate(businessId: number, date: Date): Promise<Job[]> {
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);
     const endOfDay = new Date(date);
@@ -310,7 +268,6 @@ export class DatabaseStorage implements IStorage {
     return await this.db
       .select()
       .from(jobs)
-      .leftJoin(clients, eq(jobs.clientId, clients.id))
       .where(
         and(
           eq(jobs.businessId, businessId),
@@ -364,39 +321,8 @@ export class DatabaseStorage implements IStorage {
 
   async getEstimatesByBusiness(businessId: number): Promise<Estimate[]> {
     return await this.db
-      .select({
-        id: estimates.id,
-        businessId: estimates.businessId,
-        clientId: estimates.clientId,
-        clientName: clients.name,
-        estimateNumber: estimates.estimateNumber,
-        title: estimates.title,
-        description: estimates.description,
-        lineItems: estimates.lineItems,
-        subtotal: estimates.subtotal,
-        taxRate: estimates.taxRate,
-        taxAmount: estimates.taxAmount,
-        total: estimates.total,
-        status: estimates.status,
-        validUntil: estimates.validUntil,
-        notes: estimates.notes,
-        createdAt: estimates.createdAt,
-        shareToken: estimates.shareToken,
-        acceptedAt: estimates.acceptedAt,
-        rejectedAt: estimates.rejectedAt,
-        clientResponseNotes: estimates.clientResponseNotes,
-        depositRequired: estimates.depositRequired,
-        depositType: estimates.depositType,
-        depositAmount: estimates.depositAmount,
-        depositPercentage: estimates.depositPercentage,
-        followUpDate: estimates.followUpDate,
-        convertedToInvoice: estimates.convertedToInvoice,
-        invoiceId: estimates.invoiceId,
-        clientViewedAt: estimates.clientViewedAt,
-        clientRespondedAt: estimates.clientRespondedAt
-      })
+      .select()
       .from(estimates)
-      .leftJoin(clients, eq(estimates.clientId, clients.id))
       .where(eq(estimates.businessId, businessId))
       .orderBy(desc(estimates.createdAt));
   }
@@ -457,9 +383,8 @@ export class DatabaseStorage implements IStorage {
       taxAmount: estimate.taxAmount,
       total: estimate.total,
       status: 'sent',
-      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-      notes: estimate.notes,
-      paymentTerms: '30 days'
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      paymentNotes: estimate.clientResponse
     };
 
     const [invoice] = await this.db
@@ -471,9 +396,7 @@ export class DatabaseStorage implements IStorage {
     await this.db
       .update(estimates)
       .set({ 
-        convertedToInvoice: true,
-        invoiceId: invoice.id,
-        status: 'accepted'
+        status: 'converted'
       })
       .where(eq(estimates.id, estimateId));
 
@@ -491,41 +414,8 @@ export class DatabaseStorage implements IStorage {
 
   async getInvoicesByBusiness(businessId: number): Promise<Invoice[]> {
     return await this.db
-      .select({
-        id: invoices.id,
-        businessId: invoices.businessId,
-        clientId: invoices.clientId,
-        clientName: clients.name,
-        estimateId: invoices.estimateId,
-        invoiceNumber: invoices.invoiceNumber,
-        title: invoices.title,
-        description: invoices.description,
-        lineItems: invoices.lineItems,
-        subtotal: invoices.subtotal,
-        taxRate: invoices.taxRate,
-        taxAmount: invoices.taxAmount,
-        total: invoices.total,
-        status: invoices.status,
-        issueDate: invoices.issueDate,
-        dueDate: invoices.dueDate,
-        paidDate: invoices.paidDate,
-        notes: invoices.notes,
-        createdAt: invoices.createdAt,
-        shareToken: invoices.shareToken,
-        paymentTerms: invoices.paymentTerms,
-        lateFee: invoices.lateFee,
-        discountAmount: invoices.discountAmount,
-        discountPercentage: invoices.discountPercentage,
-        recurringInterval: invoices.recurringInterval,
-        nextDueDate: invoices.nextDueDate,
-        parentInvoiceId: invoices.parentInvoiceId,
-        stripePaymentIntentId: invoices.stripePaymentIntentId,
-        clientViewedAt: invoices.clientViewedAt,
-        remindersSent: invoices.remindersSent,
-        lastReminderSent: invoices.lastReminderSent
-      })
+      .select()
       .from(invoices)
-      .leftJoin(clients, eq(invoices.clientId, clients.id))
       .where(eq(invoices.businessId, businessId))
       .orderBy(desc(invoices.createdAt));
   }
@@ -581,8 +471,8 @@ export class DatabaseStorage implements IStorage {
         and(
           eq(invoices.businessId, businessId),
           eq(invoices.status, 'paid'),
-          gte(invoices.paidDate, startDate),
-          lte(invoices.paidDate, endDate)
+          gte(invoices.paidAt, startDate),
+          lte(invoices.paidAt, endDate)
         )
       );
 
@@ -603,14 +493,14 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(timeEntries)
       .where(eq(timeEntries.userId, userId))
-      .orderBy(desc(timeEntries.startTime));
+      .orderBy(desc(timeEntries.clockIn));
   }
 
   async getActiveTimeEntry(userId: number): Promise<TimeEntry | undefined> {
     const [timeEntry] = await this.db
       .select()
       .from(timeEntries)
-      .where(and(eq(timeEntries.userId, userId), isNull(timeEntries.endTime)));
+      .where(and(eq(timeEntries.userId, userId), isNull(timeEntries.clockOut)));
     return timeEntry || undefined;
   }
 
@@ -642,7 +532,7 @@ export class DatabaseStorage implements IStorage {
       .orderBy(timeEntries.startTime);
   }
 
-  async getTimeEntriesForPayroll(businessId: number, startDate?: Date, endDate?: Date, userId?: number): Promise<any[]> {
+  async getTimeEntriesForPayroll(businessId: number, startDate?: Date, endDate?: Date, userId?: number): Promise<TimeEntry[]> {
     let whereConditions = [eq(users.businessId, businessId)];
     
     if (startDate) {
@@ -658,27 +548,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     return await this.db
-      .select({
-        id: timeEntries.id,
-        userId: timeEntries.userId,
-        userName: users.firstName,
-        userLastName: users.lastName,
-        jobId: timeEntries.jobId,
-        startTime: timeEntries.startTime,
-        endTime: timeEntries.endTime,
-        totalHours: timeEntries.totalHours,
-        hourlyRate: timeEntries.hourlyRate,
-        totalPay: timeEntries.totalPay,
-        description: timeEntries.description,
-        breakTime: timeEntries.breakTime,
-        location: timeEntries.location,
-        approved: timeEntries.approved,
-        approvedBy: timeEntries.approvedBy,
-        approvedAt: timeEntries.approvedAt,
-        overtimeHours: timeEntries.overtimeHours,
-        overtimeRate: timeEntries.overtimeRate,
-        overtimePay: timeEntries.overtimePay
-      })
+      .select()
       .from(timeEntries)
       .innerJoin(users, eq(timeEntries.userId, users.id))
       .where(and(...whereConditions))
@@ -727,7 +597,7 @@ export class DatabaseStorage implements IStorage {
           eq(jobs.businessId, businessId),
           gte(jobs.scheduledStart, startOfDay),
           lte(jobs.scheduledStart, endOfDay),
-          eq(jobs.isCompleted, false)
+          eq(jobs.status, 'scheduled')
         )
       )
       .orderBy(jobs.scheduledStart);

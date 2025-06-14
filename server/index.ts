@@ -7,22 +7,8 @@ import { setupVite, serveStatic, log } from "./vite";
 import { registerGPTRoutes } from "./gpt-routes-final";
 
 const app = express();
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
-// Configure session
-app.use(session({
-  secret: process.env.SESSION_SECRET || "bizworx-session-secret-change-in-production",
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: false,
-    httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000,
-  },
-}));
-
-// Configure passport authentication
+// Configure passport BEFORE express setup
 passport.use(new LocalStrategy(
   { usernameField: 'email', passwordField: 'pin' },
   async (email: string, pin: string, done) => {
@@ -52,6 +38,23 @@ passport.deserializeUser(async (id: number, done) => {
   }
 });
 
+// Express middleware
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: false, limit: '10mb' }));
+
+// Session configuration
+app.use(session({
+  secret: process.env.SESSION_SECRET || "bizworx-session-secret-change-in-production",
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: false,
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000,
+  },
+}));
+
+// Initialize passport AFTER session
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -87,7 +90,7 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Register GPT routes first
+  // Register GPT routes
   registerGPTRoutes(app);
 
   // Authentication routes
@@ -116,7 +119,7 @@ app.use((req, res, next) => {
       const businessData = {
         name: req.body.name,
         email: req.body.email,
-        password: req.body.ownerPin, // Use PIN as password
+        password: req.body.ownerPin,
         phone: req.body.phone || null,
         address: req.body.address || null,
         apiKey: `bw_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 10)}`
@@ -124,7 +127,6 @@ app.use((req, res, next) => {
 
       const business = await storage.createBusiness(businessData);
       
-      // Split name into first and last
       const nameParts = req.body.ownerName.split(' ');
       const firstName = nameParts[0] || req.body.ownerName;
       const lastName = nameParts.slice(1).join(' ') || '';
@@ -315,4 +317,4 @@ app.use((req, res, next) => {
   server.listen(port, "0.0.0.0", () => {
     log(`serving on port ${port}`);
   });
-})();
+})();// Server restart trigger
