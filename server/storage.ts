@@ -177,11 +177,12 @@ class DatabaseStorage {
   }
 
   async getJobsByBusiness(businessId: number): Promise<Job[]> {
-    return await this.db
+    const result = await this.db
       .select()
       .from(jobs)
       .where(eq(jobs.businessId, businessId))
       .orderBy(desc(jobs.createdAt));
+    return result;
   }
 
   async getJobsByUser(userId: number): Promise<Job[]> {
@@ -201,6 +202,10 @@ class DatabaseStorage {
     return updatedJob;
   }
 
+  async deleteJob(id: number): Promise<void> {
+    await this.db.delete(jobs).where(eq(jobs.id, id));
+  }
+
   // Estimate methods
   async createEstimate(estimate: InsertEstimate): Promise<Estimate> {
     const [newEstimate] = await this.db
@@ -218,6 +223,27 @@ class DatabaseStorage {
       .orderBy(desc(estimates.createdAt));
   }
 
+  async getEstimateById(id: number): Promise<Estimate | undefined> {
+    const [estimate] = await this.db
+      .select()
+      .from(estimates)
+      .where(eq(estimates.id, id));
+    return estimate || undefined;
+  }
+
+  async updateEstimate(id: number, estimate: Partial<InsertEstimate>): Promise<Estimate> {
+    const [updatedEstimate] = await this.db
+      .update(estimates)
+      .set(estimate)
+      .where(eq(estimates.id, id))
+      .returning();
+    return updatedEstimate;
+  }
+
+  async deleteEstimate(id: number): Promise<void> {
+    await this.db.delete(estimates).where(eq(estimates.id, id));
+  }
+
   // Invoice methods
   async createInvoice(invoice: InsertInvoice): Promise<Invoice> {
     const [newInvoice] = await this.db
@@ -233,6 +259,27 @@ class DatabaseStorage {
       .from(invoices)
       .where(eq(invoices.businessId, businessId))
       .orderBy(desc(invoices.createdAt));
+  }
+
+  async getInvoiceById(id: number): Promise<Invoice | undefined> {
+    const [invoice] = await this.db
+      .select()
+      .from(invoices)
+      .where(eq(invoices.id, id));
+    return invoice || undefined;
+  }
+
+  async updateInvoice(id: number, invoice: Partial<InsertInvoice>): Promise<Invoice> {
+    const [updatedInvoice] = await this.db
+      .update(invoices)
+      .set(invoice)
+      .where(eq(invoices.id, id))
+      .returning();
+    return updatedInvoice;
+  }
+
+  async deleteInvoice(id: number): Promise<void> {
+    await this.db.delete(invoices).where(eq(invoices.id, id));
   }
 
   // Time entry methods
