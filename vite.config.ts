@@ -29,7 +29,8 @@ export default defineConfig({
     emptyOutDir: true,
   },
   server: {
-    port: 443, // Replit sometimes requires this for SSL
+    hmr: false,  // Disables hot reload but prevents cycling
+    port: 5000,
     host: "0.0.0.0",
     watch: {
       usePolling: true, // forces file watcher to pick up changes
