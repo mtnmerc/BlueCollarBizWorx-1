@@ -62,6 +62,14 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
+app.get("/", (req, res) => {
+  res.json({ 
+    status: "BizWorx Server Running", 
+    version: "1.0.0",
+    timestamp: new Date().toISOString() 
+  });
+});
+
 // Authentication routes
 app.post("/auth/login", passport.authenticate("local"), (req, res) => {
   res.json({ success: true, user: req.user });
