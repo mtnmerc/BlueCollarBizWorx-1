@@ -6,9 +6,58 @@ hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
 channel = "stable-24_05"
 
 [deployment]
+run = ["sh", "-c", "npm run dev"]
 deploymentTarget = "autoscale"
 build = ["sh", "-c", "npm run build"]
-run = ["sh", "-c", "npm run start"]
+run = ["sh", "-c", "npm run start & node mcp-server-http.js & wait"]
+
+[workflows]
+runButton = "Test MCP Server"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start application"
+
+[[workflows.workflow]]
+name = "Start application"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
+waitForPort = 5000
+
+[[workflows.workflow]]
+name = "Start MCP Server"
+author = 42121209
+mode = "parallel"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node mcp-server-http.js"
+
+[[workflows.workflow]]
+name = "Start REST MCP Server"
+author = 42121209
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node mcp-server-rest.js"
+
+[[workflows.workflow]]
+name = "Test MCP Server"
+author = 42121209
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node mcp-server-http.js"
 
 [[ports]]
 localPort = 3001
@@ -30,28 +79,3 @@ exposeLocalhost = true
 [[ports]]
 localPort = 8080
 externalPort = 8080
-
-[[ports]]
-localPort = 24678
-externalPort = 3000
-
-[workflows]
-runButton = "Start Application"
-
-[[workflows.workflow]]
-name = "Run"
-author = 42121209
-mode = "sequential"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "npm run dev"
-
-[[workflows.workflow]]
-name = "Start Application"
-author = 42121209
-mode = "sequential"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "npm run dev"

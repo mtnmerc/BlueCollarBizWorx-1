@@ -193,27 +193,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Estimate convert to invoice route
-  app.post("/api/estimates/:id/convert-to-invoice", async (req, res) => {
-    try {
-      if (!(req.session as any).businessId) {
-        return res.status(401).json({ success: false, error: "Not authenticated" });
-      }
-
-      const estimateId = parseInt(req.params.id);
-      const estimate = await storage.getEstimateById(estimateId);
-      
-      if (!estimate || estimate.businessId !== (req.session as any).businessId) {
-        return res.status(404).json({ success: false, error: "Estimate not found" });
-      }
-
-      const invoice = await storage.convertEstimateToInvoice(estimateId);
-      res.json({ success: true, data: invoice });
-    } catch (error: any) {
-      res.status(500).json({ success: false, error: error.message });
-    }
-  });
-
   // Invoice management routes
   app.get("/api/invoices", async (req, res) => {
     try {
@@ -223,23 +202,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const invoices = await storage.getInvoicesByBusiness((req.session as any).businessId);
       res.json({ success: true, data: invoices });
-    } catch (error: any) {
-      res.status(500).json({ success: false, error: error.message });
-    }
-  });
-
-  app.get("/api/invoices/stats", async (req, res) => {
-    try {
-      if (!(req.session as any).businessId) {
-        return res.status(401).json({ success: false, error: "Not authenticated" });
-      }
-
-      const currentDate = new Date();
-      const month = parseInt(req.query.month as string) || currentDate.getMonth() + 1;
-      const year = parseInt(req.query.year as string) || currentDate.getFullYear();
-
-      const stats = await storage.getRevenueStats((req.session as any).businessId, month, year);
-      res.json({ success: true, data: stats });
     } catch (error: any) {
       res.status(500).json({ success: false, error: error.message });
     }
