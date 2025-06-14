@@ -1,12 +1,8 @@
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
-import { storage } from "./storage";
-import { db } from "./db";
-import { estimates, invoices, clients } from "@shared/schema";
-import { eq, desc } from "drizzle-orm";
 import { setupVite, serveStatic, log } from "./vite";
+import { registerRoutes } from "./routes";
 import cors from 'cors';
-import { createProxyMiddleware } from 'http-proxy-middleware';
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
@@ -69,26 +65,9 @@ app.use((req, res, next) => {
     next();
   });
 
-
-
-  // MCP functionality consolidated in server/routes.ts
-
-
-
-
-
-  // GPT routes are registered in server/routes.ts to ensure proper authentication order
-
-  // Health check
-  app.get('/health', (req, res) => {
-    res.json({ 
-      status: 'ok', 
-      timestamp: new Date().toISOString(),
-      message: 'BizWorx server with direct GPT routes'
-    });
-  });
-
-  console.log('DIRECT SERVER: GPT routes registered with highest priority');
+  // Register all routes from routes.ts - this ensures proper route connectivity
+  await registerRoutes(app);
+  console.log('All routes registered successfully');
 
   // Add error handler after routes
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
