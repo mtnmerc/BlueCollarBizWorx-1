@@ -472,6 +472,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Team management routes
+  app.get("/api/team", async (req, res) => {
+    try {
+      if (!(req.session as any).businessId) {
+        return res.status(401).json({ success: false, error: "Not authenticated" });
+      }
+      
+      const teamMembers = await storage.getUsersByBusiness((req.session as any).businessId);
+      res.json({ success: true, data: teamMembers });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  app.post("/api/team", async (req, res) => {
+    try {
+      if (!(req.session as any).businessId) {
+        return res.status(401).json({ success: false, error: "Not authenticated" });
+      }
+
+      const userData = {
+        businessId: (req.session as any).businessId,
+        firstName: req.body.firstName,
+        lastName: req.body.lastName,
+        username: req.body.username,
+        pin: req.body.pin,
+        role: req.body.role || 'member',
+        email: req.body.email || null,
+        phone: req.body.phone || null,
+        isActive: true
+      };
+
+      const user = await storage.createUser(userData);
+      res.json({ success: true, data: user });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
   // Time tracking routes
   app.get("/api/time-entries", async (req, res) => {
     try {
