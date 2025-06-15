@@ -21,8 +21,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // Business setup routes
-  // Business registration endpoint
+  // Business registration endpoint - matches frontend expectation
   app.post("/api/auth/business/register", async (req, res) => {
     try {
       const { name, email, password, phone, address } = req.body;
@@ -36,23 +35,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const businessData = {
         name,
         email,
-        password, // Add password to schema
+        password,
         phone: phone || null,
         address: address || null,
         apiKey: `bw_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 10)}`
       };
 
-      console.log('Creating business with data:', JSON.stringify(businessData, null, 2));
       const business = await storage.createBusiness(businessData);
       
-      // Set session for setup
+      // Set session for setup mode - business exists but no admin user yet
       (req.session as any).businessId = business.id;
-      (req.session as any).pendingSetup = true;
+      (req.session as any).setupMode = true;
 
       res.json({ 
         success: true, 
         business,
-        message: "Business registered successfully. Please complete setup."
+        setupMode: true,
+        message: "Business registered successfully"
       });
     } catch (error: any) {
       console.error('Business registration error:', error);
@@ -60,7 +59,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Business login endpoint
+  // Business login endpoint - for existing businesses
   app.post("/api/auth/business/login", async (req, res) => {
     try {
       const { email, password } = req.body;
@@ -77,20 +76,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       (req.session as any).businessId = business.id;
 
       if (hasAdmin) {
-        // Business setup is complete, but user still needs to login with PIN
+        // Business setup is complete, user can proceed to PIN login
         res.json({ 
           success: true, 
           business,
-          message: "Business login successful. Please enter your PIN."
+          message: "Business login successful"
         });
       } else {
-        // Business exists but no admin user created yet
-        (req.session as any).pendingSetup = true;
+        // Business exists but no admin user created yet - enter setup mode
+        (req.session as any).setupMode = true;
         res.json({ 
           success: true, 
           business,
-          requiresSetup: true,
-          message: "Business login successful. Please complete setup."
+          setupMode: true,
+          message: "Business login successful"
         });
       }
     } catch (error: any) {
@@ -99,13 +98,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // User setup endpoint (after business registration)
+  // Admin setup endpoint - creates the first admin user after business registration
   app.post("/api/auth/setup", async (req, res) => {
     try {
       const { firstName, lastName, pin } = req.body;
       const businessId = (req.session as any).businessId;
 
-      if (!businessId || !(req.session as any).pendingSetup) {
+      if (!businessId || !(req.session as any).setupMode) {
         return res.status(401).json({ success: false, error: "Invalid setup session" });
       }
 
@@ -114,23 +113,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ success: false, error: "Business not found" });
       }
 
-      // Create user with correct schema fields - all required fields included
+      // Create admin user with correct schema fields
       const userData = {
         businessId,
-        username: business.email, // Use business email as username
-        pin,
-        role: 'owner' as const,
+        username: `${firstName}.${lastName}`.toLowerCase(),
         firstName,
         lastName,
-        phone: null,
-        email: business.email
+        email: business.email,
+        role: 'owner' as const,
+        pin,
+        phone: null
       };
 
       const user = await storage.createUser(userData);
 
       (req.session as any).userId = user.id;
       (req.session as any).role = user.role;
-      delete (req.session as any).pendingSetup;
+      delete (req.session as any).setupMode;
 
       res.json({ 
         success: true, 
@@ -144,7 +143,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // User login endpoint (PIN-based)
+  // User PIN login endpoint - for team members after business login
   app.post("/api/auth/user/login", async (req, res) => {
     try {
       const { pin } = req.body;

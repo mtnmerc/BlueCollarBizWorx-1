@@ -98,6 +98,7 @@ export class DatabaseStorage implements IStorage {
   db = db;
   // Business methods
   async createBusiness(insertBusiness: InsertBusiness): Promise<Business> {
+    console.log('Storage: Creating business with data:', JSON.stringify(insertBusiness, null, 2));
     const [business] = await this.db
       .insert(businesses)
       .values(insertBusiness)
