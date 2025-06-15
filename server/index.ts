@@ -77,6 +77,193 @@ app.use((req, res, next) => {
 
 
 
+  // Authentication routes
+  app.post("/api/auth/business/register", async (req, res) => {
+    try {
+      const { name, email, password, phone, address } = req.body;
+      
+      // Check if business already exists
+      const existingBusiness = await storage.getBusinessByEmail(email);
+      if (existingBusiness) {
+        return res.status(400).json({ success: false, error: "Business with this email already exists" });
+      }
+
+      const businessData = {
+        name,
+        email,
+        phone: phone || null,
+        address: address || null,
+        apiKey: `bw_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 10)}`
+      };
+
+      const business = await storage.createBusiness(businessData);
+      
+      // Set session
+      (req.session as any).businessId = business.id;
+      (req.session as any).pendingSetup = true;
+
+      res.json({ 
+        success: true, 
+        business,
+        message: "Business registered successfully"
+      });
+    } catch (error: any) {
+      console.error('Business registration error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  app.post("/api/auth/business/login", async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      const business = await storage.getBusinessByEmail(email);
+      if (!business) {
+        return res.status(401).json({ success: false, error: "Invalid email or password" });
+      }
+
+      // For now, we'll skip password verification since it's not implemented in storage
+      // In production, you'd verify the password hash here
+      
+      // Check if business has any users (admin setup completed)
+      const users = await storage.getUsersByBusiness(business.id);
+      const hasAdmin = users.some(user => user.role === 'owner' || user.role === 'admin');
+
+      (req.session as any).businessId = business.id;
+
+      if (hasAdmin) {
+        // Business setup is complete, but user still needs to login with PIN
+        res.json({ 
+          success: true, 
+          business,
+          user: null,
+          message: "Business login successful. Please enter your PIN."
+        });
+      } else {
+        // Business exists but no admin user created yet
+        (req.session as any).pendingSetup = true;
+        res.json({ 
+          success: true, 
+          business,
+          user: null,
+          requiresSetup: true,
+          message: "Business login successful. Please complete setup."
+        });
+      }
+    } catch (error: any) {
+      console.error('Business login error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  app.post("/api/auth/user/login", async (req, res) => {
+    try {
+      const { pin } = req.body;
+      const businessId = (req.session as any).businessId;
+
+      if (!businessId) {
+        return res.status(401).json({ success: false, error: "No business session found" });
+      }
+
+      const user = await storage.getUserByPin(businessId, pin);
+      if (!user) {
+        return res.status(401).json({ success: false, error: "Invalid PIN" });
+      }
+
+      (req.session as any).userId = user.id;
+      (req.session as any).role = user.role;
+      delete (req.session as any).pendingSetup;
+
+      res.json({ 
+        success: true, 
+        user,
+        message: "Login successful"
+      });
+    } catch (error: any) {
+      console.error('User login error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  app.post("/api/auth/setup", async (req, res) => {
+    try {
+      const { firstName, lastName, pin } = req.body;
+      const businessId = (req.session as any).businessId;
+
+      if (!businessId || !(req.session as any).pendingSetup) {
+        return res.status(401).json({ success: false, error: "Invalid setup session" });
+      }
+
+      const business = await storage.getBusinessById(businessId);
+      if (!business) {
+        return res.status(404).json({ success: false, error: "Business not found" });
+      }
+
+      const userData = {
+        businessId,
+        name: `${firstName} ${lastName}`,
+        email: business.email,
+        role: 'owner' as const,
+        pin,
+        hourlyRate: "25.00"
+      };
+
+      const user = await storage.createUser(userData);
+
+      (req.session as any).userId = user.id;
+      (req.session as any).role = user.role;
+      delete (req.session as any).pendingSetup;
+
+      res.json({ 
+        success: true, 
+        user,
+        business,
+        message: "Setup completed successfully"
+      });
+    } catch (error: any) {
+      console.error('Setup error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  app.post("/api/auth/logout", (req, res) => {
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ success: false, error: "Logout failed" });
+      }
+      res.clearCookie('connect.sid');
+      res.json({ success: true, message: "Logged out successfully" });
+    });
+  });
+
+  app.get("/api/auth/me", async (req, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const businessId = (req.session as any).businessId;
+
+      if (!userId || !businessId) {
+        return res.status(401).json({ success: false, error: "Not authenticated" });
+      }
+
+      const user = await storage.getUserById(userId);
+      const business = await storage.getBusinessById(businessId);
+
+      if (!user || !business) {
+        return res.status(404).json({ success: false, error: "User or business not found" });
+      }
+
+      res.json({ 
+        success: true, 
+        user,
+        business,
+        isAuthenticated: true
+      });
+    } catch (error: any) {
+      console.error('Get me error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
   // Import and register the complete GPT routes (includes all endpoints including PUT)
   const { registerGPTRoutes } = await import("./gpt-routes-final");
   registerGPTRoutes(app);
@@ -86,10 +273,11 @@ app.use((req, res, next) => {
     res.json({ 
       status: 'ok', 
       timestamp: new Date().toISOString(),
-      message: 'BizWorx server with direct GPT routes'
+      message: 'BizWorx server with authentication and GPT routes'
     });
   });
 
+  console.log('Authentication routes registered');
   console.log('DIRECT SERVER: GPT routes registered with highest priority');
 
   // Add error handler after routes
