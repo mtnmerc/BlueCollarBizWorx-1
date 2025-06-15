@@ -351,5 +351,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+  
+  const PORT = process.env.PORT || 5000;
+  httpServer.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+  
   return httpServer;
 }

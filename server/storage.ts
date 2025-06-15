@@ -716,31 +716,7 @@ export class DatabaseStorage implements IStorage {
     return result || null;
   }
 
-  async getBusinessByEmail(email: string) {
-    const [business] = await db.select().from(businesses).where(eq(businesses.email, email));
-    return business;
-  }
 
-  async getBusinessById(id: number) {
-    const [business] = await db.select().from(businesses).where(eq(businesses.id, id));
-    return business;
-  }
-
-  async getUserById(id: number) {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
-  }
-
-  async getUserByPin(businessId: number, pin: string) {
-    const [user] = await db.select().from(users).where(
-      and(eq(users.businessId, businessId), eq(users.pin, pin))
-    );
-    return user;
-  }
-
-  async getUsersByBusiness(businessId: number) {
-    return await db.select().from(users).where(eq(users.businessId, businessId));
-  }
 }
 
 export const storage = new DatabaseStorage();
