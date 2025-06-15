@@ -24,7 +24,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Business registration endpoint - matches frontend expectation
   app.post("/api/auth/business/register", async (req, res) => {
     try {
+      console.log('Registration request body:', JSON.stringify(req.body, null, 2));
       const { name, email, password, phone, address } = req.body;
+      console.log('Extracted fields:', { name, email, password: password ? '[SET]' : '[MISSING]', phone, address });
       
       // Check if business already exists
       const existingBusiness = await storage.getBusinessByEmail(email);
@@ -40,6 +42,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         address: address || null,
         apiKey: `bw_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 10)}`
       };
+      console.log('Business data to create:', JSON.stringify(businessData, null, 2));
 
       const business = await storage.createBusiness(businessData);
       
