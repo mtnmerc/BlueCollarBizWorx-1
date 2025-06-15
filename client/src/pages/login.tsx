@@ -48,7 +48,7 @@ export default function Login() {
     } : {
       email: "",
       password: "",
-      rememberMe: true,
+      rememberMe: false,
     },
   });
 
@@ -56,23 +56,19 @@ export default function Login() {
     resolver: zodResolver(userLoginSchema),
     defaultValues: {
       pin: "",
-      rememberMe: true,
+      rememberMe: false,
     },
   });
 
   const businessMutation = useMutation({
     mutationFn: isRegister ? authApi.registerBusiness : authApi.loginBusiness,
     onSuccess: (data) => {
-      if (isRegister) {
-        // New business registration - redirect to setup
+      if (isRegister || data.setupMode) {
+        // New business registration or existing business needing setup - redirect to setup
         queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
         window.location.href = "/business-setup";
-      } else if (data.user) {
-        // Existing business with admin user already created
-        queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
-        window.location.href = "/";
       } else {
-        // Existing business but no admin user yet - go to PIN login
+        // Existing business with admin user - go to PIN login
         setStep("user");
       }
       toast({
