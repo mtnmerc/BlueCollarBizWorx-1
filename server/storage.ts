@@ -98,7 +98,6 @@ export class DatabaseStorage implements IStorage {
   db = db;
   // Business methods
   async createBusiness(insertBusiness: InsertBusiness): Promise<Business> {
-    console.log('Storage: Creating business with data:', JSON.stringify(insertBusiness, null, 2));
     const [business] = await this.db
       .insert(businesses)
       .values(insertBusiness)
@@ -674,6 +673,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Additional business and job management methods
+  async getAllBusinesses(): Promise<Business[]> {
+    return await this.db.select().from(businesses);
+  }
 
   async getIncompleteJobsForDate(businessId: number, date: Date): Promise<Job[]> {
     const nextDay = new Date(date);
@@ -712,8 +714,6 @@ export class DatabaseStorage implements IStorage {
     const [result] = await this.db.select().from(businesses).where(eq(businesses.apiKey, apiKey));
     return result || null;
   }
-
-
 }
 
 export const storage = new DatabaseStorage();
