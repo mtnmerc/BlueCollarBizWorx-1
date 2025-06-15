@@ -25,7 +25,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/business/register", async (req, res) => {
     try {
       console.log('Registration request body:', JSON.stringify(req.body, null, 2));
-      const { name, email, password, phone, address } = req.body;
+      const { name, businessName, email, password, phone, address } = req.body;
+      const businessNameToUse = name || businessName;
       console.log('Extracted fields:', { name, email, password: password ? '[SET]' : '[MISSING]', phone, address });
       
       // Check if business already exists
@@ -35,7 +36,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const businessData = {
-        name,
+        name: businessNameToUse,
         email,
         password,
         phone: phone || null,
