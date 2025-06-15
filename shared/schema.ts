@@ -11,7 +11,7 @@ export const businesses = pgTable("businesses", {
   phone: text("phone"),
   address: text("address"),
   logo: text("logo"), // URL or base64
-  password: text("password"), // Make password optional for now
+  password: text("password").notNull(),
   apiKey: text("api_key").unique(), // For external API access
   createdAt: timestamp("created_at").defaultNow(),
 });

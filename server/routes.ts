@@ -42,6 +42,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         apiKey: `bw_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 10)}`
       };
 
+      console.log('Creating business with data:', JSON.stringify(businessData, null, 2));
       const business = await storage.createBusiness(businessData);
       
       // Set session for setup
@@ -113,15 +114,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ success: false, error: "Business not found" });
       }
 
-      // Create user with correct schema fields
+      // Create user with correct schema fields - all required fields included
       const userData = {
         businessId,
         username: business.email, // Use business email as username
+        pin,
+        role: 'owner' as const,
         firstName,
         lastName,
-        email: business.email,
-        role: 'owner' as const,
-        pin
+        phone: null,
+        email: business.email
       };
 
       const user = await storage.createUser(userData);
