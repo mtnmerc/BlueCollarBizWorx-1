@@ -337,12 +337,6 @@ app.get('/health', (req, res) => {
 
 console.log('FINAL SERVER: GPT routes registered with highest priority');
 
-if (import.meta.env.PROD) {
-  serveStatic(app);
-} else {
-  setupVite(app);
-}
-
 // Error handling middleware
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   const status = err.status || err.statusCode || 500;
@@ -355,8 +349,18 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   res.status(status).json({ message });
 });
 
+const { createServer } = await import("http");
+const server = createServer(app);
+
+// Setup Vite or static serving after creating the server
+if (process.env.NODE_ENV === "production") {
+  serveStatic(app);
+} else {
+  await setupVite(app, server);
+}
+
 const port = 5000;
-const server = app.listen(port, "0.0.0.0", () => {
+server.listen(port, "0.0.0.0", () => {
   log(`Server running on port ${port}`);
 });
 
