@@ -27,7 +27,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Registration request body:', JSON.stringify(req.body, null, 2));
       const { name, businessName, email, password, phone, address } = req.body;
       const businessNameToUse = name || businessName;
-      console.log('Extracted fields:', { name, email, password: password ? '[SET]' : '[MISSING]', phone, address });
+      console.log('Extracted fields:', { name, businessName, businessNameToUse, email, password: password ? '[SET]' : '[MISSING]', phone, address });
+      
+      if (!businessNameToUse) {
+        return res.status(400).json({ success: false, error: "Business name is required" });
+      }
+      if (!email) {
+        return res.status(400).json({ success: false, error: "Email is required" });
+      }
+      if (!password) {
+        return res.status(400).json({ success: false, error: "Password is required" });
+      }
       
       // Check if business already exists
       const existingBusiness = await storage.getBusinessByEmail(email);
