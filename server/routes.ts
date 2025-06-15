@@ -336,7 +336,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ success: false, error: "Not authenticated" });
       }
       
-      const jobs = await storage.getJobsByBusiness((req.session as any).businessId);
+      const clientId = req.query.clientId;
+      let jobs;
+      
+      if (clientId) {
+        jobs = await storage.getJobsByClient(parseInt(clientId as string));
+        // Filter to ensure business ownership
+        jobs = jobs.filter((job: any) => job.businessId === (req.session as any).businessId);
+      } else {
+        jobs = await storage.getJobsByBusiness((req.session as any).businessId);
+      }
+      
       res.json({ success: true, data: jobs });
     } catch (error: any) {
       res.status(500).json({ success: false, error: error.message });
@@ -366,6 +376,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       const job = await storage.createJob(jobData);
+      res.json({ success: true, data: job });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  app.get("/api/jobs/:id", async (req, res) => {
+    try {
+      if (!(req.session as any).businessId) {
+        return res.status(401).json({ success: false, error: "Not authenticated" });
+      }
+
+      const jobId = parseInt(req.params.id);
+      const job = await storage.getJobById(jobId);
+      
+      if (!job || job.businessId !== (req.session as any).businessId) {
+        return res.status(404).json({ success: false, error: "Job not found" });
+      }
+
       res.json({ success: true, data: job });
     } catch (error: any) {
       res.status(500).json({ success: false, error: error.message });
@@ -407,8 +436,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ success: false, error: "Not authenticated" });
       }
       
-      const invoices = await storage.getInvoicesByBusiness((req.session as any).businessId);
+      const clientId = req.query.clientId;
+      let invoices;
+      
+      if (clientId) {
+        invoices = await storage.getInvoicesByClient(parseInt(clientId as string));
+        // Filter to ensure business ownership
+        invoices = invoices.filter((invoice: any) => invoice.businessId === (req.session as any).businessId);
+      } else {
+        invoices = await storage.getInvoicesByBusiness((req.session as any).businessId);
+      }
+      
       res.json({ success: true, data: invoices });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  app.get("/api/invoices/:id", async (req, res) => {
+    try {
+      if (!(req.session as any).businessId) {
+        return res.status(401).json({ success: false, error: "Not authenticated" });
+      }
+
+      const invoiceId = parseInt(req.params.id);
+      const invoice = await storage.getInvoiceById(invoiceId);
+      
+      if (!invoice || invoice.businessId !== (req.session as any).businessId) {
+        return res.status(404).json({ success: false, error: "Invoice not found" });
+      }
+
+      res.json({ success: true, data: invoice });
     } catch (error: any) {
       res.status(500).json({ success: false, error: error.message });
     }

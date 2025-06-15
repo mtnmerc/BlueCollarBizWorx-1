@@ -46,6 +46,7 @@ export interface IStorage {
   // Job methods
   createJob(job: InsertJob): Promise<Job>;
   getJobsByBusiness(businessId: number): Promise<Job[]>;
+  getJobsByClient(clientId: number): Promise<Job[]>;
   getJobsByDate(businessId: number, date: Date): Promise<Job[]>;
   getJobById(id: number): Promise<Job | undefined>;
   updateJob(id: number, job: Partial<InsertJob>): Promise<Job>;
@@ -65,6 +66,7 @@ export interface IStorage {
   // Invoice methods
   createInvoice(invoice: InsertInvoice): Promise<Invoice>;
   getInvoicesByBusiness(businessId: number): Promise<Invoice[]>;
+  getInvoicesByClient(clientId: number): Promise<Invoice[]>;
   getInvoiceById(id: number): Promise<Invoice | undefined>;
   getInvoiceByShareToken(shareToken: string): Promise<Invoice | undefined>;
   updateInvoice(id: number, invoice: Partial<InsertInvoice>): Promise<Invoice>;
@@ -288,6 +290,14 @@ export class DatabaseStorage implements IStorage {
     await this.db.delete(jobs).where(eq(jobs.id, id));
   }
 
+  async getJobsByClient(clientId: number): Promise<Job[]> {
+    return await this.db
+      .select()
+      .from(jobs)
+      .where(eq(jobs.clientId, clientId))
+      .orderBy(desc(jobs.createdAt));
+  }
+
   async getJobsByDateRange(businessId: number, startDate: Date, endDate: Date): Promise<Job[]> {
     return await this.db
       .select()
@@ -402,6 +412,14 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(invoices)
       .where(eq(invoices.businessId, businessId))
+      .orderBy(desc(invoices.createdAt));
+  }
+
+  async getInvoicesByClient(clientId: number): Promise<Invoice[]> {
+    return await this.db
+      .select()
+      .from(invoices)
+      .where(eq(invoices.clientId, clientId))
       .orderBy(desc(invoices.createdAt));
   }
 

@@ -23,20 +23,25 @@ export default function ClientDetail() {
   const { id } = useParams();
   const { toast } = useToast();
 
-  const { data: client, isLoading } = useQuery({
+  const { data: clientResponse, isLoading } = useQuery({
     queryKey: ["/api/clients", id],
     queryFn: () => fetch(`/api/clients/${id}`).then(res => res.json()),
   });
 
-  const { data: jobs = [] } = useQuery({
+  const { data: jobsResponse } = useQuery({
     queryKey: ["/api/jobs", "client", id],
     queryFn: () => fetch(`/api/jobs?clientId=${id}`).then(res => res.json()),
   });
 
-  const { data: invoices = [] } = useQuery({
+  const { data: invoicesResponse } = useQuery({
     queryKey: ["/api/invoices", "client", id],
     queryFn: () => fetch(`/api/invoices?clientId=${id}`).then(res => res.json()),
   });
+
+  // Extract data from API responses
+  const client = clientResponse?.data || clientResponse;
+  const jobs = jobsResponse?.data || jobsResponse || [];
+  const invoices = invoicesResponse?.data || invoicesResponse || [];
 
   const handleMapClick = () => {
     if (client?.address) {
