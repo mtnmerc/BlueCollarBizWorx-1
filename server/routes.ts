@@ -263,6 +263,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/clients/:id", async (req, res) => {
+    try {
+      if (!(req.session as any).businessId) {
+        return res.status(401).json({ success: false, error: "Not authenticated" });
+      }
+
+      const clientId = parseInt(req.params.id);
+      const client = await storage.getClientById(clientId);
+      
+      if (!client || client.businessId !== (req.session as any).businessId) {
+        return res.status(404).json({ success: false, error: "Client not found" });
+      }
+
+      res.json({ success: true, data: client });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  app.put("/api/clients/:id", async (req, res) => {
+    try {
+      if (!(req.session as any).businessId) {
+        return res.status(401).json({ success: false, error: "Not authenticated" });
+      }
+
+      const clientId = parseInt(req.params.id);
+      const existingClient = await storage.getClientById(clientId);
+      
+      if (!existingClient || existingClient.businessId !== (req.session as any).businessId) {
+        return res.status(404).json({ success: false, error: "Client not found" });
+      }
+
+      const updateData: any = {};
+      if (req.body.name !== undefined) updateData.name = req.body.name;
+      if (req.body.email !== undefined) updateData.email = req.body.email;
+      if (req.body.phone !== undefined) updateData.phone = req.body.phone;
+      if (req.body.address !== undefined) updateData.address = req.body.address;
+      if (req.body.notes !== undefined) updateData.notes = req.body.notes;
+
+      const updatedClient = await storage.updateClient(clientId, updateData);
+      res.json({ success: true, data: updatedClient });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  app.delete("/api/clients/:id", async (req, res) => {
+    try {
+      if (!(req.session as any).businessId) {
+        return res.status(401).json({ success: false, error: "Not authenticated" });
+      }
+
+      const clientId = parseInt(req.params.id);
+      const existingClient = await storage.getClientById(clientId);
+      
+      if (!existingClient || existingClient.businessId !== (req.session as any).businessId) {
+        return res.status(404).json({ success: false, error: "Client not found" });
+      }
+
+      await storage.deleteClient(clientId);
+      res.json({ success: true, message: "Client deleted successfully" });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
   // Job management routes
   app.get("/api/jobs", async (req, res) => {
     try {
