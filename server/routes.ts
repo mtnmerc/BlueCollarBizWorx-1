@@ -54,6 +54,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         apiKey: `bw_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 10)}`
       };
       console.log('Business data to create:', JSON.stringify(businessData, null, 2));
+      console.log('Business name being passed:', businessData.name);
 
       const business = await storage.createBusiness(businessData);
       
