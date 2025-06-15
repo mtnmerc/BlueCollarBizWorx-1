@@ -5,83 +5,208 @@ import { storage } from "./storage";
 import { db } from "./db";
 import { estimates, invoices, clients, jobs, services, timeEntries, users } from "@shared/schema";
 import { eq, desc, and, gte, lte, sql, isNull } from "drizzle-orm";
-import passport from "passport";
-
 export async function registerRoutes(app: Express): Promise<Server> {
   
-  // =============================================================================
-  // SOLUTION: Register ONLY schema-compliant GPT routes - eliminates duplicates
-  // =============================================================================
-  
-  console.log('=== REGISTERING CLEAN GPT ROUTES FIRST ===');
+  // Register GPT routes first
+  console.log('Registering GPT routes...');
   registerGPTRoutes(app);
-  console.log('=== GPT ROUTES REGISTERED SUCCESSFULLY ===');
+  console.log('GPT routes registered successfully');
 
   // Health check endpoint
   app.get('/health', (req, res) => {
     res.json({ 
       status: 'ok', 
       timestamp: new Date().toISOString(),
-      message: 'BizWorx server running with clean GPT routes'
+      message: 'BizWorx server running'
     });
-  });
-
-  // Authentication routes
-  app.post("/auth/login", passport.authenticate("local"), (req, res) => {
-    res.json({ success: true, user: req.user });
-  });
-
-  app.post("/auth/logout", (req, res) => {
-    req.logout((err) => {
-      if (err) return res.status(500).json({ success: false, error: "Logout failed" });
-      res.json({ success: true });
-    });
-  });
-
-  app.get("/auth/me", (req, res) => {
-    if (req.isAuthenticated()) {
-      res.json({ success: true, user: req.user });
-    } else {
-      res.status(401).json({ success: false, error: "Not authenticated" });
-    }
   });
 
   // Business setup routes
-  app.post("/api/business/setup", async (req, res) => {
+  // Business registration endpoint
+  app.post("/api/auth/business/register", async (req, res) => {
     try {
+      const { name, email, password, phone, address } = req.body;
+      
+      // Check if business already exists
+      const existingBusiness = await storage.getBusinessByEmail(email);
+      if (existingBusiness) {
+        return res.status(400).json({ success: false, error: "Business with this email already exists" });
+      }
+
       const businessData = {
-        name: req.body.name,
-        email: req.body.email,
-        phone: req.body.phone || null,
-        address: req.body.address || null,
+        name,
+        email,
+        password, // Add password to schema
+        phone: phone || null,
+        address: address || null,
         apiKey: `bw_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 10)}`
       };
 
       const business = await storage.createBusiness(businessData);
       
+      // Set session for setup
+      (req.session as any).businessId = business.id;
+      (req.session as any).pendingSetup = true;
+
+      res.json({ 
+        success: true, 
+        business,
+        message: "Business registered successfully. Please complete setup."
+      });
+    } catch (error: any) {
+      console.error('Business registration error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // Business login endpoint
+  app.post("/api/auth/business/login", async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      const business = await storage.getBusinessByEmail(email);
+      if (!business || business.password !== password) {
+        return res.status(401).json({ success: false, error: "Invalid email or password" });
+      }
+
+      // Check if business has any users (admin setup completed)
+      const users = await storage.getUsersByBusiness(business.id);
+      const hasAdmin = users.some(user => user.role === 'owner' || user.role === 'admin');
+
+      (req.session as any).businessId = business.id;
+
+      if (hasAdmin) {
+        // Business setup is complete, but user still needs to login with PIN
+        res.json({ 
+          success: true, 
+          business,
+          message: "Business login successful. Please enter your PIN."
+        });
+      } else {
+        // Business exists but no admin user created yet
+        (req.session as any).pendingSetup = true;
+        res.json({ 
+          success: true, 
+          business,
+          requiresSetup: true,
+          message: "Business login successful. Please complete setup."
+        });
+      }
+    } catch (error: any) {
+      console.error('Business login error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // User setup endpoint (after business registration)
+  app.post("/api/auth/setup", async (req, res) => {
+    try {
+      const { firstName, lastName, pin } = req.body;
+      const businessId = (req.session as any).businessId;
+
+      if (!businessId || !(req.session as any).pendingSetup) {
+        return res.status(401).json({ success: false, error: "Invalid setup session" });
+      }
+
+      const business = await storage.getBusinessById(businessId);
+      if (!business) {
+        return res.status(404).json({ success: false, error: "Business not found" });
+      }
+
+      // Create user with correct schema fields
       const userData = {
-        businessId: business.id,
-        name: req.body.ownerName,
-        email: req.body.email,
+        businessId,
+        username: business.email, // Use business email as username
+        firstName,
+        lastName,
+        email: business.email,
         role: 'owner' as const,
-        pin: req.body.ownerPin,
-        hourlyRate: req.body.ownerHourlyRate || "25.00"
+        pin
       };
 
       const user = await storage.createUser(userData);
 
       (req.session as any).userId = user.id;
-      (req.session as any).businessId = business.id;
+      (req.session as any).role = user.role;
+      delete (req.session as any).pendingSetup;
+
+      res.json({ 
+        success: true, 
+        user,
+        business,
+        message: "Setup completed successfully"
+      });
+    } catch (error: any) {
+      console.error('Setup error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // User login endpoint (PIN-based)
+  app.post("/api/auth/user/login", async (req, res) => {
+    try {
+      const { pin } = req.body;
+      const businessId = (req.session as any).businessId;
+
+      if (!businessId) {
+        return res.status(401).json({ success: false, error: "No business session found" });
+      }
+
+      const user = await storage.getUserByPin(businessId, pin);
+      if (!user) {
+        return res.status(401).json({ success: false, error: "Invalid PIN" });
+      }
+
+      (req.session as any).userId = user.id;
       (req.session as any).role = user.role;
 
       res.json({ 
         success: true, 
-        business, 
         user,
-        message: `Business "${business.name}" created successfully!`
+        message: "Login successful"
       });
     } catch (error: any) {
-      console.error('Business setup error:', error);
+      console.error('User login error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // Logout endpoint
+  app.post("/api/auth/logout", (req, res) => {
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ success: false, error: "Logout failed" });
+      }
+      res.clearCookie('connect.sid');
+      res.json({ success: true, message: "Logged out successfully" });
+    });
+  });
+
+  // Get current user endpoint
+  app.get("/api/auth/me", async (req, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const businessId = (req.session as any).businessId;
+
+      if (!userId || !businessId) {
+        return res.status(401).json({ success: false, error: "Not authenticated" });
+      }
+
+      const user = await storage.getUserById(userId);
+      const business = await storage.getBusinessById(businessId);
+
+      if (!user || !business) {
+        return res.status(404).json({ success: false, error: "User or business not found" });
+      }
+
+      res.json({ 
+        success: true, 
+        user,
+        business,
+        isAuthenticated: true
+      });
+    } catch (error: any) {
+      console.error('Get me error:', error);
       res.status(500).json({ success: false, error: error.message });
     }
   });
