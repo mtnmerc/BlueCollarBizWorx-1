@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { registerGPTRoutes } from "./gpt-routes-final";
-import { storage } from "./storage";
+import { storage } from "./storage-clean";
 import { db } from "./db";
 import { estimates, invoices, clients, jobs, services, timeEntries, users } from "@shared/schema";
 import { eq, desc, and, gte, lte, sql, isNull } from "drizzle-orm";
@@ -352,7 +352,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const httpServer = createServer(app);
   
-  const PORT = process.env.PORT || 5000;
+  const PORT = Number(process.env.PORT) || 5000;
   httpServer.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on port ${PORT}`);
   });

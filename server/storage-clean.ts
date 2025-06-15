@@ -84,18 +84,18 @@ export interface IStorage {
   getPayrollSettings(businessId: number): Promise<PayrollSettings | undefined>;
   updatePayrollSettings(businessId: number, settings: Partial<InsertPayrollSettings>): Promise<PayrollSettings>;
 
-  // Additional business and job management methods
-  getAllBusinesses(): Promise<Business[]>;
-  getIncompleteJobsForDate(businessId: number, date: Date): Promise<Job[]>;
-
   // API Key Management methods
   generateApiKey(businessId: number): Promise<string>;
   revokeApiKey(businessId: number): Promise<void>;
   getBusinessByApiKey(apiKey: string): Promise<Business | null>;
+  
+  // Additional methods
+  getIncompleteJobsForDate(businessId: number, date: Date): Promise<Job[]>;
 }
 
 export class DatabaseStorage implements IStorage {
   db = db;
+
   // Business methods
   async createBusiness(insertBusiness: InsertBusiness): Promise<Business> {
     console.log('Storage: Creating business with data:', JSON.stringify(insertBusiness, null, 2));
@@ -233,75 +233,41 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteService(id: number): Promise<void> {
-    await this.db.delete(services).where(eq(services.id, id));
+    await this.db.update(services).set({ isActive: false }).where(eq(services.id, id));
   }
 
   // Job methods
   async createJob(insertJob: InsertJob): Promise<Job> {
-    // Convert date strings to Date objects if needed
-    const jobData = {
-      ...insertJob,
-      scheduledStart: insertJob.scheduledStart ? new Date(insertJob.scheduledStart) : null,
-      scheduledEnd: insertJob.scheduledEnd ? new Date(insertJob.scheduledEnd) : null,
-      recurringEndDate: insertJob.recurringEndDate ? new Date(insertJob.recurringEndDate) : null,
-    };
-
     const [job] = await this.db
       .insert(jobs)
-      .values(jobData)
+      .values(insertJob)
       .returning();
     return job;
   }
 
-  async getJobsByBusiness(businessId: number): Promise<any[]> {
-    const jobsWithRelations = await this.db
-      .select({
-        job: jobs,
-        client: clients,
-        assignedUser: users
-      })
+  async getJobsByBusiness(businessId: number): Promise<Job[]> {
+    return await this.db
+      .select()
       .from(jobs)
-      .leftJoin(clients, eq(jobs.clientId, clients.id))
-      .leftJoin(users, eq(jobs.assignedUserId, users.id))
       .where(eq(jobs.businessId, businessId))
-      .orderBy(desc(jobs.scheduledStart));
-
-    return jobsWithRelations.map(row => ({
-      ...row.job,
-      client: row.client,
-      assignedUser: row.assignedUser
-    }));
+      .orderBy(desc(jobs.createdAt));
   }
 
-  async getJobsByDate(businessId: number, date: Date): Promise<any[]> {
-    const startOfDay = new Date(date);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(date);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    const jobsWithRelations = await this.db
-      .select({
-        job: jobs,
-        client: clients,
-        assignedUser: users
-      })
+  async getJobsByDate(businessId: number, date: Date): Promise<Job[]> {
+    const nextDay = new Date(date);
+    nextDay.setDate(date.getDate() + 1);
+    
+    return await this.db
+      .select()
       .from(jobs)
-      .leftJoin(clients, eq(jobs.clientId, clients.id))
-      .leftJoin(users, eq(jobs.assignedUserId, users.id))
       .where(
         and(
           eq(jobs.businessId, businessId),
-          gte(jobs.scheduledStart, startOfDay),
-          lte(jobs.scheduledStart, endOfDay)
+          gte(jobs.scheduledStart, date),
+          lt(jobs.scheduledStart, nextDay)
         )
       )
       .orderBy(jobs.scheduledStart);
-
-    return jobsWithRelations.map(row => ({
-      ...row.job,
-      client: row.client,
-      assignedUser: row.assignedUser
-    }));
   }
 
   async getJobById(id: number): Promise<Job | undefined> {
@@ -323,20 +289,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getJobsByDateRange(businessId: number, startDate: Date, endDate: Date): Promise<Job[]> {
-    const start = new Date(startDate);
-    start.setHours(0, 0, 0, 0);
-
-    const end = new Date(endDate);
-    end.setHours(23, 59, 59, 999);
-
     return await this.db
       .select()
       .from(jobs)
       .where(
         and(
           eq(jobs.businessId, businessId),
-          gte(jobs.scheduledStart, start),
-          lte(jobs.scheduledStart, end)
+          gte(jobs.scheduledStart, startDate),
+          lte(jobs.scheduledStart, endDate)
         )
       )
       .orderBy(jobs.scheduledStart);
@@ -352,35 +312,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getEstimatesByBusiness(businessId: number): Promise<Estimate[]> {
-    const results = await this.db
-      .select({
-        id: estimates.id,
-        businessId: estimates.businessId,
-        clientId: estimates.clientId,
-        estimateNumber: estimates.estimateNumber,
-        title: estimates.title,
-        description: estimates.description,
-        lineItems: estimates.lineItems,
-        subtotal: estimates.subtotal,
-        taxRate: estimates.taxRate,
-        taxAmount: estimates.taxAmount,
-        total: estimates.total,
-        status: estimates.status,
-        validUntil: estimates.validUntil,
-        notes: estimates.notes,
-        shareToken: estimates.shareToken,
-        createdAt: estimates.createdAt,
-        clientName: clients.name,
-      })
+    return await this.db
+      .select()
       .from(estimates)
-      .leftJoin(clients, eq(estimates.clientId, clients.id))
       .where(eq(estimates.businessId, businessId))
       .orderBy(desc(estimates.createdAt));
-
-    return results.map(result => ({
-      ...result,
-      clientName: result.clientName || 'Unknown Client'
-    }));
   }
 
   async getEstimateById(id: number): Promise<Estimate | undefined> {
@@ -402,73 +338,53 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getEstimateByShareToken(shareToken: string): Promise<Estimate | undefined> {
-    const [estimate] = await this.db.select().from(estimates).where(eq(estimates.shareToken, shareToken));
+    const [estimate] = await this.db
+      .select()
+      .from(estimates)
+      .where(eq(estimates.shareToken, shareToken));
     return estimate || undefined;
   }
 
   async generateShareToken(estimateId: number): Promise<string> {
-    const shareToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    
     await this.db
       .update(estimates)
-      .set({ shareToken })
+      .set({ shareToken: token })
       .where(eq(estimates.id, estimateId));
-    return shareToken;
+    
+    return token;
   }
 
   async convertEstimateToInvoice(estimateId: number): Promise<Invoice> {
-    // Get the estimate
     const estimate = await this.getEstimateById(estimateId);
     if (!estimate) {
-      throw new Error("Estimate not found");
+      throw new Error('Estimate not found');
     }
-
-    // Generate invoice number
-    const invoiceCount = await this.db
-      .select({ count: sql<number>`count(*)` })
-      .from(invoices)
-      .where(eq(invoices.businessId, estimate.businessId));
-
-    const count = invoiceCount[0]?.count || 0;
-    const invoiceNumber = `INV-${new Date().toISOString().slice(2, 10).replace(/-/g, '')}${String.fromCharCode(65 + (count % 26))}`;
-
-    // Calculate due date (30 days from now)
-    const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + 30);
-
-    // Create invoice from estimate data
-    // If estimate requires a deposit, the invoice should account for it
-    // The deposit will be collected separately on the invoice
-    const depositAmount = estimate.depositRequired && estimate.depositAmount ? parseFloat(estimate.depositAmount) : 0;
-    const originalTotal = parseFloat(estimate.total);
-
-    console.log('Converting estimate to invoice:');
-    console.log('Estimate ID:', estimate.id);
-    console.log('Deposit Required:', estimate.depositRequired);
-    console.log('Deposit Amount:', estimate.depositAmount);
-    console.log('Original Total:', estimate.total);
-    console.log('Deposit Amount to Account For:', depositAmount);
 
     const invoiceData: InsertInvoice = {
       businessId: estimate.businessId,
       clientId: estimate.clientId,
-      invoiceNumber,
+      invoiceNumber: `INV-${Date.now()}`,
       title: estimate.title,
       description: estimate.description,
-      lineItems: estimate.lineItems as any,
+      lineItems: estimate.lineItems,
       subtotal: estimate.subtotal,
       taxRate: estimate.taxRate,
       taxAmount: estimate.taxAmount,
-      total: estimate.total, // Keep original total - deposit will be tracked separately
-      depositRequired: estimate.depositRequired,
-      depositType: estimate.depositType,
-      depositAmount: estimate.depositAmount,
-      depositPercentage: estimate.depositPercentage,
-      amountPaid: "0", // No payments yet on the new invoice
-      status: "draft", // Start as draft, will change when deposit is collected
-      dueDate
+      total: estimate.total,
+      status: "draft",
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
     };
 
-    const invoice = await this.createInvoice(invoiceData);
+    const [invoice] = await this.db
+      .insert(invoices)
+      .values(invoiceData)
+      .returning();
+
+    // Update estimate status
+    await this.updateEstimate(estimateId, { status: "converted" });
+
     return invoice;
   }
 
@@ -495,7 +411,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getInvoiceByShareToken(shareToken: string): Promise<Invoice | undefined> {
-    const [invoice] = await this.db.select().from(invoices).where(eq(invoices.shareToken, shareToken));
+    const [invoice] = await this.db
+      .select()
+      .from(invoices)
+      .where(eq(invoices.shareToken, shareToken));
     return invoice || undefined;
   }
 
@@ -513,17 +432,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async generateInvoiceShareToken(invoiceId: number): Promise<string> {
-    const shareToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    
     await this.db
       .update(invoices)
-      .set({ shareToken })
+      .set({ shareToken: token })
       .where(eq(invoices.id, invoiceId));
-    return shareToken;
+    
+    return token;
   }
 
   async getRevenueStats(businessId: number, month: number, year: number): Promise<{total: number, count: number}> {
     const startDate = new Date(year, month - 1, 1);
-    const endDate = new Date(year, month, 0, 23, 59, 59);
+    const endDate = new Date(year, month, 0);
 
     const result = await this.db
       .select({
@@ -564,8 +485,7 @@ export class DatabaseStorage implements IStorage {
     const [timeEntry] = await this.db
       .select()
       .from(timeEntries)
-      .where(and(eq(timeEntries.userId, userId), sql`${timeEntries.clockOut} IS NULL`))
-      .orderBy(desc(timeEntries.clockIn));
+      .where(and(eq(timeEntries.userId, userId), isNull(timeEntries.clockOut)));
     return timeEntry || undefined;
   }
 
@@ -581,7 +501,7 @@ export class DatabaseStorage implements IStorage {
   async getTimeEntriesByUserAndDate(userId: number, date: Date): Promise<TimeEntry[]> {
     const nextDay = new Date(date);
     nextDay.setDate(date.getDate() + 1);
-
+    
     return await this.db
       .select()
       .from(timeEntries)
@@ -592,71 +512,49 @@ export class DatabaseStorage implements IStorage {
           lt(timeEntries.clockIn, nextDay)
         )
       )
-      .orderBy(desc(timeEntries.clockIn));
+      .orderBy(timeEntries.clockIn);
   }
 
-  async getTimeEntriesForPayroll(businessId: number, startDate?: Date, endDate?: Date, userId?: number): Promise<any[]> {
-    const conditions = [eq(timeEntries.businessId, businessId)];
-
+  async getTimeEntriesForPayroll(businessId: number, startDate?: Date, endDate?: Date, userId?: number): Promise<TimeEntry[]> {
+    let whereConditions = [eq(users.businessId, businessId)];
+    
     if (startDate) {
-      conditions.push(gte(timeEntries.clockIn, startDate));
+      whereConditions.push(gte(timeEntries.clockIn, startDate));
     }
+    
     if (endDate) {
-      conditions.push(lte(timeEntries.clockIn, endDate));
+      whereConditions.push(lte(timeEntries.clockIn, endDate));
     }
+    
     if (userId) {
-      conditions.push(eq(timeEntries.userId, userId));
+      whereConditions.push(eq(timeEntries.userId, userId));
     }
 
-    const results = await this.db
+    return await this.db
       .select({
-        id: timeEntries.id,
-        businessId: timeEntries.businessId,
-        userId: timeEntries.userId,
-        jobId: timeEntries.jobId,
-        clockIn: timeEntries.clockIn,
-        clockOut: timeEntries.clockOut,
-        breakStart: timeEntries.breakStart,
-        breakEnd: timeEntries.breakEnd,
-        totalHours: timeEntries.totalHours,
-        notes: timeEntries.notes,
-        createdAt: timeEntries.createdAt,
-        user: {
-          id: users.id,
-          firstName: users.firstName,
-          lastName: users.lastName,
-          username: users.username
-        }
+        ...timeEntries,
+        userName: users.username,
+        firstName: users.firstName,
+        lastName: users.lastName
       })
       .from(timeEntries)
-      .leftJoin(users, eq(timeEntries.userId, users.id))
-      .where(and(...conditions))
-      .orderBy(desc(timeEntries.clockIn));
-
-    return results;
+      .innerJoin(users, eq(timeEntries.userId, users.id))
+      .where(and(...whereConditions))
+      .orderBy(timeEntries.clockIn) as any;
   }
 
+  // Payroll settings methods
   async getPayrollSettings(businessId: number): Promise<PayrollSettings | undefined> {
     const [settings] = await this.db
       .select()
       .from(payrollSettings)
       .where(eq(payrollSettings.businessId, businessId));
-
-    if (!settings) {
-      // Create default settings if none exist
-      const [newSettings] = await this.db
-        .insert(payrollSettings)
-        .values({ businessId })
-        .returning();
-      return newSettings;
-    }
-
-    return settings;
+    return settings || undefined;
   }
 
   async updatePayrollSettings(businessId: number, settings: Partial<InsertPayrollSettings>): Promise<PayrollSettings> {
     const existing = await this.getPayrollSettings(businessId);
-
+    
     if (!existing) {
       const [newSettings] = await this.db
         .insert(payrollSettings)
@@ -672,8 +570,6 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return updatedSettings;
   }
-
-  // Additional business and job management methods
 
   async getIncompleteJobsForDate(businessId: number, date: Date): Promise<Job[]> {
     const nextDay = new Date(date);
@@ -712,8 +608,6 @@ export class DatabaseStorage implements IStorage {
     const [result] = await this.db.select().from(businesses).where(eq(businesses.apiKey, apiKey));
     return result || null;
   }
-
-
 }
 
 export const storage = new DatabaseStorage();
