@@ -479,7 +479,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ success: false, error: "Not authenticated" });
       }
       
-      const timeEntries = await storage.getTimeEntriesByBusiness((req.session as any).businessId);
+      const timeEntries = await storage.getTimeEntriesByUser((req.session as any).userId);
       res.json({ success: true, data: timeEntries });
     } catch (error: any) {
       res.status(500).json({ success: false, error: error.message });
