@@ -15,11 +15,11 @@ export default function Clients() {
     queryKey: ["/api/clients"],
   });
 
-  const filteredClients = clients?.filter((client: any) => 
+  const filteredClients = Array.isArray(clients) ? clients.filter((client: any) => 
     client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.phone?.includes(searchTerm)
-  ) || [];
+  ) : [];
 
   if (isLoading) {
     return (

@@ -74,20 +74,20 @@ export default function Jobs() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const todaysJobs = jobs?.filter((job: any) => {
+  const todaysJobs = Array.isArray(jobs) ? jobs.filter((job: any) => {
     if (!job.scheduledStart) return false;
     const jobDate = new Date(job.scheduledStart);
     jobDate.setHours(0, 0, 0, 0);
     return jobDate.getTime() === today.getTime();
-  }) || [];
+  }) : [];
 
-  const upcomingJobs = jobs?.filter((job: any) => {
+  const upcomingJobs = Array.isArray(jobs) ? jobs.filter((job: any) => {
     if (!job.scheduledStart) return false;
     const jobDate = new Date(job.scheduledStart);
     return jobDate > new Date();
-  }) || [];
+  }) : [];
 
-  const completedJobs = jobs?.filter((job: any) => job.status === "completed") || [];
+  const completedJobs = Array.isArray(jobs) ? jobs.filter((job: any) => job.status === "completed") : [];
 
   if (isLoading) {
     return (
