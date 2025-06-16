@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { registerGPTRoutes } from "./gpt-routes-final";
-import { storage } from "./storage";
+import { storage } from "./storage-clean";
 import { db } from "./db";
 import { estimates, invoices, clients, jobs, services, timeEntries, users } from "@shared/schema";
 import { eq, desc, and, gte, lte, sql, isNull } from "drizzle-orm";
@@ -88,25 +88,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const users = await storage.getUsersByBusiness(business.id);
       const hasAdmin = users.some(user => user.role === 'owner' || user.role === 'admin');
 
-      (req.session as any).businessId = business.id;
+      // CRITICAL FIX: Regenerate session to prevent contamination between business accounts
+      req.session.regenerate((err) => {
+        if (err) {
+          console.error('Session regeneration error:', err);
+          return res.status(500).json({ success: false, error: "Session error during login" });
+        }
+        
+        // Set business session for API access with fresh session
+        (req.session as any).businessId = business.id;
+        console.log(`[SESSION] Business login: ${email} -> businessId: ${business.id}`);
 
-      if (hasAdmin) {
-        // Business setup is complete, user can proceed to PIN login
-        res.json({ 
-          success: true, 
-          business,
-          message: "Business login successful"
-        });
-      } else {
-        // Business exists but no admin user created yet - enter setup mode
-        (req.session as any).setupMode = true;
-        res.json({ 
-          success: true, 
-          business,
-          setupMode: true,
-          message: "Business login successful"
-        });
-      }
+        if (hasAdmin) {
+          // Business setup is complete, user can proceed to PIN login
+          res.json({ 
+            success: true, 
+            business,
+            message: "Business login successful"
+          });
+        } else {
+          // Business exists but no admin user created yet - enter setup mode
+          (req.session as any).setupMode = true;
+          res.json({ 
+            success: true, 
+            business,
+            setupMode: true,
+            message: "Business login successful"
+          });
+        }
+      });
     } catch (error: any) {
       console.error('Business login error:', error);
       res.status(500).json({ success: false, error: error.message });
@@ -525,9 +535,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  const httpServer = createServer(app);
-  
-  // API Key Management Routes
+  // Business API Key Management Routes
   app.get("/api/business/api-key", async (req, res) => {
     try {
       if (!(req.session as any).businessId) {
@@ -542,7 +550,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ 
         success: true, 
         data: { 
-          apiKey: business.apiKey || null,
+          apiKey: business.apiKey,
           hasApiKey: !!business.apiKey 
         } 
       });
@@ -558,27 +566,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const businessId = (req.session as any).businessId;
+      console.log(`[API-KEY-GEN] Session businessId: ${businessId}`);
       
-      // Generate new API key with proper format
-      const newApiKey = `bw_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 10)}`;
-      
-      // Update the business with the new API key
-      await storage.updateBusiness(businessId, { apiKey: newApiKey });
-      
-      // Verify the update worked by fetching the business
-      const updatedBusiness = await storage.getBusinessById(businessId);
-      
-      if (!updatedBusiness || updatedBusiness.apiKey !== newApiKey) {
-        throw new Error("Failed to save API key to database");
+      // Get business details to verify session
+      const business = await storage.getBusinessById(businessId);
+      if (!business) {
+        console.log(`[API-KEY-GEN] ERROR: Business not found for ID: ${businessId}`);
+        return res.status(404).json({ success: false, error: "Business not found" });
       }
       
+      console.log(`[API-KEY-GEN] Generating API key for business: ${business.email} (ID: ${business.id})`);
+      const apiKey = await storage.generateApiKey(businessId);
+      console.log(`[API-KEY-GEN] Generated API key: ${apiKey} for business: ${business.email}`);
+
       res.json({ 
         success: true, 
-        data: { apiKey: newApiKey },
-        message: "API key generated successfully" 
+        data: { 
+          apiKey: apiKey 
+        },
+        message: "API key generated successfully"
       });
     } catch (error: any) {
-      console.error('API key generation error:', error);
+      console.error(`[API-KEY-GEN] Error:`, error);
       res.status(500).json({ success: false, error: error.message });
     }
   });
@@ -590,8 +599,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const businessId = (req.session as any).businessId;
-      await storage.updateBusiness(businessId, { apiKey: null });
-      
+      await storage.revokeApiKey(businessId);
+
       res.json({ 
         success: true, 
         message: "API key revoked successfully" 
@@ -601,6 +610,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  const httpServer = createServer(app);
+  
   const PORT = Number(process.env.PORT) || 5000;
   httpServer.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on port ${PORT}`);

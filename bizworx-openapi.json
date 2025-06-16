@@ -1,0 +1,323 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "BizWorx Business Management API",
+    "description": "Voice and text commands for managing blue-collar business operations including clients, jobs, invoices, estimates, and revenue tracking.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000",
+      "description": "Local development server"
+    }
+  ],
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "paths": {
+    "/gpt/clients": {
+      "get": {
+        "summary": "Get all clients",
+        "description": "Retrieve list of all clients for the business",
+        "operationId": "getClients",
+        "responses": {
+          "200": {
+            "description": "List of clients",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "number" },
+                          "name": { "type": "string" },
+                          "email": { "type": "string" },
+                          "phone": { "type": "string" },
+                          "address": { "type": "string" }
+                        }
+                      }
+                    },
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create new client",
+        "description": "Add a new client to the business",
+        "operationId": "createClient",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": { "type": "string", "description": "Client's full name" },
+                  "email": { "type": "string", "description": "Client's email address" },
+                  "phone": { "type": "string", "description": "Client's phone number" },
+                  "address": { "type": "string", "description": "Client's address" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Client created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "number" },
+                        "name": { "type": "string" },
+                        "email": { "type": "string" },
+                        "phone": { "type": "string" },
+                        "address": { "type": "string" }
+                      }
+                    },
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/gpt/jobs": {
+      "get": {
+        "summary": "Get jobs",
+        "description": "Retrieve jobs, optionally filtered by date",
+        "operationId": "getJobs",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "description": "Filter jobs by date (YYYY-MM-DD format)",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of jobs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "number" },
+                          "title": { "type": "string" },
+                          "client": { "type": "string" },
+                          "status": { "type": "string" },
+                          "scheduledStart": { "type": "string" },
+                          "scheduledEnd": { "type": "string" },
+                          "address": { "type": "string" }
+                        }
+                      }
+                    },
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create new job",
+        "description": "Schedule a new job for a client",
+        "operationId": "createJob",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["clientId", "title"],
+                "properties": {
+                  "clientId": { "type": "number", "description": "ID of the client for this job" },
+                  "title": { "type": "string", "description": "Job title or service type" },
+                  "description": { "type": "string", "description": "Detailed job description" },
+                  "address": { "type": "string", "description": "Job location address" },
+                  "scheduledStart": { "type": "string", "format": "date-time", "description": "Job start time" },
+                  "scheduledEnd": { "type": "string", "format": "date-time", "description": "Job end time" },
+                  "status": { "type": "string", "enum": ["scheduled", "in_progress", "completed", "cancelled"], "default": "scheduled" },
+                  "priority": { "type": "string", "enum": ["low", "medium", "high", "urgent"], "default": "medium" },
+                  "estimatedAmount": { "type": "string", "description": "Estimated cost for the job" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Job created successfully"
+          }
+        }
+      }
+    },
+    "/gpt/revenue": {
+      "get": {
+        "summary": "Get revenue statistics",
+        "description": "Retrieve revenue stats for specified period",
+        "operationId": "getRevenue",
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "description": "Time period for revenue stats",
+            "schema": {
+              "type": "string",
+              "enum": ["day", "week", "month", "year"],
+              "default": "month"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Revenue statistics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "totalRevenue": { "type": "string" },
+                        "period": { "type": "string" },
+                        "jobCount": { "type": "number" },
+                        "averageJobValue": { "type": "string" }
+                      }
+                    },
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/gpt/invoices": {
+      "post": {
+        "summary": "Create new invoice",
+        "description": "Generate an invoice for completed work",
+        "operationId": "createInvoice",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["clientId", "title", "total"],
+                "properties": {
+                  "clientId": { "type": "number", "description": "Client ID for the invoice" },
+                  "title": { "type": "string", "description": "Invoice title or description" },
+                  "lineItems": {
+                    "type": "array",
+                    "description": "Invoice line items",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "description": { "type": "string" },
+                        "quantity": { "type": "number" },
+                        "rate": { "type": "string" },
+                        "total": { "type": "string" }
+                      }
+                    }
+                  },
+                  "subtotal": { "type": "string", "description": "Subtotal amount" },
+                  "total": { "type": "string", "description": "Total invoice amount" },
+                  "dueDate": { "type": "string", "format": "date", "description": "Payment due date" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Invoice created successfully"
+          }
+        }
+      }
+    },
+    "/gpt/estimates": {
+      "post": {
+        "summary": "Create new estimate",
+        "description": "Generate a cost estimate for potential work",
+        "operationId": "createEstimate",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["clientId", "title", "total"],
+                "properties": {
+                  "clientId": { "type": "number", "description": "Client ID for the estimate" },
+                  "title": { "type": "string", "description": "Estimate title or project description" },
+                  "description": { "type": "string", "description": "Detailed estimate description" },
+                  "lineItems": {
+                    "type": "array",
+                    "description": "Estimate line items",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "description": { "type": "string" },
+                        "quantity": { "type": "number" },
+                        "rate": { "type": "string" },
+                        "total": { "type": "string" }
+                      }
+                    }
+                  },
+                  "subtotal": { "type": "string", "description": "Subtotal amount" },
+                  "total": { "type": "string", "description": "Total estimate amount" },
+                  "validUntil": { "type": "string", "format": "date", "description": "Estimate expiration date" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Estimate created successfully"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

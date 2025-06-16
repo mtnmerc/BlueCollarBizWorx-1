@@ -1,0 +1,106 @@
+
+{
+  "mcpServers": {
+    "bizworx-mcp-server": {
+      "command": "node",
+      "args": ["mcp-server-http.js"],
+      "env": {
+        "MCP_HTTP_PORT": "8000",
+        "BIZWORX_BASE_URL": "https://BluecollarBizWorx.replit.app"
+      }
+    }
+  },
+  "server": {
+    "name": "bizworx-mcp-server",
+    "version": "1.0.0",
+    "protocolVersion": "2024-11-05",
+    "capabilities": {
+      "tools": {
+        "listChanged": false
+      },
+      "resources": {},
+      "prompts": {},
+      "experimental": {}
+    }
+  },
+  "endpoints": {
+    "http": "https://BluecollarBizWorx.replit.app:8000",
+    "sse": "https://BluecollarBizWorx.replit.app:8000/sse",
+    "events": "https://BluecollarBizWorx.replit.app:8000/mcp/events",
+    "call": "https://BluecollarBizWorx.replit.app:8000/mcp/call",
+    "config": "https://BluecollarBizWorx.replit.app:8000/mcp/config"
+  },
+  "authentication": {
+    "required": true,
+    "method": "header",
+    "header": "X-API-Key",
+    "description": "Business API key from BizWorx Business Settings"
+  },
+  "tools": [
+    {
+      "name": "get_clients",
+      "description": "Get list of all clients for the business",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "apiKey": {
+            "type": "string",
+            "description": "Business API key for authentication"
+          }
+        },
+        "required": ["apiKey"]
+      }
+    },
+    {
+      "name": "create_client", 
+      "description": "Create a new client",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "apiKey": {"type": "string"},
+          "name": {"type": "string"},
+          "email": {"type": "string"},
+          "phone": {"type": "string"},
+          "address": {"type": "string"}
+        },
+        "required": ["apiKey", "name", "email"]
+      }
+    },
+    {
+      "name": "get_jobs",
+      "description": "Get jobs for a specific date or all jobs"
+    },
+    {
+      "name": "create_job",
+      "description": "Create a new job"
+    },
+    {
+      "name": "get_invoices", 
+      "description": "Get list of all invoices"
+    },
+    {
+      "name": "create_invoice",
+      "description": "Create a new invoice"
+    },
+    {
+      "name": "get_estimates",
+      "description": "Get list of all estimates"
+    },
+    {
+      "name": "create_estimate",
+      "description": "Create a new estimate"
+    },
+    {
+      "name": "update_job_status",
+      "description": "Update job status"
+    },
+    {
+      "name": "get_revenue_stats",
+      "description": "Get revenue statistics"
+    },
+    {
+      "name": "get_services",
+      "description": "Get list of all services"
+    }
+  ]
+}

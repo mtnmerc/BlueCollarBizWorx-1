@@ -1,0 +1,414 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "BizWorx Jobs & Scheduling Management API",
+    "description": "API for managing jobs and scheduling in BizWorx business management system",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://bluecollarbizworx.replit.app/api/gpt"
+    }
+  ],
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "paths": {
+    "/jobs": {
+      "get": {
+        "operationId": "getJobs",
+        "summary": "Get all jobs",
+        "description": "Retrieve all jobs for the authenticated business",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "Filter jobs by specific date (YYYY-MM-DD)"
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "Start date for date range filter (YYYY-MM-DD)"
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "End date for date range filter (YYYY-MM-DD)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createJob",
+        "summary": "Create new job",
+        "description": "Create a new job/appointment for the authenticated business",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateJobRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs/{id}": {
+      "get": {
+        "operationId": "getJobById",
+        "summary": "Get job by ID",
+        "description": "Retrieve a specific job by its ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "updateJob",
+        "summary": "Update job",
+        "description": "Update an existing job/appointment",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateJobRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteJob",
+        "summary": "Delete job",
+        "description": "Delete an existing job/appointment",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs/natural-language": {
+      "post": {
+        "operationId": "createJobFromNaturalLanguage",
+        "summary": "Create job from natural language",
+        "description": "Create a job/appointment using natural language processing for scheduling",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NaturalLanguageJobRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    },
+    "schemas": {
+      "Job": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "integer"},
+          "businessId": {"type": "integer"},
+          "clientId": {"type": "integer"},
+          "assignedUserId": {"type": "integer"},
+          "title": {"type": "string"},
+          "description": {"type": "string"},
+          "address": {"type": "string"},
+          "scheduledStart": {"type": "string", "format": "date-time"},
+          "scheduledEnd": {"type": "string", "format": "date-time"},
+          "actualStart": {"type": "string", "format": "date-time"},
+          "actualEnd": {"type": "string", "format": "date-time"},
+          "status": {"type": "string"},
+          "priority": {"type": "string"},
+          "jobType": {"type": "string"},
+          "estimatedAmount": {"type": "number"},
+          "actualAmount": {"type": "number"},
+          "notes": {"type": "string"},
+          "isRecurring": {"type": "boolean"},
+          "recurringFrequency": {"type": "string"},
+          "recurringEndDate": {"type": "string", "format": "date-time"},
+          "parentJobId": {"type": "integer"},
+          "createdAt": {"type": "string", "format": "date-time"},
+          "clientName": {"type": "string"},
+          "assignedUserName": {"type": "string"}
+        }
+      },
+      "CreateJobRequest": {
+        "type": "object",
+        "required": ["clientId", "title", "scheduledStart"],
+        "properties": {
+          "clientId": {"type": "integer"},
+          "assignedUserId": {"type": "integer"},
+          "title": {"type": "string"},
+          "description": {"type": "string"},
+          "address": {"type": "string"},
+          "scheduledStart": {"type": "string", "format": "date-time"},
+          "scheduledEnd": {"type": "string", "format": "date-time"},
+          "status": {"type": "string", "default": "scheduled"},
+          "priority": {"type": "string", "default": "medium"},
+          "jobType": {"type": "string"},
+          "estimatedAmount": {"type": "number"},
+          "notes": {"type": "string"},
+          "isRecurring": {"type": "boolean", "default": false},
+          "recurringFrequency": {"type": "string"},
+          "recurringEndDate": {"type": "string", "format": "date-time"}
+        }
+      },
+      "UpdateJobRequest": {
+        "type": "object",
+        "properties": {
+          "clientId": {"type": "integer"},
+          "assignedUserId": {"type": "integer"},
+          "title": {"type": "string"},
+          "description": {"type": "string"},
+          "address": {"type": "string"},
+          "scheduledStart": {"type": "string", "format": "date-time"},
+          "scheduledEnd": {"type": "string", "format": "date-time"},
+          "actualStart": {"type": "string", "format": "date-time"},
+          "actualEnd": {"type": "string", "format": "date-time"},
+          "status": {"type": "string"},
+          "priority": {"type": "string"},
+          "jobType": {"type": "string"},
+          "estimatedAmount": {"type": "number"},
+          "actualAmount": {"type": "number"},
+          "notes": {"type": "string"},
+          "isRecurring": {"type": "boolean"},
+          "recurringFrequency": {"type": "string"},
+          "recurringEndDate": {"type": "string", "format": "date-time"}
+        }
+      },
+      "NaturalLanguageJobRequest": {
+        "type": "object",
+        "required": ["message"],
+        "properties": {
+          "message": {"type": "string", "description": "Natural language description of the job/appointment to create"},
+          "clientName": {"type": "string", "description": "Client name if mentioned in the message"}
+        }
+      },
+      "JobsResponse": {
+        "type": "object",
+        "properties": {
+          "success": {"type": "boolean"},
+          "data": {
+            "type": "array",
+            "items": {"$ref": "#/components/schemas/Job"}
+          },
+          "message": {"type": "string"},
+          "businessVerification": {
+            "type": "object",
+            "properties": {
+              "businessName": {"type": "string"},
+              "businessId": {"type": "integer"},
+              "dataSource": {"type": "string"},
+              "timestamp": {"type": "string", "format": "date-time"}
+            }
+          }
+        }
+      },
+      "JobResponse": {
+        "type": "object",
+        "properties": {
+          "success": {"type": "boolean"},
+          "data": {"$ref": "#/components/schemas/Job"},
+          "message": {"type": "string"}
+        }
+      },
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {"type": "boolean"},
+          "message": {"type": "string"}
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": {"type": "boolean"},
+          "error": {"type": "string"}
+        }
+      }
+    }
+  }
+}

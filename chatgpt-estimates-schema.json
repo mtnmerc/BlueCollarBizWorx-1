@@ -1,0 +1,401 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "BizWorx Estimates Management API",
+    "description": "API for managing estimates in BizWorx business management system",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://bluecollarbizworx.replit.app/api/gpt"
+    }
+  ],
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "paths": {
+    "/estimates": {
+      "get": {
+        "operationId": "getEstimates",
+        "summary": "Get all estimates",
+        "description": "Retrieve all estimates for the authenticated business",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstimatesResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createEstimate",
+        "summary": "Create new estimate",
+        "description": "Create a new estimate for the authenticated business",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateEstimateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstimateResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/estimates/{id}": {
+      "get": {
+        "operationId": "getEstimateById",
+        "summary": "Get estimate by ID",
+        "description": "Retrieve a specific estimate by its ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstimateResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "updateEstimate",
+        "summary": "Update estimate",
+        "description": "Update an existing estimate",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEstimateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstimateResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteEstimate",
+        "summary": "Delete estimate",
+        "description": "Delete an existing estimate",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/estimates/{id}/convert-to-invoice": {
+      "post": {
+        "operationId": "convertEstimateToInvoice",
+        "summary": "Convert estimate to invoice",
+        "description": "Convert an existing estimate to an invoice",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    },
+    "schemas": {
+      "EstimateItem": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "string"},
+          "description": {"type": "string"},
+          "quantity": {"type": "number"},
+          "rate": {"type": "number"},
+          "amount": {"type": "number"}
+        }
+      },
+      "Estimate": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "integer"},
+          "businessId": {"type": "integer"},
+          "clientId": {"type": "integer"},
+          "title": {"type": "string"},
+          "description": {"type": "string"},
+          "items": {
+            "type": "array",
+            "items": {"$ref": "#/components/schemas/EstimateItem"}
+          },
+          "subtotal": {"type": "number"},
+          "tax": {"type": "number"},
+          "total": {"type": "number"},
+          "status": {"type": "string"},
+          "validUntil": {"type": "string", "format": "date-time"},
+          "notes": {"type": "string"},
+          "shareToken": {"type": "string"},
+          "createdAt": {"type": "string", "format": "date-time"},
+          "clientName": {"type": "string"}
+        }
+      },
+      "CreateEstimateRequest": {
+        "type": "object",
+        "required": ["clientId", "title", "items", "subtotal", "tax", "total"],
+        "properties": {
+          "clientId": {"type": "integer"},
+          "title": {"type": "string"},
+          "description": {"type": "string"},
+          "items": {
+            "type": "array",
+            "items": {"$ref": "#/components/schemas/EstimateItem"}
+          },
+          "subtotal": {"type": "number"},
+          "tax": {"type": "number"},
+          "total": {"type": "number"},
+          "status": {"type": "string", "default": "draft"},
+          "validUntil": {"type": "string", "format": "date-time"},
+          "notes": {"type": "string"}
+        }
+      },
+      "UpdateEstimateRequest": {
+        "type": "object",
+        "properties": {
+          "clientId": {"type": "integer"},
+          "title": {"type": "string"},
+          "description": {"type": "string"},
+          "items": {
+            "type": "array",
+            "items": {"$ref": "#/components/schemas/EstimateItem"}
+          },
+          "subtotal": {"type": "number"},
+          "tax": {"type": "number"},
+          "total": {"type": "number"},
+          "status": {"type": "string"},
+          "validUntil": {"type": "string", "format": "date-time"},
+          "notes": {"type": "string"}
+        }
+      },
+      "EstimatesResponse": {
+        "type": "object",
+        "properties": {
+          "success": {"type": "boolean"},
+          "data": {
+            "type": "array",
+            "items": {"$ref": "#/components/schemas/Estimate"}
+          },
+          "message": {"type": "string"},
+          "businessVerification": {
+            "type": "object",
+            "properties": {
+              "businessName": {"type": "string"},
+              "businessId": {"type": "integer"},
+              "dataSource": {"type": "string"},
+              "timestamp": {"type": "string", "format": "date-time"}
+            }
+          }
+        }
+      },
+      "EstimateResponse": {
+        "type": "object",
+        "properties": {
+          "success": {"type": "boolean"},
+          "data": {"$ref": "#/components/schemas/Estimate"},
+          "message": {"type": "string"}
+        }
+      },
+      "InvoiceResponse": {
+        "type": "object",
+        "properties": {
+          "success": {"type": "boolean"},
+          "data": {
+            "type": "object",
+            "properties": {
+              "id": {"type": "integer"},
+              "businessId": {"type": "integer"},
+              "clientId": {"type": "integer"},
+              "title": {"type": "string"},
+              "description": {"type": "string"},
+              "items": {
+                "type": "array",
+                "items": {"$ref": "#/components/schemas/EstimateItem"}
+              },
+              "subtotal": {"type": "number"},
+              "tax": {"type": "number"},
+              "total": {"type": "number"},
+              "status": {"type": "string"},
+              "dueDate": {"type": "string", "format": "date-time"},
+              "notes": {"type": "string"},
+              "shareToken": {"type": "string"},
+              "createdAt": {"type": "string", "format": "date-time"},
+              "clientName": {"type": "string"}
+            }
+          },
+          "message": {"type": "string"}
+        }
+      },
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {"type": "boolean"},
+          "message": {"type": "string"}
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": {"type": "boolean"},
+          "error": {"type": "string"}
+        }
+      }
+    }
+  }
+}

@@ -693,29 +693,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async generateApiKey(businessId: number): Promise<string> {
-    const apiKey = `bw_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 10)}`;
+    const apiKey = 'bw_' + Math.random().toString(36).substr(2, 32) + Date.now().toString(36);
 
-    // Update the business with the new API key using direct database update
-    const [updatedBusiness] = await db
-      .update(businesses)
+    await this.db.update(businesses)
       .set({ apiKey })
-      .where(eq(businesses.id, businessId))
-      .returning();
-
-    if (!updatedBusiness) {
-      throw new Error(`Failed to update business ${businessId} with new API key`);
-    }
-
-    // Verify the update
-    const verifyBusiness = await db
-      .select()
-      .from(businesses)
-      .where(eq(businesses.id, businessId))
-      .limit(1);
-
-    if (!verifyBusiness[0] || verifyBusiness[0].apiKey !== apiKey) {
-      throw new Error(`API key verification failed for business ${businessId}`);
-    }
+      .where(eq(businesses.id, businessId));
 
     return apiKey;
   }

@@ -1,44 +1,106 @@
-
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "BizWorx Complete Business Management API",
-    "description": "Comprehensive API for managing all aspects of BizWorx business operations including clients, estimates, invoices, and job scheduling",
-    "version": "1.0.0"
+    "title": "BizWorx Business Management API",
+    "description": "Comprehensive API for blue-collar business management including clients, jobs, invoices, estimates, team management, and time tracking. Optimized for voice commands through ChatGPT Custom GPT integration.",
+    "version": "2.0.0"
   },
   "servers": [
     {
-      "url": "https://bluecollarbizworx.replit.app/api/gpt"
+      "url": "https://bluecollarbizworx.replit.app",
+      "description": "Production BizWorx Server"
     }
   ],
   "security": [
     {
-      "ApiKeyAuth": []
+      "BearerAuth": []
     }
   ],
   "paths": {
-    "/clients": {
+    "/api/gpt/debug": {
       "get": {
-        "operationId": "getClients",
+        "summary": "Debug authentication headers",
+        "description": "Test endpoint to debug authentication headers sent by ChatGPT",
+        "operationId": "debugAuth",
+        "responses": {
+          "200": {
+            "description": "Debug information returned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "headers": { "type": "object" },
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/gpt/dashboard": {
+      "get": {
+        "summary": "Get business dashboard overview",
+        "description": "Retrieve key business metrics including total clients, jobs, and revenue statistics",
+        "operationId": "getDashboard",
+        "responses": {
+          "200": {
+            "description": "Dashboard data retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "totalClients": { "type": "integer" },
+                        "totalJobs": { "type": "integer" },
+                        "revenue": { "type": "number" }
+                      }
+                    },
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/gpt/clients": {
+      "get": {
         "summary": "Get all clients",
-        "description": "Retrieve all clients for the authenticated business",
+        "description": "Retrieve all clients for the business",
+        "operationId": "getClients",
         "responses": {
           "200": {
-            "description": "Success",
+            "description": "Clients retrieved successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ClientsResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "integer" },
+                          "name": { "type": "string" },
+                          "email": { "type": "string" },
+                          "phone": { "type": "string" },
+                          "address": { "type": "string" }
+                        }
+                      }
+                    },
+                    "message": { "type": "string" }
+                  }
                 }
               }
             }
@@ -46,36 +108,38 @@
         }
       },
       "post": {
-        "operationId": "createClient",
         "summary": "Create new client",
-        "description": "Create a new client for the authenticated business",
+        "description": "Add a new client to the business",
+        "operationId": "createClient",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateClientRequest"
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": { "type": "string", "description": "Client name" },
+                  "email": { "type": "string", "format": "email" },
+                  "phone": { "type": "string" },
+                  "address": { "type": "string" }
+                }
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Success",
+            "description": "Client created successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ClientResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Server Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": { "$ref": "#/components/schemas/Client" },
+                    "message": { "type": "string" }
+                  }
                 }
               }
             }
@@ -83,406 +147,45 @@
         }
       }
     },
-    "/estimates": {
+    "/api/gpt/jobs": {
       "get": {
-        "operationId": "getEstimates",
-        "summary": "Get all estimates",
-        "description": "Retrieve all estimates for the authenticated business",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EstimatesResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "operationId": "createEstimate",
-        "summary": "Create new estimate",
-        "description": "Create a new estimate for the authenticated business",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateEstimateRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EstimateResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Server Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/estimates/{id}": {
-      "get": {
-        "operationId": "getEstimate",
-        "summary": "Get estimate by ID",
-        "description": "Retrieve a specific estimate by ID",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EstimateResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Estimate not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "operationId": "updateEstimate",
-        "summary": "Update estimate",
-        "description": "Update an existing estimate",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateEstimateRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EstimateResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Estimate not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "operationId": "deleteEstimate",
-        "summary": "Delete estimate",
-        "description": "Delete an estimate",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SuccessResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Estimate not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/invoices": {
-      "get": {
-        "operationId": "getInvoices",
-        "summary": "Get all invoices",
-        "description": "Retrieve all invoices for the authenticated business",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InvoicesResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "operationId": "createInvoice",
-        "summary": "Create new invoice",
-        "description": "Create a new invoice for the authenticated business",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateInvoiceRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InvoiceResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Server Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/invoices/{id}": {
-      "get": {
-        "operationId": "getInvoice",
-        "summary": "Get invoice by ID",
-        "description": "Retrieve a specific invoice by ID",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InvoiceResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Invoice not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "operationId": "updateInvoice",
-        "summary": "Update invoice",
-        "description": "Update an existing invoice",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateInvoiceRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InvoiceResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Invoice not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "operationId": "deleteInvoice",
-        "summary": "Delete invoice",
-        "description": "Delete an invoice",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SuccessResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Invoice not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/jobs": {
-      "get": {
-        "operationId": "getJobs",
         "summary": "Get all jobs",
-        "description": "Retrieve all jobs for the authenticated business",
+        "description": "Retrieve all jobs for the business. Optional date parameter to filter by specific date",
+        "operationId": "getJobs",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "description": "Filter jobs by specific date (YYYY-MM-DD)",
+            "schema": { "type": "string", "format": "date" }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Success",
+            "description": "Jobs retrieved successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/JobsResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "integer" },
+                          "title": { "type": "string" },
+                          "client": { "type": "string" },
+                          "status": { "type": "string", "enum": ["scheduled", "in_progress", "completed", "cancelled"] },
+                          "scheduledStart": { "type": "string", "format": "date-time" },
+                          "scheduledEnd": { "type": "string", "format": "date-time" },
+                          "address": { "type": "string" }
+                        }
+                      }
+                    },
+                    "message": { "type": "string" }
+                  }
                 }
               }
             }
@@ -490,36 +193,43 @@
         }
       },
       "post": {
-        "operationId": "createJob",
         "summary": "Create new job",
-        "description": "Create a new job for the authenticated business",
+        "description": "Schedule a new job for a client",
+        "operationId": "createJob",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateJobRequest"
+                "type": "object",
+                "required": ["clientId", "title"],
+                "properties": {
+                  "clientId": { "type": "integer", "description": "ID of the client" },
+                  "title": { "type": "string", "description": "Job title/description" },
+                  "description": { "type": "string" },
+                  "address": { "type": "string" },
+                  "scheduledStart": { "type": "string", "format": "date-time" },
+                  "scheduledEnd": { "type": "string", "format": "date-time" },
+                  "status": { "type": "string", "enum": ["scheduled", "in_progress", "completed", "cancelled"], "default": "scheduled" },
+                  "priority": { "type": "string", "enum": ["low", "normal", "high", "urgent"], "default": "normal" },
+                  "estimatedAmount": { "type": "string", "description": "Estimated cost" }
+                }
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Success",
+            "description": "Job created successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/JobResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Server Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": { "$ref": "#/components/schemas/Job" },
+                    "message": { "type": "string" }
+                  }
                 }
               }
             }
@@ -527,56 +237,17 @@
         }
       }
     },
-    "/jobs/{id}": {
-      "get": {
-        "operationId": "getJob",
-        "summary": "Get job by ID",
-        "description": "Retrieve a specific job by ID",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Job not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
+    "/api/gpt/jobs/{id}": {
+      "patch": {
+        "summary": "Update job status",
+        "description": "Update job status, notes, or actual amount",
         "operationId": "updateJob",
-        "summary": "Update job",
-        "description": "Update an existing job",
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "required": true,
-            "schema": {
-              "type": "integer"
-            }
+            "schema": { "type": "integer" }
           }
         ],
         "requestBody": {
@@ -584,65 +255,414 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateJobRequest"
+                "type": "object",
+                "properties": {
+                  "status": { "type": "string", "enum": ["scheduled", "in_progress", "completed", "cancelled"] },
+                  "notes": { "type": "string" },
+                  "actualAmount": { "type": "string" }
+                }
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Success",
+            "description": "Job updated successfully"
+          }
+        }
+      }
+    },
+    "/api/gpt/invoices": {
+      "get": {
+        "summary": "Get all invoices",
+        "description": "Retrieve all invoices for the business",
+        "operationId": "getInvoices",
+        "responses": {
+          "200": {
+            "description": "Invoices retrieved successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/JobResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Job not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "integer" },
+                          "invoiceNumber": { "type": "string" },
+                          "title": { "type": "string" },
+                          "client": { "type": "string" },
+                          "total": { "type": "string" },
+                          "status": { "type": "string", "enum": ["draft", "sent", "paid", "overdue", "cancelled"] },
+                          "dueDate": { "type": "string", "format": "date-time" },
+                          "paidAt": { "type": "string", "format": "date-time" }
+                        }
+                      }
+                    },
+                    "message": { "type": "string" }
+                  }
                 }
               }
             }
           }
         }
       },
-      "delete": {
-        "operationId": "deleteJob",
-        "summary": "Delete job",
-        "description": "Delete a job",
+      "post": {
+        "summary": "Create new invoice",
+        "description": "Create a new invoice for a client",
+        "operationId": "createInvoice",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["clientId", "title", "total"],
+                "properties": {
+                  "clientId": { "type": "integer" },
+                  "title": { "type": "string" },
+                  "total": { "type": "string", "description": "Total amount" },
+                  "lineItems": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "description": { "type": "string" },
+                        "quantity": { "type": "number" },
+                        "rate": { "type": "string" },
+                        "amount": { "type": "string" }
+                      }
+                    }
+                  },
+                  "subtotal": { "type": "string" },
+                  "status": { "type": "string", "enum": ["draft", "sent", "paid", "overdue", "cancelled"], "default": "draft" },
+                  "dueDate": { "type": "string", "format": "date-time" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Invoice created successfully"
+          }
+        }
+      }
+    },
+    "/api/gpt/estimates": {
+      "get": {
+        "summary": "Get all estimates",
+        "description": "Retrieve all estimates for the business",
+        "operationId": "getEstimates",
+        "responses": {
+          "200": {
+            "description": "Estimates retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "integer" },
+                          "estimateNumber": { "type": "string" },
+                          "title": { "type": "string" },
+                          "client": { "type": "string" },
+                          "total": { "type": "string" },
+                          "status": { "type": "string", "enum": ["draft", "sent", "approved", "rejected", "converted"] },
+                          "validUntil": { "type": "string", "format": "date-time" }
+                        }
+                      }
+                    },
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create new estimate",
+        "description": "Create a new estimate for a client",
+        "operationId": "createEstimate",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["clientId", "title", "total"],
+                "properties": {
+                  "clientId": { "type": "integer" },
+                  "title": { "type": "string" },
+                  "description": { "type": "string" },
+                  "total": { "type": "string", "description": "Total estimated amount" },
+                  "lineItems": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "description": { "type": "string" },
+                        "quantity": { "type": "number" },
+                        "rate": { "type": "string" },
+                        "amount": { "type": "string" }
+                      }
+                    }
+                  },
+                  "subtotal": { "type": "string" },
+                  "status": { "type": "string", "enum": ["draft", "sent", "approved", "rejected", "converted"], "default": "draft" },
+                  "validUntil": { "type": "string", "format": "date-time" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Estimate created successfully"
+          }
+        }
+      }
+    },
+    "/api/gpt/services": {
+      "get": {
+        "summary": "Get all services",
+        "description": "Retrieve all services/products offered by the business",
+        "operationId": "getServices",
+        "responses": {
+          "200": {
+            "description": "Services retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "integer" },
+                          "name": { "type": "string" },
+                          "description": { "type": "string" },
+                          "rate": { "type": "string" },
+                          "unit": { "type": "string" },
+                          "isActive": { "type": "boolean" }
+                        }
+                      }
+                    },
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create new service",
+        "description": "Add a new service or product to the catalog",
+        "operationId": "createService",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": { "type": "string", "description": "Service name" },
+                  "description": { "type": "string" },
+                  "rate": { "type": "string", "description": "Service rate/price" },
+                  "unit": { "type": "string", "default": "hour", "description": "Unit of measurement (hour, item, sq_ft, etc.)" },
+                  "isActive": { "type": "boolean", "default": true }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Service created successfully"
+          }
+        }
+      }
+    },
+    "/api/gpt/team": {
+      "get": {
+        "summary": "Get team members",
+        "description": "Retrieve all team members and their information",
+        "operationId": "getTeam",
+        "responses": {
+          "200": {
+            "description": "Team members retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "integer" },
+                          "username": { "type": "string" },
+                          "firstName": { "type": "string" },
+                          "lastName": { "type": "string" },
+                          "role": { "type": "string", "enum": ["admin", "member"] },
+                          "phone": { "type": "string" },
+                          "email": { "type": "string" },
+                          "isActive": { "type": "boolean" }
+                        }
+                      }
+                    },
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/gpt/revenue": {
+      "get": {
+        "summary": "Get revenue statistics",
+        "description": "Retrieve revenue statistics for the current period",
+        "operationId": "getRevenue",
         "parameters": [
           {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
+            "name": "period",
+            "in": "query",
+            "description": "Time period for revenue stats",
+            "schema": { "type": "string", "enum": ["month", "quarter", "year"], "default": "month" }
           }
         ],
         "responses": {
           "200": {
-            "description": "Success",
+            "description": "Revenue statistics retrieved successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SuccessResponse"
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "total": { "type": "number" },
+                        "paid": { "type": "number" },
+                        "pending": { "type": "number" },
+                        "overdue": { "type": "number" }
+                      }
+                    },
+                    "message": { "type": "string" }
+                  }
                 }
               }
             }
-          },
-          "404": {
-            "description": "Job not found",
+          }
+        }
+      }
+    },
+    "/api/gpt/timeclock/in": {
+      "post": {
+        "summary": "Clock in for work",
+        "description": "Record the start time for a work session",
+        "operationId": "clockIn",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["userId"],
+                "properties": {
+                  "userId": { "type": "integer", "description": "ID of the team member" },
+                  "jobId": { "type": "integer", "description": "Optional job ID to associate with time entry" },
+                  "notes": { "type": "string", "description": "Optional notes about the work session" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully clocked in"
+          }
+        }
+      }
+    },
+    "/api/gpt/timeclock/out": {
+      "post": {
+        "summary": "Clock out from work",
+        "description": "Record the end time for a work session",
+        "operationId": "clockOut",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["timeEntryId"],
+                "properties": {
+                  "timeEntryId": { "type": "integer", "description": "ID of the time entry to close" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully clocked out"
+          }
+        }
+      }
+    },
+    "/api/gpt/process": {
+      "post": {
+        "summary": "Process natural language commands",
+        "description": "Interpret voice commands and execute business operations",
+        "operationId": "processCommand",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["message"],
+                "properties": {
+                  "message": { "type": "string", "description": "Natural language command or request" },
+                  "intent": { "type": "string", "description": "Detected intent (optional)" },
+                  "context": { "type": "object", "description": "Additional context for the command" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Command processed successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": { "type": "object" },
+                    "message": { "type": "string" }
+                  }
                 }
               }
             }
@@ -653,766 +673,45 @@
   },
   "components": {
     "securitySchemes": {
-      "ApiKeyAuth": {
+      "BearerAuth": {
         "type": "apiKey",
         "in": "header",
-        "name": "X-API-Key",
-        "description": "API key for business authentication"
+        "name": "Authorization",
+        "description": "Bearer token authentication using your business API key"
       }
     },
     "schemas": {
-      "BusinessVerification": {
-        "type": "object",
-        "properties": {
-          "businessName": {
-            "type": "string"
-          },
-          "businessId": {
-            "type": "integer"
-          },
-          "dataSource": {
-            "type": "string"
-          },
-          "timestamp": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
       "Client": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "integer"
-          },
-          "businessId": {
-            "type": "integer"
-          },
-          "name": {
-            "type": "string"
-          },
-          "email": {
-            "type": "string"
-          },
-          "phone": {
-            "type": "string"
-          },
-          "address": {
-            "type": "string"
-          },
-          "notes": {
-            "type": "string"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "LineItem": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "quantity": {
-            "type": "number"
-          },
-          "rate": {
-            "type": "number"
-          },
-          "amount": {
-            "type": "number"
-          }
-        }
-      },
-      "Estimate": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer"
-          },
-          "businessId": {
-            "type": "integer"
-          },
-          "clientId": {
-            "type": "integer"
-          },
-          "estimateNumber": {
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/LineItem"
-            }
-          },
-          "subtotal": {
-            "type": "string"
-          },
-          "tax": {
-            "type": "string"
-          },
-          "total": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string"
-          },
-          "validUntil": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "notes": {
-            "type": "string"
-          },
-          "shareToken": {
-            "type": "string"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "clientName": {
-            "type": "string"
-          }
-        }
-      },
-      "Invoice": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer"
-          },
-          "businessId": {
-            "type": "integer"
-          },
-          "clientId": {
-            "type": "integer"
-          },
-          "invoiceNumber": {
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/LineItem"
-            }
-          },
-          "subtotal": {
-            "type": "string"
-          },
-          "tax": {
-            "type": "string"
-          },
-          "total": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string"
-          },
-          "dueDate": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "paidAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "shareToken": {
-            "type": "string"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "clientName": {
-            "type": "string"
-          }
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "email": { "type": "string" },
+          "phone": { "type": "string" },
+          "address": { "type": "string" },
+          "notes": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" }
         }
       },
       "Job": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "integer"
-          },
-          "businessId": {
-            "type": "integer"
-          },
-          "clientId": {
-            "type": "integer"
-          },
-          "assignedUserId": {
-            "type": "integer"
-          },
-          "title": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "address": {
-            "type": "string"
-          },
-          "scheduledStart": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "scheduledEnd": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "status": {
-            "type": "string"
-          },
-          "priority": {
-            "type": "string"
-          },
-          "jobType": {
-            "type": "string"
-          },
-          "estimatedAmount": {
-            "type": "string"
-          },
-          "notes": {
-            "type": "string"
-          },
-          "isRecurring": {
-            "type": "boolean"
-          },
-          "recurringFrequency": {
-            "type": "string"
-          },
-          "recurringEndDate": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "clientName": {
-            "type": "string"
-          }
-        }
-      },
-      "CreateClientRequest": {
-        "type": "object",
-        "required": [
-          "name"
-        ],
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "email": {
-            "type": "string"
-          },
-          "phone": {
-            "type": "string"
-          },
-          "address": {
-            "type": "string"
-          },
-          "notes": {
-            "type": "string"
-          }
-        }
-      },
-      "UpdateClientRequest": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "email": {
-            "type": "string"
-          },
-          "phone": {
-            "type": "string"
-          },
-          "address": {
-            "type": "string"
-          },
-          "notes": {
-            "type": "string"
-          }
-        }
-      },
-      "CreateEstimateRequest": {
-        "type": "object",
-        "required": [
-          "clientId",
-          "title",
-          "total"
-        ],
-        "properties": {
-          "clientId": {
-            "type": "integer"
-          },
-          "title": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/LineItem"
-            }
-          },
-          "subtotal": {
-            "type": "string"
-          },
-          "tax": {
-            "type": "string"
-          },
-          "total": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string"
-          },
-          "validUntil": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "notes": {
-            "type": "string"
-          }
-        }
-      },
-      "UpdateEstimateRequest": {
-        "type": "object",
-        "properties": {
-          "clientId": {
-            "type": "integer"
-          },
-          "title": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/LineItem"
-            }
-          },
-          "subtotal": {
-            "type": "string"
-          },
-          "tax": {
-            "type": "string"
-          },
-          "total": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string"
-          },
-          "validUntil": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "notes": {
-            "type": "string"
-          }
-        }
-      },
-      "CreateInvoiceRequest": {
-        "type": "object",
-        "required": [
-          "clientId",
-          "title",
-          "total"
-        ],
-        "properties": {
-          "clientId": {
-            "type": "integer"
-          },
-          "title": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/LineItem"
-            }
-          },
-          "subtotal": {
-            "type": "string"
-          },
-          "tax": {
-            "type": "string"
-          },
-          "total": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string"
-          },
-          "dueDate": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "notes": {
-            "type": "string"
-          }
-        }
-      },
-      "UpdateInvoiceRequest": {
-        "type": "object",
-        "properties": {
-          "clientId": {
-            "type": "integer"
-          },
-          "title": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/LineItem"
-            }
-          },
-          "subtotal": {
-            "type": "string"
-          },
-          "tax": {
-            "type": "string"
-          },
-          "total": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string"
-          },
-          "dueDate": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "notes": {
-            "type": "string"
-          }
-        }
-      },
-      "CreateJobRequest": {
-        "type": "object",
-        "required": [
-          "clientId",
-          "title"
-        ],
-        "properties": {
-          "clientId": {
-            "type": "integer"
-          },
-          "assignedUserId": {
-            "type": "integer"
-          },
-          "title": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "address": {
-            "type": "string"
-          },
-          "scheduledStart": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "scheduledEnd": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "status": {
-            "type": "string"
-          },
-          "priority": {
-            "type": "string"
-          },
-          "jobType": {
-            "type": "string"
-          },
-          "estimatedAmount": {
-            "type": "string"
-          },
-          "notes": {
-            "type": "string"
-          }
-        }
-      },
-      "UpdateJobRequest": {
-        "type": "object",
-        "properties": {
-          "clientId": {
-            "type": "integer"
-          },
-          "assignedUserId": {
-            "type": "integer"
-          },
-          "title": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "address": {
-            "type": "string"
-          },
-          "scheduledStart": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "scheduledEnd": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "status": {
-            "type": "string"
-          },
-          "priority": {
-            "type": "string"
-          },
-          "jobType": {
-            "type": "string"
-          },
-          "estimatedAmount": {
-            "type": "string"
-          },
-          "notes": {
-            "type": "string"
-          }
-        }
-      },
-      "ClientsResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Client"
-            }
-          },
-          "message": {
-            "type": "string"
-          },
-          "businessVerification": {
-            "$ref": "#/components/schemas/BusinessVerification"
-          }
-        }
-      },
-      "ClientResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "data": {
-            "$ref": "#/components/schemas/Client"
-          },
-          "message": {
-            "type": "string"
-          },
-          "businessVerification": {
-            "$ref": "#/components/schemas/BusinessVerification"
-          }
-        }
-      },
-      "EstimatesResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Estimate"
-            }
-          },
-          "message": {
-            "type": "string"
-          },
-          "businessVerification": {
-            "$ref": "#/components/schemas/BusinessVerification"
-          }
-        }
-      },
-      "EstimateResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "data": {
-            "$ref": "#/components/schemas/Estimate"
-          },
-          "message": {
-            "type": "string"
-          },
-          "businessVerification": {
-            "$ref": "#/components/schemas/BusinessVerification"
-          }
-        }
-      },
-      "InvoicesResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Invoice"
-            }
-          },
-          "message": {
-            "type": "string"
-          },
-          "businessVerification": {
-            "$ref": "#/components/schemas/BusinessVerification"
-          }
-        }
-      },
-      "InvoiceResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "data": {
-            "$ref": "#/components/schemas/Invoice"
-          },
-          "message": {
-            "type": "string"
-          },
-          "businessVerification": {
-            "$ref": "#/components/schemas/BusinessVerification"
-          }
-        }
-      },
-      "InvoiceStatsResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "data": {
-            "type": "object",
-            "properties": {
-              "totalInvoices": {
-                "type": "integer"
-              },
-              "totalRevenue": {
-                "type": "number"
-              },
-              "pendingAmount": {
-                "type": "number"
-              },
-              "paidAmount": {
-                "type": "number"
-              }
-            }
-          },
-          "message": {
-            "type": "string"
-          },
-          "businessVerification": {
-            "$ref": "#/components/schemas/BusinessVerification"
-          }
-        }
-      },
-      "JobsResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Job"
-            }
-          },
-          "message": {
-            "type": "string"
-          },
-          "businessVerification": {
-            "$ref": "#/components/schemas/BusinessVerification"
-          }
-        }
-      },
-      "JobResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "data": {
-            "$ref": "#/components/schemas/Job"
-          },
-          "message": {
-            "type": "string"
-          },
-          "businessVerification": {
-            "$ref": "#/components/schemas/BusinessVerification"
-          }
-        }
-      },
-      "SuccessResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "message": {
-            "type": "string"
-          },
-          "businessVerification": {
-            "$ref": "#/components/schemas/BusinessVerification"
-          }
-        }
-      },
-      "ErrorResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "error": {
-            "type": "string"
-          }
+          "id": { "type": "integer" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "clientId": { "type": "integer" },
+          "assignedUserId": { "type": "integer" },
+          "address": { "type": "string" },
+          "scheduledStart": { "type": "string", "format": "date-time" },
+          "scheduledEnd": { "type": "string", "format": "date-time" },
+          "status": { "type": "string", "enum": ["scheduled", "in_progress", "completed", "cancelled"] },
+          "priority": { "type": "string", "enum": ["low", "normal", "high", "urgent"] },
+          "estimatedAmount": { "type": "string" },
+          "actualAmount": { "type": "string" },
+          "notes": { "type": "string" },
+          "isRecurring": { "type": "boolean" },
+          "recurringFrequency": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" }
         }
       }
     }

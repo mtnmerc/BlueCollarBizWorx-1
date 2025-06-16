@@ -8,33 +8,26 @@ import { eq, desc } from "drizzle-orm";
 function authenticateGPT(req: any, res: any, next: any) {
   console.log('=== GPT FINAL AUTH ===');
   console.log('Method:', req.method, 'URL:', req.url);
-  console.log('All Headers:', JSON.stringify(req.headers, null, 2));
+  console.log('X-API-Key:', req.headers['x-api-key'] ? 'Present' : 'Missing');
   
-  // Check multiple possible header variations
-  const apiKey = req.headers['x-api-key'] || 
-                 req.headers['X-API-Key'] || 
-                 req.headers['X-Api-Key'] ||
-                 req.headers['authorization']?.replace('Bearer ', '');
-  
-  console.log('Extracted API Key:', apiKey ? 'Present' : 'Missing');
-  
+  const apiKey = req.headers['x-api-key'];
   if (!apiKey) {
     console.log('GPT FINAL: No API key provided');
     return res.status(401).json({ success: false, error: 'API key required' });
   }
   
+  console.log(`[GPT-AUTH] Validating API key: ${apiKey}`);
+  
   storage.getBusinessByApiKey(apiKey).then((business: any) => {
     if (!business) {
-      console.log('GPT FINAL: Invalid API key:', apiKey);
-      console.log('GPT FINAL: Database lookup returned null');
+      console.log(`[GPT-AUTH] Invalid API key: ${apiKey}`);
       return res.status(401).json({ success: false, error: 'Invalid API key' });
     }
-    console.log('GPT FINAL: Business authenticated:', business.name, 'ID:', business.id);
+    console.log(`[GPT-AUTH] API key ${apiKey} belongs to business: ${business.email} (ID: ${business.id})`);
     req.business = business;
     next();
   }).catch((error: any) => {
-    console.error('GPT FINAL: Auth error:', error);
-    console.error('GPT FINAL: API key being searched:', apiKey);
+    console.error(`[GPT-AUTH] Error validating API key ${apiKey}:`, error);
     res.status(500).json({ success: false, error: 'Authentication error' });
   });
 }
@@ -112,10 +105,10 @@ export function registerGPTRoutes(app: Express) {
           tax: estimate.taxAmount || '0.00',
           total: estimate.total || '0.00',
           status: estimate.status || 'draft',
-          validUntil: estimate.validUntil ? new Date(estimate.validUntil).toISOString() : null,
+          validUntil: estimate.validUntil,
           notes: estimate.notes || '',
           shareToken: estimate.shareToken || '',
-          createdAt: new Date(estimate.createdAt).toISOString(),
+          createdAt: estimate.createdAt,
           clientName: estimate.clientName || 'Unknown Client'
         };
       });
@@ -213,10 +206,10 @@ export function registerGPTRoutes(app: Express) {
           tax: invoice.taxAmount || '0.00',
           total: invoice.total || '0.00',
           status: invoice.status || 'draft',
-          dueDate: invoice.dueDate ? new Date(invoice.dueDate).toISOString() : null,
-          paidAt: invoice.paidAt ? new Date(invoice.paidAt).toISOString() : null,
+          dueDate: invoice.dueDate,
+          paidAt: invoice.paidAt,
           shareToken: invoice.shareToken || '',
-          createdAt: new Date(invoice.createdAt).toISOString(),
+          createdAt: invoice.createdAt,
           clientName: invoice.clientName || 'Unknown Client'
         };
       });
@@ -248,26 +241,14 @@ export function registerGPTRoutes(app: Express) {
       const business = req.business;
       console.log('GPT FINAL: Processing clients for business:', business.name);
       
-      const rawClients = await storage.getClientsByBusiness(business.id);
+      const clientsList = await storage.getClientsByBusiness(business.id);
       
-      // Format clients to ensure schema compliance
-      const formattedClients = rawClients.map(client => ({
-        id: client.id,
-        businessId: client.businessId,
-        name: client.name,
-        email: client.email,
-        phone: client.phone,
-        address: client.address,
-        notes: client.notes,
-        createdAt: client.createdAt ? new Date(client.createdAt).toISOString() : new Date().toISOString()
-      }));
-      
-      console.log('GPT FINAL: Returning', formattedClients.length, 'schema-compliant clients');
+      console.log('GPT FINAL: Returning', clientsList.length, 'clients with business verification');
       
       res.json({
         success: true,
-        data: formattedClients,
-        message: `Found ${formattedClients.length} clients for ${business.name}`,
+        data: clientsList,
+        message: `Found ${clientsList.length} clients for ${business.name}`,
         businessVerification: {
           businessName: business.name,
           businessId: business.id,
@@ -560,35 +541,12 @@ export function registerGPTRoutes(app: Express) {
         .where(eq(jobs.businessId, business.id))
         .orderBy(desc(jobs.createdAt));
 
-      // Format jobs to ensure schema compliance
-      const formattedJobs = rawJobs.map(job => ({
-        id: job.id,
-        businessId: job.businessId,
-        clientId: job.clientId,
-        assignedUserId: job.assignedUserId,
-        title: job.title,
-        description: job.description,
-        address: job.address,
-        scheduledStart: job.scheduledStart ? new Date(job.scheduledStart).toISOString() : null,
-        scheduledEnd: job.scheduledEnd ? new Date(job.scheduledEnd).toISOString() : null,
-        status: job.status,
-        priority: job.priority,
-        jobType: job.jobType,
-        estimatedAmount: job.estimatedAmount,
-        notes: job.notes,
-        isRecurring: job.isRecurring,
-        recurringFrequency: job.recurringFrequency,
-        recurringEndDate: job.recurringEndDate ? new Date(job.recurringEndDate).toISOString() : null,
-        createdAt: new Date(job.createdAt).toISOString(),
-        clientName: job.clientName
-      }));
-
-      console.log('GPT FINAL: Returning', formattedJobs.length, 'schema-compliant jobs');
+      console.log('GPT FINAL: Returning', rawJobs.length, 'jobs with business verification');
 
       res.json({
         success: true,
-        data: formattedJobs,
-        message: `Found ${formattedJobs.length} jobs for ${business.name}`,
+        data: rawJobs,
+        message: `Found ${rawJobs.length} jobs for ${business.name}`,
         businessVerification: {
           businessName: business.name,
           businessId: business.id,
@@ -610,7 +568,7 @@ export function registerGPTRoutes(app: Express) {
       const business = req.business;
       console.log('GPT FINAL: Creating job for business:', business.name);
       
-      const jobData: any = {
+      const jobData = {
         businessId: business.id,
         clientId: req.body.clientId,
         assignedUserId: req.body.assignedUserId || null,
@@ -626,22 +584,13 @@ export function registerGPTRoutes(app: Express) {
         notes: req.body.notes || ''
       };
 
-      const newJob = await storage.createJob(jobData as any);
+      const newJob = await storage.createJob(jobData);
       
       console.log('GPT FINAL: Created job', newJob.id);
       
-      // Format job response for schema compliance
-      const formattedJob = {
-        ...newJob,
-        scheduledStart: newJob.scheduledStart ? new Date(newJob.scheduledStart).toISOString() : null,
-        scheduledEnd: newJob.scheduledEnd ? new Date(newJob.scheduledEnd).toISOString() : null,
-        recurringEndDate: newJob.recurringEndDate ? new Date(newJob.recurringEndDate).toISOString() : null,
-        createdAt: new Date(newJob.createdAt).toISOString()
-      };
-
       res.json({
         success: true,
-        data: formattedJob,
+        data: newJob,
         message: `Job "${newJob.title}" created successfully`,
         businessVerification: {
           businessName: business.name,
@@ -977,6 +926,245 @@ export function registerGPTRoutes(app: Express) {
     } catch (error: any) {
       console.error('GPT FINAL Delete Estimate error:', error);
       res.status(500).json({ success: false, error: 'Failed to delete estimate', details: error.message });
+    }
+  });
+
+  // GPT DASHBOARD - Summary endpoint
+  app.get('/api/gpt/dashboard', authenticateGPT, async (req: any, res: any) => {
+    console.log('=== GPT FINAL DASHBOARD HANDLER ===');
+    
+    try {
+      const business = req.business;
+      console.log('GPT FINAL: Processing dashboard for business:', business.name);
+
+      // Get summary data
+      const clients = await storage.getClientsByBusiness(business.id);
+      const jobs = await storage.getJobsByBusiness(business.id);
+      const invoices = await storage.getInvoicesByBusiness(business.id);
+      const estimates = await storage.getEstimatesByBusiness(business.id);
+
+      const dashboardData = {
+        totalClients: clients.length,
+        totalJobs: jobs.length,
+        totalInvoices: invoices.length,
+        totalEstimates: estimates.length,
+        recentJobs: jobs.slice(0, 5),
+        recentInvoices: invoices.slice(0, 5),
+        pendingInvoices: invoices.filter((inv: any) => inv.status === 'pending').length,
+        completedJobs: jobs.filter((job: any) => job.status === 'completed').length
+      };
+
+      res.json({
+        success: true,
+        data: dashboardData,
+        message: `Dashboard data for ${business.name}`,
+        businessVerification: {
+          businessName: business.name,
+          businessId: business.id,
+          dataSource: "AUTHENTIC_DATABASE",
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (error: any) {
+      console.error('GPT FINAL Dashboard error:', error);
+      res.status(500).json({ success: false, error: 'Failed to fetch dashboard data', details: error.message });
+    }
+  });
+
+  // GPT SERVICES - Schema compliant
+  app.get('/api/gpt/services', authenticateGPT, async (req: any, res: any) => {
+    console.log('=== GPT FINAL SERVICES HANDLER ===');
+    
+    try {
+      const business = req.business;
+      console.log('GPT FINAL: Processing services for business:', business.name);
+      
+      const services = await storage.getServicesByBusiness(business.id);
+      
+      console.log('GPT FINAL: Returning', services.length, 'services with business verification');
+      
+      res.json({
+        success: true,
+        data: services,
+        message: `Found ${services.length} services for ${business.name}`,
+        businessVerification: {
+          businessName: business.name,
+          businessId: business.id,
+          dataSource: "AUTHENTIC_DATABASE",
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (error: any) {
+      console.error('GPT FINAL Services error:', error);
+      res.status(500).json({ success: false, error: 'Failed to fetch services', details: error.message });
+    }
+  });
+
+  // GPT CREATE SERVICE - Schema compliant
+  app.post('/api/gpt/services', authenticateGPT, async (req: any, res: any) => {
+    console.log('=== GPT FINAL CREATE SERVICE HANDLER ===');
+    
+    try {
+      const business = req.business;
+      console.log('GPT FINAL: Creating service for business:', business.name);
+      
+      const serviceData = {
+        businessId: business.id,
+        name: req.body.name,
+        description: req.body.description || '',
+        rate: req.body.rate?.toString() || '0.00',
+        unit: req.body.unit || 'hour',
+        category: req.body.category || 'general'
+      };
+
+      const newService = await storage.createService(serviceData);
+      
+      console.log('GPT FINAL: Created service', newService.name);
+      
+      res.json({
+        success: true,
+        data: newService,
+        message: `Service "${newService.name}" created successfully`,
+        businessVerification: {
+          businessName: business.name,
+          businessId: business.id,
+          dataSource: "AUTHENTIC_DATABASE",
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (error: any) {
+      console.error('GPT FINAL Create Service error:', error);
+      res.status(500).json({ success: false, error: 'Failed to create service', details: error.message });
+    }
+  });
+
+  // GPT TEAM - Schema compliant
+  app.get('/api/gpt/team', authenticateGPT, async (req: any, res: any) => {
+    console.log('=== GPT FINAL TEAM HANDLER ===');
+    
+    try {
+      const business = req.business;
+      console.log('GPT FINAL: Processing team for business:', business.name);
+      
+      const teamMembers = await storage.getUsersByBusiness(business.id);
+      
+      console.log('GPT FINAL: Returning', teamMembers.length, 'team members with business verification');
+      
+      res.json({
+        success: true,
+        data: teamMembers,
+        message: `Found ${teamMembers.length} team members for ${business.name}`,
+        businessVerification: {
+          businessName: business.name,
+          businessId: business.id,
+          dataSource: "AUTHENTIC_DATABASE",
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (error: any) {
+      console.error('GPT FINAL Team error:', error);
+      res.status(500).json({ success: false, error: 'Failed to fetch team members', details: error.message });
+    }
+  });
+
+  // GPT REVENUE - Schema compliant
+  app.get('/api/gpt/revenue', authenticateGPT, async (req: any, res: any) => {
+    console.log('=== GPT FINAL REVENUE HANDLER ===');
+    
+    try {
+      const business = req.business;
+      console.log('GPT FINAL: Processing revenue for business:', business.name);
+      
+      const invoices = await storage.getInvoicesByBusiness(business.id);
+      
+      const totalRevenue = invoices
+        .filter((inv: any) => inv.status === 'paid')
+        .reduce((sum: number, inv: any) => sum + parseFloat(inv.total || '0'), 0);
+      
+      const pendingRevenue = invoices
+        .filter((inv: any) => inv.status === 'pending')
+        .reduce((sum: number, inv: any) => sum + parseFloat(inv.total || '0'), 0);
+
+      const revenueData = {
+        totalRevenue: totalRevenue.toFixed(2),
+        pendingRevenue: pendingRevenue.toFixed(2),
+        paidInvoices: invoices.filter((inv: any) => inv.status === 'paid').length,
+        pendingInvoices: invoices.filter((inv: any) => inv.status === 'pending').length,
+        totalInvoices: invoices.length
+      };
+      
+      console.log('GPT FINAL: Returning revenue data with business verification');
+      
+      res.json({
+        success: true,
+        data: revenueData,
+        message: `Revenue data for ${business.name}`,
+        businessVerification: {
+          businessName: business.name,
+          businessId: business.id,
+          dataSource: "AUTHENTIC_DATABASE",
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (error: any) {
+      console.error('GPT FINAL Revenue error:', error);
+      res.status(500).json({ success: false, error: 'Failed to fetch revenue data', details: error.message });
+    }
+  });
+
+  // GPT PROCESS - Natural language processing endpoint
+  app.post('/api/gpt/process', authenticateGPT, async (req: any, res: any) => {
+    console.log('=== GPT FINAL PROCESS HANDLER ===');
+    
+    try {
+      const business = req.business;
+      const { message, intent, context } = req.body;
+      console.log('GPT FINAL: Processing request for business:', business.name);
+      console.log('GPT FINAL: Message:', message);
+      console.log('GPT FINAL: Intent:', intent);
+      
+      // Simple intent processing
+      let response = {
+        success: true,
+        message: "Request processed successfully",
+        data: null,
+        businessVerification: {
+          businessName: business.name,
+          businessId: business.id,
+          dataSource: "AUTHENTIC_DATABASE",
+          timestamp: new Date().toISOString()
+        }
+      };
+
+      // Process based on intent
+      switch (intent) {
+        case 'get_jobs':
+          const jobs = await storage.getJobsByBusiness(business.id);
+          response.data = jobs;
+          response.message = `Found ${jobs.length} jobs`;
+          break;
+          
+        case 'get_clients':
+          const clients = await storage.getClientsByBusiness(business.id);
+          response.data = clients;
+          response.message = `Found ${clients.length} clients`;
+          break;
+          
+        case 'get_invoices':
+          const invoices = await storage.getInvoicesByBusiness(business.id);
+          response.data = invoices;
+          response.message = `Found ${invoices.length} invoices`;
+          break;
+          
+        default:
+          response.message = "Intent processed but no specific action taken";
+          response.data = { intent, context, processedAt: new Date().toISOString() };
+      }
+      
+      res.json(response);
+    } catch (error: any) {
+      console.error('GPT FINAL Process error:', error);
+      res.status(500).json({ success: false, error: 'Failed to process request', details: error.message });
     }
   });
 

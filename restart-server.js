@@ -1,19 +1,13 @@
-import { spawn } from 'child_process';
+// Force server restart
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-console.log('Starting development server...');
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const server = spawn('npx', ['tsx', 'server/index.ts'], {
-  env: { 
-    ...process.env, 
-    NODE_ENV: 'development',
-    PORT: '5000'
-  },
-  stdio: 'inherit'
-});
+// Touch the main server file to trigger hot reload
+const serverPath = path.join(__dirname, 'server', 'index.ts');
+const content = fs.readFileSync(serverPath, 'utf8');
+fs.writeFileSync(serverPath, content);
 
-server.on('error', (err) => {
-  console.error('Server error:', err);
-});
-
-// Keep process alive
-setInterval(() => {}, 1000);
+console.log('Server restart triggered');
