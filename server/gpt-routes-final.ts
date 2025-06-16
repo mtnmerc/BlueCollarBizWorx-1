@@ -16,16 +16,18 @@ function authenticateGPT(req: any, res: any, next: any) {
     return res.status(401).json({ success: false, error: 'API key required' });
   }
   
+  console.log(`[GPT-AUTH] Validating API key: ${apiKey}`);
+  
   storage.getBusinessByApiKey(apiKey).then((business: any) => {
     if (!business) {
-      console.log('GPT FINAL: Invalid API key');
+      console.log(`[GPT-AUTH] Invalid API key: ${apiKey}`);
       return res.status(401).json({ success: false, error: 'Invalid API key' });
     }
-    console.log('GPT FINAL: Business authenticated:', business.name);
+    console.log(`[GPT-AUTH] API key ${apiKey} belongs to business: ${business.email} (ID: ${business.id})`);
     req.business = business;
     next();
   }).catch((error: any) => {
-    console.error('GPT FINAL: Auth error:', error);
+    console.error(`[GPT-AUTH] Error validating API key ${apiKey}:`, error);
     res.status(500).json({ success: false, error: 'Authentication error' });
   });
 }
