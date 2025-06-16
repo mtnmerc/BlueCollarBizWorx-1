@@ -567,9 +567,39 @@ export function registerGPTRoutes(app: Express) {
       const business = req.business;
       console.log('GPT FINAL: Creating job for business:', business.name);
       
+      // If no clientId provided, use the first available client or create a default one
+      let clientId = req.body.clientId;
+      console.log('GPT FINAL: Original clientId from request:', clientId);
+      
+      if (!clientId) {
+        console.log('GPT FINAL: No clientId provided, looking for existing clients...');
+        const businessClients = await storage.getClientsByBusinessId(business.id);
+        console.log('GPT FINAL: Found', businessClients.length, 'existing clients');
+        
+        if (businessClients.length > 0) {
+          clientId = businessClients[0].id;
+          console.log('GPT FINAL: Using existing client ID:', clientId);
+        } else {
+          console.log('GPT FINAL: No existing clients, creating default client...');
+          // Create a default client for jobs without specific client
+          const defaultClient = await storage.createClient({
+            businessId: business.id,
+            name: "General Client",
+            email: "general@business.com",
+            phone: "",
+            address: "",
+            notes: "Default client for general jobs"
+          });
+          clientId = defaultClient.id;
+          console.log('GPT FINAL: Created default client with ID:', clientId);
+        }
+      }
+      
+      console.log('GPT FINAL: Final clientId to use:', clientId);
+      
       const jobData = {
         businessId: business.id,
-        clientId: req.body.clientId,
+        clientId: clientId,
         assignedUserId: req.body.assignedUserId || null,
         title: req.body.title,
         description: req.body.description || '',
