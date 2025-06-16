@@ -527,6 +527,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const httpServer = createServer(app);
   
+  // API Key Management Routes
+  app.get("/api/business/api-key", async (req, res) => {
+    try {
+      if (!(req.session as any).businessId) {
+        return res.status(401).json({ success: false, error: "Not authenticated" });
+      }
+
+      const business = await storage.getBusinessById((req.session as any).businessId);
+      if (!business) {
+        return res.status(404).json({ success: false, error: "Business not found" });
+      }
+
+      res.json({ 
+        success: true, 
+        data: { 
+          apiKey: business.apiKey || null,
+          hasApiKey: !!business.apiKey 
+        } 
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  app.post("/api/business/api-key", async (req, res) => {
+    try {
+      if (!(req.session as any).businessId) {
+        return res.status(401).json({ success: false, error: "Not authenticated" });
+      }
+
+      const businessId = (req.session as any).businessId;
+      const apiKey = await storage.generateApiKey(businessId);
+      
+      res.json({ 
+        success: true, 
+        data: { apiKey },
+        message: "API key generated successfully" 
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  app.delete("/api/business/api-key", async (req, res) => {
+    try {
+      if (!(req.session as any).businessId) {
+        return res.status(401).json({ success: false, error: "Not authenticated" });
+      }
+
+      const businessId = (req.session as any).businessId;
+      await storage.updateBusiness(businessId, { apiKey: null });
+      
+      res.json({ 
+        success: true, 
+        message: "API key revoked successfully" 
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
   const PORT = Number(process.env.PORT) || 5000;
   httpServer.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on port ${PORT}`);
