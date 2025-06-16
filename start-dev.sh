@@ -1,3 +1,4 @@
 #!/bin/bash
 cd /home/runner/workspace
-NODE_ENV=development npx tsx server/index.ts
+export NODE_ENV=development
+exec tsx server/index.ts
