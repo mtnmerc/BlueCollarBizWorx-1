@@ -4,28 +4,36 @@ import { db } from "./db";
 import { estimates, invoices, clients, jobs } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 
-// GPT Authentication middleware
+// GPT Authentication middleware - requires both API key and secret
 function authenticateGPT(req: any, res: any, next: any) {
-  console.log('=== GPT FINAL AUTH ===');
+  console.log('=== GPT DUAL-KEY AUTH ===');
   console.log('Method:', req.method, 'URL:', req.url);
   console.log('X-API-Key:', req.headers['x-api-key'] ? 'Present' : 'Missing');
+  console.log('X-API-Secret:', req.headers['x-api-secret'] ? 'Present' : 'Missing');
   
   const apiKey = req.headers['x-api-key'];
+  const apiSecret = req.headers['x-api-secret'];
+  
   if (!apiKey) {
-    console.log('GPT FINAL: No API key provided');
+    console.log('GPT AUTH: No API key provided');
     return res.status(401).json({ success: false, error: 'API key required' });
   }
   
-  storage.getBusinessByApiKey(apiKey).then((business: any) => {
+  if (!apiSecret) {
+    console.log('GPT AUTH: No API secret provided');
+    return res.status(401).json({ success: false, error: 'API secret required' });
+  }
+  
+  storage.getBusinessByApiKeys(apiKey, apiSecret).then((business: any) => {
     if (!business) {
-      console.log('GPT FINAL: Invalid API key');
-      return res.status(401).json({ success: false, error: 'Invalid API key' });
+      console.log('GPT AUTH: Invalid API key/secret combination');
+      return res.status(401).json({ success: false, error: 'Invalid API credentials' });
     }
-    console.log('GPT FINAL: Business authenticated:', business.name);
+    console.log('GPT AUTH: Business authenticated:', business.name);
     req.business = business;
     next();
   }).catch((error: any) => {
-    console.error('GPT FINAL: Auth error:', error);
+    console.error('GPT AUTH: Auth error:', error);
     res.status(500).json({ success: false, error: 'Authentication error' });
   });
 }

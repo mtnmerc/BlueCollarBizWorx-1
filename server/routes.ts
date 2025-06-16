@@ -564,14 +564,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ success: false, error: "Invalid business session" });
       }
 
-      const apiKey = await storage.generateApiKey(businessId);
+      const { apiKey, apiSecret } = await storage.generateApiKeys(businessId);
 
       res.json({ 
         success: true, 
         data: { 
-          apiKey: apiKey 
+          apiKey,
+          apiSecret
         },
-        message: "API key generated successfully"
+        message: "API credentials generated successfully"
       });
     } catch (error: any) {
       res.status(500).json({ success: false, error: error.message });

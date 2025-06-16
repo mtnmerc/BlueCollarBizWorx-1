@@ -89,8 +89,10 @@ export interface IStorage {
   getIncompleteJobsForDate(businessId: number, date: Date): Promise<Job[]>;
 
   // API Key Management methods
-  generateApiKey(businessId: number): Promise<string>;
-  revokeApiKey(businessId: number): Promise<void>;
+  generateApiKeys(businessId: number): Promise<{apiKey: string, apiSecret: string}>;
+  revokeApiKeys(businessId: number): Promise<void>;
+  getBusinessByApiKeys(apiKey: string, apiSecret: string): Promise<Business | null>;
+  // Legacy method for backward compatibility
   getBusinessByApiKey(apiKey: string): Promise<Business | null>;
 }
 
@@ -692,24 +694,27 @@ export class DatabaseStorage implements IStorage {
       );
   }
 
-  async generateApiKey(businessId: number): Promise<string> {
+  async generateApiKeys(businessId: number): Promise<{apiKey: string, apiSecret: string}> {
     const apiKey = 'bw_' + Math.random().toString(36).substr(2, 32) + Date.now().toString(36);
+    const apiSecret = 'sk_' + Math.random().toString(36).substr(2, 40) + Date.now().toString(36);
 
     await this.db.update(businesses)
-      .set({ apiKey })
+      .set({ apiKey, apiSecret })
       .where(eq(businesses.id, businessId));
 
-    return apiKey;
+    return { apiKey, apiSecret };
   }
 
-  async revokeApiKey(businessId: number): Promise<void> {
+  async revokeApiKeys(businessId: number): Promise<void> {
     await this.db.update(businesses)
-      .set({ apiKey: null })
+      .set({ apiKey: null, apiSecret: null })
       .where(eq(businesses.id, businessId));
   }
 
-  async getBusinessByApiKey(apiKey: string): Promise<Business | null> {
-    const [result] = await this.db.select().from(businesses).where(eq(businesses.apiKey, apiKey));
+  async getBusinessByApiKeys(apiKey: string, apiSecret: string): Promise<Business | null> {
+    const [result] = await this.db.select().from(businesses).where(
+      and(eq(businesses.apiKey, apiKey), eq(businesses.apiSecret, apiSecret))
+    );
     return result || null;
   }
 
