@@ -29,6 +29,8 @@ export default function BusinessSettings() {
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [showApiKey, setShowApiKey] = useState(false);
   const [isGeneratingKey, setIsGeneratingKey] = useState(false);
+  const [isRevokingKey, setIsRevokingKey] = useState(false);
+  const [hasApiKey, setHasApiKey] = useState(false);
 
   const { data: authData } = useQuery({
     queryKey: ["/api/auth/me"],
@@ -60,6 +62,7 @@ export default function BusinessSettings() {
       }
       if (business.apiKey) {
         setApiKey(business.apiKey);
+        setHasApiKey(true);
       }
     }
   });
@@ -172,28 +175,42 @@ export default function BusinessSettings() {
   const generateApiKey = async () => {
     setIsGeneratingKey(true);
     try {
-      const response = await apiRequest("POST", "/api/business/api-key", {});
+      const response = await fetch("/api/business/api-key", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
       const data = await response.json();
-      if (data.success) {
-        // Set the new API key immediately
-        setApiKey(data.apiKey);
-        setShowApiKey(true); // Show the key by default when newly generated
+
+      if (!response.ok) {
+        throw new Error(data.error || `HTTP ${response.status}: Failed to generate API key`);
+      }
+
+      if (data.success && data.data?.apiKey) {
+        // Verify the API key has the correct format
+        if (!data.data.apiKey.startsWith('bw_')) {
+          throw new Error("Generated API key has invalid format");
+        }
+
+        setApiKey(data.data.apiKey);
+        setHasApiKey(true);
+
         toast({
           title: "Success",
-          description: "API key generated successfully!",
+          description: "API key generated successfully",
         });
-        queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+
+        console.log("API key generated:", data.data.apiKey);
       } else {
-        toast({
-          title: "Error",
-          description: data.error || "Failed to generate API key",
-          variant: "destructive",
-        });
+        throw new Error(data.error || "API key generation returned invalid response");
       }
-    } catch (error: any) {
+    } catch (error) {
+      console.error("Error generating API key:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to generate API key",
+        description: error instanceof Error ? error.message : "Failed to generate API key",
         variant: "destructive",
       });
     } finally {
@@ -202,20 +219,44 @@ export default function BusinessSettings() {
   };
 
   const revokeApiKey = async () => {
+    setIsRevokingKey(true);
     try {
-      await apiRequest("DELETE", "/api/business/api-key", {});
-      setApiKey(null);
-      toast({
-        title: "Success",
-        description: "API key revoked successfully!",
+      const response = await fetch("/api/business/api-key", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
-    } catch (error: any) {
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || `HTTP ${response.status}: Failed to revoke API key`);
+      }
+
+      if (data.success) {
+        // Clear the API key state completely
+        setApiKey("");
+        setHasApiKey(false);
+
+        toast({
+          title: "Success",
+          description: "API key revoked successfully",
+        });
+
+        console.log("API key revoked successfully");
+      } else {
+        throw new Error(data.error || "API key revocation returned invalid response");
+      }
+    } catch (error) {
+      console.error("Error revoking API key:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to revoke API key",
+        description: error instanceof Error ? error.message : "Failed to revoke API key",
         variant: "destructive",
       });
+    } finally {
+      setIsRevokingKey(false);
     }
   };
 
@@ -359,8 +400,9 @@ export default function BusinessSettings() {
                       variant="destructive"
                       size="sm"
                       onClick={revokeApiKey}
+                      disabled={isRevokingKey}
                     >
-                      Revoke Key
+                      {isRevokingKey ? "Revoking..." : "Revoke Key"}
                     </Button>
                   </div>
                 </div>

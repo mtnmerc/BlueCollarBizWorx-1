@@ -558,14 +558,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const businessId = (req.session as any).businessId;
-      const apiKey = await storage.generateApiKey(businessId);
+      
+      // Generate new API key with proper format
+      const newApiKey = `bw_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 10)}`;
+      
+      // Update the business with the new API key
+      await storage.updateBusiness(businessId, { apiKey: newApiKey });
+      
+      // Verify the update worked by fetching the business
+      const updatedBusiness = await storage.getBusinessById(businessId);
+      
+      if (!updatedBusiness || updatedBusiness.apiKey !== newApiKey) {
+        throw new Error("Failed to save API key to database");
+      }
       
       res.json({ 
         success: true, 
-        data: { apiKey },
+        data: { apiKey: newApiKey },
         message: "API key generated successfully" 
       });
     } catch (error: any) {
+      console.error('API key generation error:', error);
       res.status(500).json({ success: false, error: error.message });
     }
   });
