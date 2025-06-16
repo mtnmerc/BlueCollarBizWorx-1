@@ -132,12 +132,12 @@ export default function BusinessSettings() {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     const img = new Image();
-    
+
     img.onload = () => {
       // Calculate new dimensions (max 800px width/height)
       const maxSize = 800;
       let { width, height } = img;
-      
+
       if (width > height) {
         if (width > maxSize) {
           height = (height * maxSize) / width;
@@ -149,18 +149,18 @@ export default function BusinessSettings() {
           height = maxSize;
         }
       }
-      
+
       canvas.width = width;
       canvas.height = height;
-      
+
       // Draw and compress
       ctx?.drawImage(img, 0, 0, width, height);
       const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
-      
+
       setLogoPreview(compressedBase64);
       uploadLogoMutation.mutate(compressedBase64);
     };
-    
+
     img.src = URL.createObjectURL(file);
   };
 
@@ -174,13 +174,22 @@ export default function BusinessSettings() {
     try {
       const response = await apiRequest("POST", "/api/business/api-key", {});
       const data = await response.json();
-      setApiKey(data.apiKey);
-      setShowApiKey(true);
-      toast({
-        title: "Success",
-        description: "API key generated successfully!",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      if (data.success) {
+        // Set the new API key immediately
+        setApiKey(data.apiKey);
+        setShowApiKey(true); // Show the key by default when newly generated
+        toast({
+          title: "Success",
+          description: "API key generated successfully!",
+        });
+        queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      } else {
+        toast({
+          title: "Error",
+          description: data.error || "Failed to generate API key",
+          variant: "destructive",
+        });
+      }
     } catch (error: any) {
       toast({
         title: "Error",
@@ -317,7 +326,7 @@ export default function BusinessSettings() {
               <p className="text-sm text-muted-foreground">
                 Generate an API key to integrate your BizWorx data with external tools like n8n, Zapier, or custom applications.
               </p>
-              
+
               {apiKey ? (
                 <div className="space-y-3">
                   <div className="flex items-center space-x-2">
@@ -370,7 +379,7 @@ export default function BusinessSettings() {
                   </Button>
                 </div>
               )}
-              
+
               <div className="mt-4 p-3 bg-muted/50 rounded-lg">
                 <h4 className="text-sm font-medium mb-2">API Usage Instructions:</h4>
                 <ul className="text-xs text-muted-foreground space-y-1">
