@@ -87,7 +87,7 @@ function startServerAndTest() {
     const loginOptions = {
       hostname: 'localhost',
       port: 5000,
-      path: '/api/auth/login',
+      path: '/api/auth/business/login',
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

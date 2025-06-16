@@ -88,6 +88,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const users = await storage.getUsersByBusiness(business.id);
       const hasAdmin = users.some(user => user.role === 'owner' || user.role === 'admin');
 
+      // Set business session for API access
       (req.session as any).businessId = business.id;
 
       if (hasAdmin) {

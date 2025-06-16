@@ -172,8 +172,10 @@ export default function BusinessSettings() {
   const generateApiKey = async () => {
     setIsGeneratingKey(true);
     try {
-      const data = await apiRequest("POST", "/api/business/api-key", {});
-      setApiKey(data.data.apiKey);
+      const response = await apiRequest("POST", "/api/business/api-key", {});
+      const json = await response.json();
+      const data = json.data || json;
+      setApiKey(data.apiKey);
       setShowApiKey(true);
       toast({
         title: "Success",
