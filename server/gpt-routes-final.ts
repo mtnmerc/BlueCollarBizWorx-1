@@ -248,14 +248,26 @@ export function registerGPTRoutes(app: Express) {
       const business = req.business;
       console.log('GPT FINAL: Processing clients for business:', business.name);
       
-      const clientsList = await storage.getClientsByBusiness(business.id);
+      const rawClients = await storage.getClientsByBusiness(business.id);
       
-      console.log('GPT FINAL: Returning', clientsList.length, 'clients with business verification');
+      // Format clients to ensure schema compliance
+      const formattedClients = rawClients.map(client => ({
+        id: client.id,
+        businessId: client.businessId,
+        name: client.name,
+        email: client.email,
+        phone: client.phone,
+        address: client.address,
+        notes: client.notes,
+        createdAt: client.createdAt ? new Date(client.createdAt).toISOString() : new Date().toISOString()
+      }));
+      
+      console.log('GPT FINAL: Returning', formattedClients.length, 'schema-compliant clients');
       
       res.json({
         success: true,
-        data: clientsList,
-        message: `Found ${clientsList.length} clients for ${business.name}`,
+        data: formattedClients,
+        message: `Found ${formattedClients.length} clients for ${business.name}`,
         businessVerification: {
           businessName: business.name,
           businessId: business.id,
@@ -575,7 +587,7 @@ export function registerGPTRoutes(app: Express) {
       const business = req.business;
       console.log('GPT FINAL: Creating job for business:', business.name);
       
-      const jobData = {
+      const jobData: any = {
         businessId: business.id,
         clientId: req.body.clientId,
         assignedUserId: req.body.assignedUserId || null,
@@ -591,7 +603,7 @@ export function registerGPTRoutes(app: Express) {
         notes: req.body.notes || ''
       };
 
-      const newJob = await storage.createJob(jobData);
+      const newJob = await storage.createJob(jobData as any);
       
       console.log('GPT FINAL: Created job', newJob.id);
       
