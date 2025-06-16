@@ -10,8 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { ArrowLeft, Building, Upload, X, Camera, Key, Copy, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Building, Upload, X, Camera, Key, Copy, Eye, EyeOff, Moon, Sun } from "lucide-react";
 import { Link } from "wouter";
+import { useTheme } from "@/components/theme-provider";
 
 const businessSettingsSchema = z.object({
   name: z.string().min(1, "Business name is required"),
