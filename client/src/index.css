@@ -3,22 +3,22 @@
 @tailwind utilities;
 
 :root {
-  --background: 0 0% 0%; /* #000000 - Black background */
-  --foreground: 120 15% 95%; /* #F2F5F2 - Soft white with green tint */
-  --muted: 135 20% 15%; /* #1F3A1F - Darker green muted */
-  --muted-foreground: 120 10% 70%; /* #B8C4B8 - Muted green-gray */
-  --popover: 135 25% 12%; /* #172C17 - Dark green popover */
-  --popover-foreground: 120 15% 95%; /* #F2F5F2 - Light foreground */
-  --card: 135 30% 12%; /* #172E17 - Rich dark green cards */
-  --card-foreground: 120 15% 95%; /* #F2F5F2 - Light text on cards */
-  --border: 135 15% 25%; /* #384538 - Subtle green border */
-  --input: 135 25% 15%; /* #1F3A1F - Dark green input background */
+  --background: 0 0% 98%; /* #FAFAFA - Light background */
+  --foreground: 135 25% 8%; /* #0F1F0F - Dark green text */
+  --muted: 120 10% 90%; /* #E8F0E8 - Light green muted */
+  --muted-foreground: 135 15% 40%; /* #526352 - Muted green-gray */
+  --popover: 0 0% 100%; /* #FFFFFF - White popover */
+  --popover-foreground: 135 25% 8%; /* #0F1F0F - Dark foreground */
+  --card: 0 0% 100%; /* #FFFFFF - White cards */
+  --card-foreground: 135 25% 8%; /* #0F1F0F - Dark text on cards */
+  --border: 120 15% 85%; /* #D4E6D4 - Light green border */
+  --input: 0 0% 100%; /* #FFFFFF - White input background */
   --primary: 120 70% 35%; /* #1B8B1B - Vibrant opaque green */
   --primary-foreground: 120 15% 95%; /* #F2F5F2 - Light text on primary */
-  --secondary: 135 40% 25%; /* #284D28 - Secondary dark green */
-  --secondary-foreground: 120 15% 95%; /* #F2F5F2 - Light text on secondary */
+  --secondary: 120 10% 90%; /* #E8F0E8 - Light secondary green */
+  --secondary-foreground: 135 25% 8%; /* #0F1F0F - Dark text on secondary */
   --accent: 120 60% 45%; /* #33A533 - Bright opaque green accent */
-  --accent-foreground: 135 25% 8%; /* #0F1F0F - Dark text on accent */
+  --accent-foreground: 0 0% 100%; /* #FFFFFF - White text on accent */
   --destructive: 0 84% 60%; /* #F56565 - Red for warnings */
   --destructive-foreground: 0 0% 100%; /* #FFFFFF - White text on red */
   --ring: 120 70% 35%; /* #1B8B1B - Green focus ring */
