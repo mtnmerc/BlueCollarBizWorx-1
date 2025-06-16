@@ -533,12 +533,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ success: false, error: "Not authenticated" });
       }
 
-      const businessId = (req.session as any).businessId;
-      
-      // Verify business exists and session is valid for this business
-      const business = await storage.getBusinessById(businessId);
+      const business = await storage.getBusinessById((req.session as any).businessId);
       if (!business) {
-        return res.status(401).json({ success: false, error: "Invalid business session" });
+        return res.status(404).json({ success: false, error: "Business not found" });
       }
 
       res.json({ 
