@@ -112,10 +112,10 @@ export function registerGPTRoutes(app: Express) {
           tax: estimate.taxAmount || '0.00',
           total: estimate.total || '0.00',
           status: estimate.status || 'draft',
-          validUntil: estimate.validUntil,
+          validUntil: estimate.validUntil ? new Date(estimate.validUntil).toISOString() : null,
           notes: estimate.notes || '',
           shareToken: estimate.shareToken || '',
-          createdAt: estimate.createdAt,
+          createdAt: new Date(estimate.createdAt).toISOString(),
           clientName: estimate.clientName || 'Unknown Client'
         };
       });
@@ -213,10 +213,10 @@ export function registerGPTRoutes(app: Express) {
           tax: invoice.taxAmount || '0.00',
           total: invoice.total || '0.00',
           status: invoice.status || 'draft',
-          dueDate: invoice.dueDate,
-          paidAt: invoice.paidAt,
+          dueDate: invoice.dueDate ? new Date(invoice.dueDate).toISOString() : null,
+          paidAt: invoice.paidAt ? new Date(invoice.paidAt).toISOString() : null,
           shareToken: invoice.shareToken || '',
-          createdAt: invoice.createdAt,
+          createdAt: new Date(invoice.createdAt).toISOString(),
           clientName: invoice.clientName || 'Unknown Client'
         };
       });
