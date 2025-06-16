@@ -560,12 +560,35 @@ export function registerGPTRoutes(app: Express) {
         .where(eq(jobs.businessId, business.id))
         .orderBy(desc(jobs.createdAt));
 
-      console.log('GPT FINAL: Returning', rawJobs.length, 'jobs with business verification');
+      // Format jobs to ensure schema compliance
+      const formattedJobs = rawJobs.map(job => ({
+        id: job.id,
+        businessId: job.businessId,
+        clientId: job.clientId,
+        assignedUserId: job.assignedUserId,
+        title: job.title,
+        description: job.description,
+        address: job.address,
+        scheduledStart: job.scheduledStart ? new Date(job.scheduledStart).toISOString() : null,
+        scheduledEnd: job.scheduledEnd ? new Date(job.scheduledEnd).toISOString() : null,
+        status: job.status,
+        priority: job.priority,
+        jobType: job.jobType,
+        estimatedAmount: job.estimatedAmount,
+        notes: job.notes,
+        isRecurring: job.isRecurring,
+        recurringFrequency: job.recurringFrequency,
+        recurringEndDate: job.recurringEndDate ? new Date(job.recurringEndDate).toISOString() : null,
+        createdAt: new Date(job.createdAt).toISOString(),
+        clientName: job.clientName
+      }));
+
+      console.log('GPT FINAL: Returning', formattedJobs.length, 'schema-compliant jobs');
 
       res.json({
         success: true,
-        data: rawJobs,
-        message: `Found ${rawJobs.length} jobs for ${business.name}`,
+        data: formattedJobs,
+        message: `Found ${formattedJobs.length} jobs for ${business.name}`,
         businessVerification: {
           businessName: business.name,
           businessId: business.id,
@@ -607,9 +630,18 @@ export function registerGPTRoutes(app: Express) {
       
       console.log('GPT FINAL: Created job', newJob.id);
       
+      // Format job response for schema compliance
+      const formattedJob = {
+        ...newJob,
+        scheduledStart: newJob.scheduledStart ? new Date(newJob.scheduledStart).toISOString() : null,
+        scheduledEnd: newJob.scheduledEnd ? new Date(newJob.scheduledEnd).toISOString() : null,
+        recurringEndDate: newJob.recurringEndDate ? new Date(newJob.recurringEndDate).toISOString() : null,
+        createdAt: new Date(newJob.createdAt).toISOString()
+      };
+
       res.json({
         success: true,
-        data: newJob,
+        data: formattedJob,
         message: `Job "${newJob.title}" created successfully`,
         businessVerification: {
           businessName: business.name,
