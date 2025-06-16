@@ -573,7 +573,7 @@ export function registerGPTRoutes(app: Express) {
       
       if (!clientId) {
         console.log('GPT FINAL: No clientId provided, looking for existing clients...');
-        const businessClients = await storage.getClientsByBusinessId(business.id);
+        const businessClients = await storage.getClientsByBusiness(business.id);
         console.log('GPT FINAL: Found', businessClients.length, 'existing clients');
         
         if (businessClients.length > 0) {
@@ -612,6 +612,13 @@ export function registerGPTRoutes(app: Express) {
         estimatedAmount: req.body.estimatedAmount?.toString() || '0.00',
         notes: req.body.notes || ''
       };
+
+      console.log('GPT FINAL: Job data before creation:', JSON.stringify(jobData, null, 2));
+      
+      // Ensure clientId is not null
+      if (!jobData.clientId) {
+        throw new Error('Client ID is required but was null or undefined');
+      }
 
       const newJob = await storage.createJob(jobData);
       
