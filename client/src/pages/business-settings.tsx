@@ -27,7 +27,9 @@ export default function BusinessSettings() {
   const [isUploading, setIsUploading] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [apiKey, setApiKey] = useState<string | null>(null);
+  const [apiSecret, setApiSecret] = useState<string | null>(null);
   const [showApiKey, setShowApiKey] = useState(false);
+  const [showApiSecret, setShowApiSecret] = useState(false);
   const [isGeneratingKey, setIsGeneratingKey] = useState(false);
 
   const { data: authData } = useQuery({
@@ -60,6 +62,9 @@ export default function BusinessSettings() {
       }
       if (business.apiKey) {
         setApiKey(business.apiKey);
+      }
+      if (business.apiSecret) {
+        setApiSecret(business.apiSecret);
       }
     }
   });
@@ -176,10 +181,12 @@ export default function BusinessSettings() {
       const json = await response.json();
       const data = json.data || json;
       setApiKey(data.apiKey);
+      setApiSecret(data.apiSecret);
       setShowApiKey(true);
+      setShowApiSecret(true);
       toast({
         title: "Success",
-        description: "API key generated successfully!",
+        description: "API credentials generated successfully!",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
     } catch (error: any) {
@@ -197,15 +204,16 @@ export default function BusinessSettings() {
     try {
       await apiRequest("DELETE", "/api/business/api-key", {});
       setApiKey(null);
+      setApiSecret(null);
       toast({
         title: "Success",
-        description: "API key revoked successfully!",
+        description: "API credentials revoked successfully!",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "Failed to revoke API key",
+        description: error.message || "Failed to revoke API credentials",
         variant: "destructive",
       });
     }
@@ -217,6 +225,16 @@ export default function BusinessSettings() {
       toast({
         title: "Copied!",
         description: "API key copied to clipboard",
+      });
+    }
+  };
+
+  const copyApiSecret = () => {
+    if (apiSecret) {
+      navigator.clipboard.writeText(apiSecret);
+      toast({
+        title: "Copied!",
+        description: "API secret copied to clipboard",
       });
     }
   };

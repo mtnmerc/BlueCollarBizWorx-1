@@ -542,6 +542,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: true, 
         data: { 
           apiKey: business.apiKey,
+          apiSecret: business.apiSecret,
           hasApiKey: !!business.apiKey 
         } 
       });
