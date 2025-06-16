@@ -89,10 +89,8 @@ export interface IStorage {
   getIncompleteJobsForDate(businessId: number, date: Date): Promise<Job[]>;
 
   // API Key Management methods
-  generateApiKeys(businessId: number): Promise<{apiKey: string, apiSecret: string}>;
-  revokeApiKeys(businessId: number): Promise<void>;
-  getBusinessByApiKeys(apiKey: string, apiSecret: string): Promise<Business | null>;
-  // Legacy method for backward compatibility
+  generateApiKey(businessId: number): Promise<string>;
+  revokeApiKey(businessId: number): Promise<void>;
   getBusinessByApiKey(apiKey: string): Promise<Business | null>;
 }
 
@@ -694,46 +692,22 @@ export class DatabaseStorage implements IStorage {
       );
   }
 
-  async generateApiKeys(businessId: number): Promise<{apiKey: string, apiSecret: string}> {
+  async generateApiKey(businessId: number): Promise<string> {
     const apiKey = 'bw_' + Math.random().toString(36).substr(2, 32) + Date.now().toString(36);
-    
-    // Generate readable passphrase secret
-    const words = [
-      'swift', 'bright', 'secure', 'rapid', 'clever', 'strong', 'silent', 'golden',
-      'crystal', 'diamond', 'steel', 'iron', 'copper', 'silver', 'bronze', 'marble',
-      'ocean', 'river', 'mountain', 'forest', 'desert', 'valley', 'island', 'meadow',
-      'thunder', 'lightning', 'storm', 'breeze', 'sunshine', 'rainbow', 'comet', 'star',
-      'falcon', 'eagle', 'tiger', 'lion', 'wolf', 'bear', 'shark', 'dolphin'
-    ];
-    
-    const word1 = words[Math.floor(Math.random() * words.length)];
-    const word2 = words[Math.floor(Math.random() * words.length)];
-    const word3 = words[Math.floor(Math.random() * words.length)];
-    const numbers = Math.floor(1000 + Math.random() * 9000); // 4-digit number
-    
-    const apiSecret = `${word1}-${word2}-${word3}-${numbers}`;
 
     await this.db.update(businesses)
-      .set({ apiKey, apiSecret })
+      .set({ apiKey })
       .where(eq(businesses.id, businessId));
 
-    return { apiKey, apiSecret };
+    return apiKey;
   }
 
-  async revokeApiKeys(businessId: number): Promise<void> {
+  async revokeApiKey(businessId: number): Promise<void> {
     await this.db.update(businesses)
-      .set({ apiKey: null, apiSecret: null })
+      .set({ apiKey: null })
       .where(eq(businesses.id, businessId));
   }
 
-  async getBusinessByApiKeys(apiKey: string, apiSecret: string): Promise<Business | null> {
-    const [result] = await this.db.select().from(businesses).where(
-      and(eq(businesses.apiKey, apiKey), eq(businesses.apiSecret, apiSecret))
-    );
-    return result || null;
-  }
-
-  // Legacy method for backward compatibility
   async getBusinessByApiKey(apiKey: string): Promise<Business | null> {
     const [result] = await this.db.select().from(businesses).where(eq(businesses.apiKey, apiKey));
     return result || null;

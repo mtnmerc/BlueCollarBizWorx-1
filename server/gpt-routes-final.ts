@@ -4,29 +4,28 @@ import { db } from "./db";
 import { estimates, invoices, clients, jobs } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 
-// GPT Authentication middleware - single API key only
+// GPT Authentication middleware
 function authenticateGPT(req: any, res: any, next: any) {
-  console.log('=== GPT SINGLE-KEY AUTH ===');
+  console.log('=== GPT FINAL AUTH ===');
   console.log('Method:', req.method, 'URL:', req.url);
   console.log('X-API-Key:', req.headers['x-api-key'] ? 'Present' : 'Missing');
   
   const apiKey = req.headers['x-api-key'];
-  
   if (!apiKey) {
-    console.log('GPT AUTH: No API key provided');
+    console.log('GPT FINAL: No API key provided');
     return res.status(401).json({ success: false, error: 'API key required' });
   }
   
   storage.getBusinessByApiKey(apiKey).then((business: any) => {
     if (!business) {
-      console.log('GPT AUTH: Invalid API key');
+      console.log('GPT FINAL: Invalid API key');
       return res.status(401).json({ success: false, error: 'Invalid API key' });
     }
-    console.log('GPT AUTH: Business authenticated:', business.name);
+    console.log('GPT FINAL: Business authenticated:', business.name);
     req.business = business;
     next();
   }).catch((error: any) => {
-    console.error('GPT AUTH: Auth error:', error);
+    console.error('GPT FINAL: Auth error:', error);
     res.status(500).json({ success: false, error: 'Authentication error' });
   });
 }
@@ -567,39 +566,9 @@ export function registerGPTRoutes(app: Express) {
       const business = req.business;
       console.log('GPT FINAL: Creating job for business:', business.name);
       
-      // If no clientId provided, use the first available client or create a default one
-      let clientId = req.body.clientId;
-      console.log('GPT FINAL: Original clientId from request:', clientId);
-      
-      if (!clientId) {
-        console.log('GPT FINAL: No clientId provided, looking for existing clients...');
-        const businessClients = await storage.getClientsByBusiness(business.id);
-        console.log('GPT FINAL: Found', businessClients.length, 'existing clients');
-        
-        if (businessClients.length > 0) {
-          clientId = businessClients[0].id;
-          console.log('GPT FINAL: Using existing client ID:', clientId);
-        } else {
-          console.log('GPT FINAL: No existing clients, creating default client...');
-          // Create a default client for jobs without specific client
-          const defaultClient = await storage.createClient({
-            businessId: business.id,
-            name: "General Client",
-            email: "general@business.com",
-            phone: "",
-            address: "",
-            notes: "Default client for general jobs"
-          });
-          clientId = defaultClient.id;
-          console.log('GPT FINAL: Created default client with ID:', clientId);
-        }
-      }
-      
-      console.log('GPT FINAL: Final clientId to use:', clientId);
-      
       const jobData = {
         businessId: business.id,
-        clientId: clientId,
+        clientId: req.body.clientId,
         assignedUserId: req.body.assignedUserId || null,
         title: req.body.title,
         description: req.body.description || '',
@@ -612,13 +581,6 @@ export function registerGPTRoutes(app: Express) {
         estimatedAmount: req.body.estimatedAmount?.toString() || '0.00',
         notes: req.body.notes || ''
       };
-
-      console.log('GPT FINAL: Job data before creation:', JSON.stringify(jobData, null, 2));
-      
-      // Ensure clientId is not null
-      if (!jobData.clientId) {
-        throw new Error('Client ID is required but was null or undefined');
-      }
 
       const newJob = await storage.createJob(jobData);
       

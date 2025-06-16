@@ -10,9 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { ArrowLeft, Building, Upload, X, Camera, Key, Copy, Eye, EyeOff, Moon, Sun } from "lucide-react";
+import { ArrowLeft, Building, Upload, X, Camera, Key, Copy, Eye, EyeOff } from "lucide-react";
 import { Link } from "wouter";
-import { useTheme } from "@/components/theme-provider";
 
 const businessSettingsSchema = z.object({
   name: z.string().min(1, "Business name is required"),
@@ -28,9 +27,7 @@ export default function BusinessSettings() {
   const [isUploading, setIsUploading] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [apiKey, setApiKey] = useState<string | null>(null);
-  const [apiSecret, setApiSecret] = useState<string | null>(null);
   const [showApiKey, setShowApiKey] = useState(false);
-  const [showApiSecret, setShowApiSecret] = useState(false);
   const [isGeneratingKey, setIsGeneratingKey] = useState(false);
 
   const { data: authData } = useQuery({
@@ -63,9 +60,6 @@ export default function BusinessSettings() {
       }
       if (business.apiKey) {
         setApiKey(business.apiKey);
-      }
-      if (business.apiSecret) {
-        setApiSecret(business.apiSecret);
       }
     }
   });
@@ -179,15 +173,12 @@ export default function BusinessSettings() {
     setIsGeneratingKey(true);
     try {
       const response = await apiRequest("POST", "/api/business/api-key", {});
-      const json = await response.json();
-      const data = json.data || json;
+      const data = await response.json();
       setApiKey(data.apiKey);
-      setApiSecret(data.apiSecret);
       setShowApiKey(true);
-      setShowApiSecret(true);
       toast({
         title: "Success",
-        description: "API credentials generated successfully!",
+        description: "API key generated successfully!",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
     } catch (error: any) {
@@ -225,16 +216,6 @@ export default function BusinessSettings() {
       toast({
         title: "Copied!",
         description: "API key copied to clipboard",
-      });
-    }
-  };
-
-  const copyApiSecret = () => {
-    if (apiSecret) {
-      navigator.clipboard.writeText(apiSecret);
-      toast({
-        title: "Copied!",
-        description: "API secret copied to clipboard",
       });
     }
   };
@@ -393,9 +374,8 @@ export default function BusinessSettings() {
               <div className="mt-4 p-3 bg-muted/50 rounded-lg">
                 <h4 className="text-sm font-medium mb-2">API Usage Instructions:</h4>
                 <ul className="text-xs text-muted-foreground space-y-1">
-                  <li>• Include your API key in the header:</li>
-                  <li>&nbsp;&nbsp;- <code>X-API-Key: your-api-key</code></li>
-                  <li>• Base URL: <code>{window.location.origin}/api/gpt/</code></li>
+                  <li>• Include the API key in the <code>X-API-Key</code> header</li>
+                  <li>• Base URL: <code>{window.location.origin}/api/external/</code></li>
                   <li>• <strong>Complete Endpoint Coverage:</strong></li>
                   <li>&nbsp;&nbsp;• Clients: GET, POST /clients</li>
                   <li>&nbsp;&nbsp;• Jobs: GET, POST, PUT, DELETE /jobs, /jobs/bulk, /jobs/calendar</li>

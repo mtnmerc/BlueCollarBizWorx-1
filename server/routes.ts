@@ -88,7 +88,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const users = await storage.getUsersByBusiness(business.id);
       const hasAdmin = users.some(user => user.role === 'owner' || user.role === 'admin');
 
-      // Set business session for API access
       (req.session as any).businessId = business.id;
 
       if (hasAdmin) {
@@ -521,85 +520,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const timeEntries = await storage.getTimeEntriesByUser((req.session as any).userId);
       res.json({ success: true, data: timeEntries });
-    } catch (error: any) {
-      res.status(500).json({ success: false, error: error.message });
-    }
-  });
-
-  // Business API Key Management Routes
-  app.get("/api/business/api-key", async (req, res) => {
-    try {
-      if (!(req.session as any).businessId) {
-        return res.status(401).json({ success: false, error: "Not authenticated" });
-      }
-
-      const business = await storage.getBusinessById((req.session as any).businessId);
-      if (!business) {
-        return res.status(404).json({ success: false, error: "Business not found" });
-      }
-
-      res.json({ 
-        success: true, 
-        data: { 
-          apiKey: business.apiKey,
-          apiSecret: business.apiSecret,
-          hasApiKey: !!business.apiKey 
-        } 
-      });
-    } catch (error: any) {
-      res.status(500).json({ success: false, error: error.message });
-    }
-  });
-
-  app.post("/api/business/api-key", async (req, res) => {
-    try {
-      if (!(req.session as any).businessId) {
-        return res.status(401).json({ success: false, error: "Not authenticated" });
-      }
-
-      const businessId = (req.session as any).businessId;
-      
-      // Verify business exists and session is valid for this business
-      const business = await storage.getBusinessById(businessId);
-      if (!business) {
-        return res.status(401).json({ success: false, error: "Invalid business session" });
-      }
-
-      const { apiKey, apiSecret } = await storage.generateApiKeys(businessId);
-
-      res.json({ 
-        success: true, 
-        data: { 
-          apiKey,
-          apiSecret
-        },
-        message: "API credentials generated successfully"
-      });
-    } catch (error: any) {
-      res.status(500).json({ success: false, error: error.message });
-    }
-  });
-
-  app.delete("/api/business/api-key", async (req, res) => {
-    try {
-      if (!(req.session as any).businessId) {
-        return res.status(401).json({ success: false, error: "Not authenticated" });
-      }
-
-      const businessId = (req.session as any).businessId;
-      
-      // Verify business exists and session is valid for this business
-      const business = await storage.getBusinessById(businessId);
-      if (!business) {
-        return res.status(401).json({ success: false, error: "Invalid business session" });
-      }
-
-      await storage.revokeApiKey(businessId);
-
-      res.json({ 
-        success: true, 
-        message: "API key revoked successfully" 
-      });
     } catch (error: any) {
       res.status(500).json({ success: false, error: error.message });
     }

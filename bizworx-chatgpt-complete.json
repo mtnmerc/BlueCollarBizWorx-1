@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "https://bluecollarbizworx.replit.app/api/gpt"
+      "url": "http://localhost:5000"
     }
   ],
   "paths": {
@@ -32,21 +32,8 @@
                           "id": {"type": "integer"},
                           "name": {"type": "string"},
                           "phone": {"type": "string"},
-                          "email": {"type": "string"},
-                          "address": {"type": "string"},
-                          "notes": {"type": "string"},
-                          "createdAt": {"type": "string", "format": "date-time"}
+                          "email": {"type": "string"}
                         }
-                      }
-                    },
-                    "message": {"type": "string"},
-                    "businessVerification": {
-                      "type": "object",
-                      "properties": {
-                        "businessName": {"type": "string"},
-                        "businessId": {"type": "integer"},
-                        "dataSource": {"type": "string"},
-                        "timestamp": {"type": "string", "format": "date-time"}
                       }
                     }
                   }
@@ -127,30 +114,11 @@
                         "type": "object",
                         "properties": {
                           "id": {"type": "integer"},
-                          "businessId": {"type": "integer"},
-                          "clientId": {"type": "integer"},
-                          "clientName": {"type": "string"},
                           "title": {"type": "string"},
-                          "description": {"type": "string"},
-                          "address": {"type": "string"},
-                          "scheduledStart": {"type": "string", "format": "date-time"},
-                          "scheduledEnd": {"type": "string", "format": "date-time"},
+                          "client": {"type": "string"},
                           "status": {"type": "string"},
-                          "priority": {"type": "string"},
-                          "estimatedAmount": {"type": "string"},
-                          "notes": {"type": "string"},
-                          "createdAt": {"type": "string", "format": "date-time"}
+                          "scheduledStart": {"type": "string"}
                         }
-                      }
-                    },
-                    "message": {"type": "string"},
-                    "businessVerification": {
-                      "type": "object",
-                      "properties": {
-                        "businessName": {"type": "string"},
-                        "businessId": {"type": "integer"},
-                        "dataSource": {"type": "string"},
-                        "timestamp": {"type": "string", "format": "date-time"}
                       }
                     }
                   }
