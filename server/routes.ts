@@ -533,9 +533,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ success: false, error: "Not authenticated" });
       }
 
-      const business = await storage.getBusinessById((req.session as any).businessId);
+      const businessId = (req.session as any).businessId;
+      
+      // Verify business exists and session is valid for this business
+      const business = await storage.getBusinessById(businessId);
       if (!business) {
-        return res.status(404).json({ success: false, error: "Business not found" });
+        return res.status(401).json({ success: false, error: "Invalid business session" });
       }
 
       res.json({ 
@@ -557,6 +560,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const businessId = (req.session as any).businessId;
+      
+      // Verify business exists and session is valid for this business
+      const business = await storage.getBusinessById(businessId);
+      if (!business) {
+        return res.status(401).json({ success: false, error: "Invalid business session" });
+      }
+
       const apiKey = await storage.generateApiKey(businessId);
 
       res.json({ 
@@ -578,6 +588,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const businessId = (req.session as any).businessId;
+      
+      // Verify business exists and session is valid for this business
+      const business = await storage.getBusinessById(businessId);
+      if (!business) {
+        return res.status(401).json({ success: false, error: "Invalid business session" });
+      }
+
       await storage.revokeApiKey(businessId);
 
       res.json({ 
