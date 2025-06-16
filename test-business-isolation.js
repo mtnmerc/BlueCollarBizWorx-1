@@ -5,7 +5,7 @@ import { sql } from 'drizzle-orm';
 async function testBusinessIsolation() {
   try {
     // Get current API keys
-    const allBusinesses = await db.select().from(businesses).where(sql`"apiKey" IS NOT NULL`);
+    const allBusinesses = await db.select().from(businesses).where(sql`api_key IS NOT NULL`);
     
     console.log('=== TESTING BUSINESS ISOLATION ===\n');
     
