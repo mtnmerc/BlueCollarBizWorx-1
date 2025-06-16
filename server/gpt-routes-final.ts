@@ -4,30 +4,23 @@ import { db } from "./db";
 import { estimates, invoices, clients, jobs } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 
-// GPT Authentication middleware - requires both API key and secret
+// GPT Authentication middleware - single API key only
 function authenticateGPT(req: any, res: any, next: any) {
-  console.log('=== GPT DUAL-KEY AUTH ===');
+  console.log('=== GPT SINGLE-KEY AUTH ===');
   console.log('Method:', req.method, 'URL:', req.url);
   console.log('X-API-Key:', req.headers['x-api-key'] ? 'Present' : 'Missing');
-  console.log('X-API-Secret:', req.headers['x-api-secret'] ? 'Present' : 'Missing');
   
   const apiKey = req.headers['x-api-key'];
-  const apiSecret = req.headers['x-api-secret'];
   
   if (!apiKey) {
     console.log('GPT AUTH: No API key provided');
     return res.status(401).json({ success: false, error: 'API key required' });
   }
   
-  if (!apiSecret) {
-    console.log('GPT AUTH: No API secret provided');
-    return res.status(401).json({ success: false, error: 'API secret required' });
-  }
-  
-  storage.getBusinessByApiKeys(apiKey, apiSecret).then((business: any) => {
+  storage.getBusinessByApiKey(apiKey).then((business: any) => {
     if (!business) {
-      console.log('GPT AUTH: Invalid API key/secret combination');
-      return res.status(401).json({ success: false, error: 'Invalid API credentials' });
+      console.log('GPT AUTH: Invalid API key');
+      return res.status(401).json({ success: false, error: 'Invalid API key' });
     }
     console.log('GPT AUTH: Business authenticated:', business.name);
     req.business = business;

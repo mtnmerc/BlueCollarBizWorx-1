@@ -205,16 +205,15 @@ export default function BusinessSettings() {
     try {
       await apiRequest("DELETE", "/api/business/api-key", {});
       setApiKey(null);
-      setApiSecret(null);
       toast({
         title: "Success",
-        description: "API credentials revoked successfully!",
+        description: "API key revoked successfully!",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "Failed to revoke API credentials",
+        description: error.message || "Failed to revoke API key",
         variant: "destructive",
       });
     }
@@ -339,70 +338,31 @@ export default function BusinessSettings() {
               </p>
               
               {apiKey ? (
-                <div className="space-y-4">
-                  <div className="space-y-3">
-                    <div>
-                      <label className="text-sm font-medium text-foreground mb-2 block">API Key</label>
-                      <div className="flex items-center space-x-2">
-                        <Input
-                          type={showApiKey ? "text" : "password"}
-                          value={apiKey}
-                          readOnly
-                          className="font-mono text-sm"
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon"
-                          onClick={() => setShowApiKey(!showApiKey)}
-                        >
-                          {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon"
-                          onClick={copyApiKey}
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    {apiSecret && (
-                      <div>
-                        <label className="text-sm font-medium text-foreground mb-2 block">API Secret</label>
-                        <div className="flex items-center space-x-2">
-                          <Input
-                            type={showApiSecret ? "text" : "password"}
-                            value={apiSecret}
-                            readOnly
-                            className="font-mono text-sm"
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="icon"
-                            onClick={() => setShowApiSecret(!showApiSecret)}
-                          >
-                            {showApiSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="icon"
-                            onClick={copyApiSecret}
-                          >
-                            <Copy className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Easy-to-remember passphrase for authentication
-                        </p>
-                      </div>
-                    )}
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      type={showApiKey ? "text" : "password"}
+                      value={apiKey}
+                      readOnly
+                      className="font-mono text-sm"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setShowApiKey(!showApiKey)}
+                    >
+                      {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={copyApiKey}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
                   </div>
-                  
                   <div className="flex space-x-2">
                     <Button
                       type="button"
@@ -410,7 +370,7 @@ export default function BusinessSettings() {
                       size="sm"
                       onClick={revokeApiKey}
                     >
-                      Revoke Credentials
+                      Revoke Key
                     </Button>
                   </div>
                 </div>
@@ -433,9 +393,8 @@ export default function BusinessSettings() {
               <div className="mt-4 p-3 bg-muted/50 rounded-lg">
                 <h4 className="text-sm font-medium mb-2">API Usage Instructions:</h4>
                 <ul className="text-xs text-muted-foreground space-y-1">
-                  <li>• Include both credentials in headers:</li>
+                  <li>• Include your API key in the header:</li>
                   <li>&nbsp;&nbsp;- <code>X-API-Key: your-api-key</code></li>
-                  <li>&nbsp;&nbsp;- <code>X-API-Secret: your-passphrase</code></li>
                   <li>• Base URL: <code>{window.location.origin}/api/gpt/</code></li>
                   <li>• <strong>Complete Endpoint Coverage:</strong></li>
                   <li>&nbsp;&nbsp;• Clients: GET, POST /clients</li>
