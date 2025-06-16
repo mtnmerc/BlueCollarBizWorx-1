@@ -88,35 +88,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const users = await storage.getUsersByBusiness(business.id);
       const hasAdmin = users.some(user => user.role === 'owner' || user.role === 'admin');
 
-      // CRITICAL FIX: Regenerate session to prevent contamination between business accounts
-      req.session.regenerate((err) => {
-        if (err) {
-          console.error('Session regeneration error:', err);
-          return res.status(500).json({ success: false, error: "Session error during login" });
-        }
-        
-        // Set business session for API access with fresh session
-        (req.session as any).businessId = business.id;
-        console.log(`[SESSION] Business login: ${email} -> businessId: ${business.id}`);
+      // Set business session for API access
+      (req.session as any).businessId = business.id;
 
-        if (hasAdmin) {
-          // Business setup is complete, user can proceed to PIN login
-          res.json({ 
-            success: true, 
-            business,
-            message: "Business login successful"
-          });
-        } else {
-          // Business exists but no admin user created yet - enter setup mode
-          (req.session as any).setupMode = true;
-          res.json({ 
-            success: true, 
-            business,
-            setupMode: true,
-            message: "Business login successful"
-          });
-        }
-      });
+      if (hasAdmin) {
+        // Business setup is complete, user can proceed to PIN login
+        res.json({ 
+          success: true, 
+          business,
+          message: "Business login successful"
+        });
+      } else {
+        // Business exists but no admin user created yet - enter setup mode
+        (req.session as any).setupMode = true;
+        res.json({ 
+          success: true, 
+          business,
+          setupMode: true,
+          message: "Business login successful"
+        });
+      }
     } catch (error: any) {
       console.error('Business login error:', error);
       res.status(500).json({ success: false, error: error.message });
@@ -566,18 +557,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const businessId = (req.session as any).businessId;
-      console.log(`[API-KEY-GEN] Session businessId: ${businessId}`);
-      
-      // Get business details to verify session
-      const business = await storage.getBusinessById(businessId);
-      if (!business) {
-        console.log(`[API-KEY-GEN] ERROR: Business not found for ID: ${businessId}`);
-        return res.status(404).json({ success: false, error: "Business not found" });
-      }
-      
-      console.log(`[API-KEY-GEN] Generating API key for business: ${business.email} (ID: ${business.id})`);
       const apiKey = await storage.generateApiKey(businessId);
-      console.log(`[API-KEY-GEN] Generated API key: ${apiKey} for business: ${business.email}`);
 
       res.json({ 
         success: true, 
@@ -587,7 +567,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "API key generated successfully"
       });
     } catch (error: any) {
-      console.error(`[API-KEY-GEN] Error:`, error);
       res.status(500).json({ success: false, error: error.message });
     }
   });
