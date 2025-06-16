@@ -60,4 +60,11 @@ app.use((req, res, next) => {
   } else {
     serveStatic(app);
   }
+
+  const PORT = Number(process.env.PORT) || 5000;
+  server.listen(PORT, "0.0.0.0", () => {
+    console.log(`🚀 BizWorx server running on port ${PORT}`);
+    console.log(`📡 Preview URL: https://${PORT}-${process.env.REPL_SLUG || 'preview'}-${process.env.REPL_OWNER || 'user'}.replit.dev`);
+    console.log(`🔗 Production URL: https://bluecollarbizworx.replit.app`);
+  });
 })();
