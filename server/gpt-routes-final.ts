@@ -1,5 +1,5 @@
 import type { Express } from "express";
-import { storage } from "./storage-clean";
+import { storage } from "./storage";
 import { db } from "./db";
 import { estimates, invoices, clients, jobs } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
@@ -25,14 +25,16 @@ function authenticateGPT(req: any, res: any, next: any) {
   
   storage.getBusinessByApiKey(apiKey).then((business: any) => {
     if (!business) {
-      console.log('GPT FINAL: Invalid API key');
+      console.log('GPT FINAL: Invalid API key:', apiKey);
+      console.log('GPT FINAL: Database lookup returned null');
       return res.status(401).json({ success: false, error: 'Invalid API key' });
     }
-    console.log('GPT FINAL: Business authenticated:', business.name);
+    console.log('GPT FINAL: Business authenticated:', business.name, 'ID:', business.id);
     req.business = business;
     next();
   }).catch((error: any) => {
     console.error('GPT FINAL: Auth error:', error);
+    console.error('GPT FINAL: API key being searched:', apiKey);
     res.status(500).json({ success: false, error: 'Authentication error' });
   });
 }
