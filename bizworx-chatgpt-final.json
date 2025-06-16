@@ -1,3 +1,4 @@
+
 {
   "openapi": "3.0.3",
   "info": {
@@ -30,12 +31,40 @@
                         "type": "object",
                         "properties": {
                           "id": { "type": "integer" },
+                          "businessId": { "type": "integer" },
                           "name": { "type": "string" },
                           "phone": { "type": "string" },
-                          "email": { "type": "string" }
+                          "email": { "type": "string" },
+                          "address": { "type": "string" },
+                          "notes": { "type": "string" },
+                          "createdAt": { "type": "string", "format": "date-time" }
                         }
                       }
+                    },
+                    "message": { "type": "string" },
+                    "businessVerification": {
+                      "type": "object",
+                      "properties": {
+                        "businessName": { "type": "string" },
+                        "businessId": { "type": "integer" },
+                        "dataSource": { "type": "string" },
+                        "timestamp": { "type": "string", "format": "date-time" }
+                      }
                     }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "error": { "type": "string" }
                   }
                 }
               }
@@ -57,7 +86,8 @@
                   "name": { "type": "string" },
                   "phone": { "type": "string" },
                   "email": { "type": "string" },
-                  "address": { "type": "string" }
+                  "address": { "type": "string" },
+                  "notes": { "type": "string" }
                 }
               }
             }
@@ -73,11 +103,12 @@
                   "properties": {
                     "success": { "type": "boolean" },
                     "message": { "type": "string" },
-                    "client": {
+                    "data": {
                       "type": "object",
                       "properties": {
                         "id": { "type": "integer" },
-                        "name": { "type": "string" }
+                        "name": { "type": "string" },
+                        "businessId": { "type": "integer" }
                       }
                     }
                   }
@@ -117,8 +148,20 @@
                           "title": { "type": "string" },
                           "client": { "type": "string" },
                           "status": { "type": "string" },
-                          "scheduledStart": { "type": "string" }
+                          "scheduledStart": { "type": "string" },
+                          "scheduledEnd": { "type": "string" },
+                          "address": { "type": "string" }
                         }
+                      }
+                    },
+                    "message": { "type": "string" },
+                    "businessVerification": {
+                      "type": "object",
+                      "properties": {
+                        "businessName": { "type": "string" },
+                        "businessId": { "type": "integer" },
+                        "dataSource": { "type": "string" },
+                        "timestamp": { "type": "string", "format": "date-time" }
                       }
                     }
                   }
@@ -249,7 +292,8 @@
       "ApiKeyAuth": {
         "type": "apiKey",
         "in": "header",
-        "name": "X-API-Key"
+        "name": "X-API-Key",
+        "description": "API key for business authentication"
       }
     }
   },
@@ -257,9 +301,5 @@
     {
       "ApiKeyAuth": []
     }
-  ],
-  "externalDocs": {
-    "description": "Privacy Policy",
-    "url": "https://bluecollarbizworx.replit.app/privacy"
-  }
+  ]
 }
