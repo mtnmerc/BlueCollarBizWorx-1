@@ -8,9 +8,16 @@ import { eq, desc } from "drizzle-orm";
 function authenticateGPT(req: any, res: any, next: any) {
   console.log('=== GPT FINAL AUTH ===');
   console.log('Method:', req.method, 'URL:', req.url);
-  console.log('X-API-Key:', req.headers['x-api-key'] ? 'Present' : 'Missing');
+  console.log('All Headers:', JSON.stringify(req.headers, null, 2));
   
-  const apiKey = req.headers['x-api-key'];
+  // Check multiple possible header variations
+  const apiKey = req.headers['x-api-key'] || 
+                 req.headers['X-API-Key'] || 
+                 req.headers['X-Api-Key'] ||
+                 req.headers['authorization']?.replace('Bearer ', '');
+  
+  console.log('Extracted API Key:', apiKey ? 'Present' : 'Missing');
+  
   if (!apiKey) {
     console.log('GPT FINAL: No API key provided');
     return res.status(401).json({ success: false, error: 'API key required' });
