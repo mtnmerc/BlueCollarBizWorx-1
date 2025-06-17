@@ -1,6 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
-import { registerRoutes } from "./routes";
+import { registerRoutes } from "./simple-routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
@@ -50,14 +50,21 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  const server = await registerRoutes(app);
+  await registerRoutes(app);
 
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
   if (app.get("env") === "development") {
+    const server = app.listen(5000, "0.0.0.0", () => {
+      console.log(`Server running on http://0.0.0.0:5000`);
+    });
     await setupVite(app, server);
   } else {
     serveStatic(app);
+    const port = process.env.PORT || 5000;
+    app.listen(port, "0.0.0.0", () => {
+      console.log(`Production server running on port ${port}`);
+    });
   }
 })();
