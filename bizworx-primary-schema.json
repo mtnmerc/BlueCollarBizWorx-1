@@ -1,0 +1,325 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "BizWorx Business Management API",
+    "description": "Complete business management API for blue-collar services",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://bluecollarbizworx.replit.app"
+    }
+  ],
+  "paths": {
+    "/api/gpt/clients": {
+      "get": {
+        "operationId": "getClients",
+        "summary": "Get all clients",
+        "responses": {
+          "200": {
+            "description": "List of clients retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createClient",
+        "summary": "Create new client",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateClientRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Client created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/gpt/jobs": {
+      "get": {
+        "operationId": "getJobs",
+        "summary": "Get jobs",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of jobs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobsResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createJob",
+        "summary": "Create new job",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateJobRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Job created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/gpt/revenue": {
+      "get": {
+        "operationId": "getRevenue",
+        "summary": "Get revenue stats",
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Revenue statistics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevenueResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/gpt/invoices": {
+      "post": {
+        "operationId": "createInvoice",
+        "summary": "Create invoice",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateInvoiceRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Invoice created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "API key for business authentication"
+      }
+    },
+    "schemas": {
+      "Client": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "businessId": { "type": "integer" },
+          "name": { "type": "string" },
+          "email": { "type": "string" },
+          "phone": { "type": "string" },
+          "address": { "type": "string" },
+          "notes": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Job": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "title": { "type": "string" },
+          "client": { "type": "string" },
+          "status": { "type": "string" },
+          "scheduledStart": { "type": "string" },
+          "scheduledEnd": { "type": "string" },
+          "address": { "type": "string" },
+          "estimatedAmount": { "type": "string" }
+        }
+      },
+      "BusinessVerification": {
+        "type": "object",
+        "properties": {
+          "businessName": { "type": "string" },
+          "businessId": { "type": "integer" },
+          "dataSource": { "type": "string" },
+          "timestamp": { "type": "string", "format": "date-time" }
+        }
+      },
+      "CreateClientRequest": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string" },
+          "email": { "type": "string" },
+          "phone": { "type": "string" },
+          "address": { "type": "string" },
+          "notes": { "type": "string" }
+        }
+      },
+      "CreateJobRequest": {
+        "type": "object",
+        "required": ["clientId", "title"],
+        "properties": {
+          "clientId": { "type": "integer" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "address": { "type": "string" },
+          "scheduledStart": { "type": "string" },
+          "scheduledEnd": { "type": "string" },
+          "estimatedAmount": { "type": "string" }
+        }
+      },
+      "CreateInvoiceRequest": {
+        "type": "object",
+        "required": ["clientId", "title", "total"],
+        "properties": {
+          "clientId": { "type": "integer" },
+          "title": { "type": "string" },
+          "total": { "type": "string" },
+          "subtotal": { "type": "string" }
+        }
+      },
+      "ClientsResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "data": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Client" }
+          },
+          "message": { "type": "string" },
+          "businessVerification": { "$ref": "#/components/schemas/BusinessVerification" }
+        }
+      },
+      "ClientResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "data": { "$ref": "#/components/schemas/Client" },
+          "message": { "type": "string" }
+        }
+      },
+      "JobsResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "data": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Job" }
+          },
+          "message": { "type": "string" },
+          "businessVerification": { "$ref": "#/components/schemas/BusinessVerification" }
+        }
+      },
+      "JobResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "message": { "type": "string" }
+        }
+      },
+      "RevenueResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "data": {
+            "type": "object",
+            "properties": {
+              "total": { "type": "number" },
+              "period": { "type": "string" }
+            }
+          }
+        }
+      },
+      "InvoiceResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "message": { "type": "string" }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "error": { "type": "string" }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ]
+}

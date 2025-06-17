@@ -29,6 +29,8 @@ export default function BusinessSettings() {
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [showApiKey, setShowApiKey] = useState(false);
   const [isGeneratingKey, setIsGeneratingKey] = useState(false);
+  const [isRevokingKey, setIsRevokingKey] = useState(false);
+  const [hasApiKey, setHasApiKey] = useState(false);
 
   const { data: authData } = useQuery({
     queryKey: ["/api/auth/me"],
@@ -60,6 +62,7 @@ export default function BusinessSettings() {
       }
       if (business.apiKey) {
         setApiKey(business.apiKey);
+        setHasApiKey(true);
       }
     }
   });
@@ -132,12 +135,12 @@ export default function BusinessSettings() {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     const img = new Image();
-    
+
     img.onload = () => {
       // Calculate new dimensions (max 800px width/height)
       const maxSize = 800;
       let { width, height } = img;
-      
+
       if (width > height) {
         if (width > maxSize) {
           height = (height * maxSize) / width;
@@ -149,18 +152,18 @@ export default function BusinessSettings() {
           height = maxSize;
         }
       }
-      
+
       canvas.width = width;
       canvas.height = height;
-      
+
       // Draw and compress
       ctx?.drawImage(img, 0, 0, width, height);
       const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
-      
+
       setLogoPreview(compressedBase64);
       uploadLogoMutation.mutate(compressedBase64);
     };
-    
+
     img.src = URL.createObjectURL(file);
   };
 
@@ -172,20 +175,42 @@ export default function BusinessSettings() {
   const generateApiKey = async () => {
     setIsGeneratingKey(true);
     try {
-      const response = await apiRequest("POST", "/api/business/api-key", {});
-      const json = await response.json();
-      const data = json.data || json;
-      setApiKey(data.apiKey);
-      setShowApiKey(true);
-      toast({
-        title: "Success",
-        description: "API key generated successfully!",
+      const response = await fetch("/api/business/api-key", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
-    } catch (error: any) {
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || `HTTP ${response.status}: Failed to generate API key`);
+      }
+
+      if (data.success && data.data?.apiKey) {
+        // Verify the API key has the correct format
+        if (!data.data.apiKey.startsWith('bw_')) {
+          throw new Error("Generated API key has invalid format");
+        }
+
+        setApiKey(data.data.apiKey);
+        setHasApiKey(true);
+
+        toast({
+          title: "Success",
+          description: "API key generated successfully",
+        });
+
+        console.log("API key generated:", data.data.apiKey);
+      } else {
+        throw new Error(data.error || "API key generation returned invalid response");
+      }
+    } catch (error) {
+      console.error("Error generating API key:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to generate API key",
+        description: error instanceof Error ? error.message : "Failed to generate API key",
         variant: "destructive",
       });
     } finally {
@@ -194,20 +219,44 @@ export default function BusinessSettings() {
   };
 
   const revokeApiKey = async () => {
+    setIsRevokingKey(true);
     try {
-      await apiRequest("DELETE", "/api/business/api-key", {});
-      setApiKey(null);
-      toast({
-        title: "Success",
-        description: "API key revoked successfully!",
+      const response = await fetch("/api/business/api-key", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
-    } catch (error: any) {
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || `HTTP ${response.status}: Failed to revoke API key`);
+      }
+
+      if (data.success) {
+        // Clear the API key state completely
+        setApiKey("");
+        setHasApiKey(false);
+
+        toast({
+          title: "Success",
+          description: "API key revoked successfully",
+        });
+
+        console.log("API key revoked successfully");
+      } else {
+        throw new Error(data.error || "API key revocation returned invalid response");
+      }
+    } catch (error) {
+      console.error("Error revoking API key:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to revoke API key",
+        description: error instanceof Error ? error.message : "Failed to revoke API key",
         variant: "destructive",
       });
+    } finally {
+      setIsRevokingKey(false);
     }
   };
 
@@ -318,7 +367,7 @@ export default function BusinessSettings() {
               <p className="text-sm text-muted-foreground">
                 Generate an API key to integrate your BizWorx data with external tools like n8n, Zapier, or custom applications.
               </p>
-              
+
               {apiKey ? (
                 <div className="space-y-3">
                   <div className="flex items-center space-x-2">
@@ -351,8 +400,9 @@ export default function BusinessSettings() {
                       variant="destructive"
                       size="sm"
                       onClick={revokeApiKey}
+                      disabled={isRevokingKey}
                     >
-                      Revoke Key
+                      {isRevokingKey ? "Revoking..." : "Revoke Key"}
                     </Button>
                   </div>
                 </div>
@@ -371,7 +421,7 @@ export default function BusinessSettings() {
                   </Button>
                 </div>
               )}
-              
+
               <div className="mt-4 p-3 bg-muted/50 rounded-lg">
                 <h4 className="text-sm font-medium mb-2">API Usage Instructions:</h4>
                 <ul className="text-xs text-muted-foreground space-y-1">

@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { registerGPTRoutes } from "./gpt-routes-final";
-import { storage } from "./storage-clean";
+import { storage } from "./storage";
 import { db } from "./db";
 import { estimates, invoices, clients, jobs, services, timeEntries, users } from "@shared/schema";
 import { eq, desc, and, gte, lte, sql, isNull } from "drizzle-orm";
@@ -88,7 +88,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const users = await storage.getUsersByBusiness(business.id);
       const hasAdmin = users.some(user => user.role === 'owner' || user.role === 'admin');
 
-      // Set business session for API access
       (req.session as any).businessId = business.id;
 
       if (hasAdmin) {
@@ -526,7 +525,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Business API Key Management Routes
+  const httpServer = createServer(app);
+  
+  // API Key Management Routes
   app.get("/api/business/api-key", async (req, res) => {
     try {
       if (!(req.session as any).businessId) {
@@ -541,7 +542,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ 
         success: true, 
         data: { 
-          apiKey: business.apiKey,
+          apiKey: business.apiKey || null,
           hasApiKey: !!business.apiKey 
         } 
       });
@@ -557,16 +558,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const businessId = (req.session as any).businessId;
-      const apiKey = await storage.generateApiKey(businessId);
-
+      
+      // Generate new API key with proper format
+      const newApiKey = `bw_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 10)}`;
+      
+      // Update the business with the new API key
+      await storage.updateBusiness(businessId, { apiKey: newApiKey });
+      
+      // Verify the update worked by fetching the business
+      const updatedBusiness = await storage.getBusinessById(businessId);
+      
+      if (!updatedBusiness || updatedBusiness.apiKey !== newApiKey) {
+        throw new Error("Failed to save API key to database");
+      }
+      
       res.json({ 
         success: true, 
-        data: { 
-          apiKey: apiKey 
-        },
-        message: "API key generated successfully"
+        data: { apiKey: newApiKey },
+        message: "API key generated successfully" 
       });
     } catch (error: any) {
+      console.error('API key generation error:', error);
       res.status(500).json({ success: false, error: error.message });
     }
   });
@@ -578,8 +590,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const businessId = (req.session as any).businessId;
-      await storage.revokeApiKey(businessId);
-
+      await storage.updateBusiness(businessId, { apiKey: null });
+      
       res.json({ 
         success: true, 
         message: "API key revoked successfully" 
@@ -589,8 +601,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  const httpServer = createServer(app);
-  
   const PORT = Number(process.env.PORT) || 5000;
   httpServer.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on port ${PORT}`);
