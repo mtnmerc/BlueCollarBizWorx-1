@@ -21,6 +21,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // ChatGPT Proxy endpoints - integrated into main app
+  app.get('/proxy/health', (req, res) => {
+    res.json({
+      status: 'ok',
+      service: 'BizWorx ChatGPT Proxy',
+      timestamp: new Date().toISOString()
+    });
+  });
+
+  // Proxy endpoints for ChatGPT Custom GPT integration
+  app.all('/proxy/api/gpt/*', async (req, res) => {
+    try {
+      console.log(`[PROXY] ${req.method} ${req.originalUrl}`);
+      console.log(`[PROXY] Body:`, JSON.stringify(req.body, null, 2));
+      
+      // Extract API key from request body
+      const { api_key, ...bodyWithoutKey } = req.body || {};
+      
+      if (!api_key) {
+        return res.status(400).json({
+          success: false,
+          error: 'API key required. Please provide your BizWorx API key in the request body as "api_key"'
+        });
+      }
+
+      console.log(`[PROXY] Using API key: ${api_key.substring(0, 8)}...`);
+      
+      // Get the target path by removing /proxy prefix
+      const targetPath = req.originalUrl.replace('/proxy', '');
+      console.log(`[PROXY] Forwarding to: ${targetPath}`);
+      
+      // Make internal request to the actual GPT endpoint
+      const fetch = (await import('node-fetch')).default;
+      const baseUrl = `http://localhost:${process.env.PORT || 5000}`;
+      const fullUrl = `${baseUrl}${targetPath}`;
+      
+      console.log(`[PROXY] Full URL: ${fullUrl}`);
+      
+      const fetchOptions: any = {
+        method: req.method,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': api_key
+        }
+      };
+      
+      // Add body for non-GET requests
+      if (req.method !== 'GET' && bodyWithoutKey && Object.keys(bodyWithoutKey).length > 0) {
+        fetchOptions.body = JSON.stringify(bodyWithoutKey);
+      }
+      
+      console.log(`[PROXY] Fetch options:`, { ...fetchOptions, headers: { ...fetchOptions.headers, 'X-API-Key': '***' } });
+      
+      const response = await fetch(fullUrl, fetchOptions);
+      const data = await response.json();
+      
+      console.log(`[PROXY] Response status: ${response.status}`);
+      
+      return res.status(response.status).json(data);
+      
+    } catch (error) {
+      console.error('[PROXY] Error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Proxy server error',
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   // Business registration endpoint - matches frontend expectation
   app.post("/api/auth/business/register", async (req, res) => {
     try {
