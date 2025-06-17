@@ -1,4 +1,3 @@
-
 {
   "openapi": "3.1.0",
   "info": {
@@ -11,10 +10,9 @@
       "url": "https://bluecollarbizworx.replit.app/proxy/api/gpt"
     }
   ],
-
   "paths": {
     "/clients": {
-      "get": {
+      "post": {
         "operationId": "getClients",
         "summary": "Get all clients",
         "description": "Retrieve all clients for the authenticated business",
@@ -39,39 +37,21 @@
               }
             }
           }
-        }
-      },
-      "post": {
-        "operationId": "createClient",
-        "summary": "Create new client",
-        "description": "Create a new client for the authenticated business",
+        },
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateClientRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClientResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Server Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                "type": "object",
+                "required": [
+                  "api_key"
+                ],
+                "properties": {
+                  "api_key": {
+                    "type": "string",
+                    "description": "Your BizWorx API key for authentication"
+                  }
                 }
               }
             }
@@ -80,7 +60,7 @@
       }
     },
     "/estimates": {
-      "get": {
+      "post": {
         "operationId": "getEstimates",
         "summary": "Get all estimates",
         "description": "Retrieve all estimates for the authenticated business",
@@ -105,39 +85,21 @@
               }
             }
           }
-        }
-      },
-      "post": {
-        "operationId": "createEstimate",
-        "summary": "Create new estimate",
-        "description": "Create a new estimate for the authenticated business",
+        },
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateEstimateRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EstimateResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Server Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                "type": "object",
+                "required": [
+                  "api_key"
+                ],
+                "properties": {
+                  "api_key": {
+                    "type": "string",
+                    "description": "Your BizWorx API key for authentication"
+                  }
                 }
               }
             }
@@ -146,44 +108,7 @@
       }
     },
     "/estimates/{id}": {
-      "get": {
-        "operationId": "getEstimate",
-        "summary": "Get estimate by ID",
-        "description": "Retrieve a specific estimate by ID",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EstimateResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Estimate not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
+      "post": {
         "operationId": "updateEstimate",
         "summary": "Update estimate",
         "description": "Update an existing estimate",
@@ -229,47 +154,10 @@
             }
           }
         }
-      },
-      "delete": {
-        "operationId": "deleteEstimate",
-        "summary": "Delete estimate",
-        "description": "Delete an estimate",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SuccessResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Estimate not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
       }
     },
     "/invoices": {
-      "get": {
+      "post": {
         "operationId": "getInvoices",
         "summary": "Get all invoices",
         "description": "Retrieve all invoices for the authenticated business",
@@ -294,39 +182,21 @@
               }
             }
           }
-        }
-      },
-      "post": {
-        "operationId": "createInvoice",
-        "summary": "Create new invoice",
-        "description": "Create a new invoice for the authenticated business",
+        },
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateInvoiceRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InvoiceResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Server Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                "type": "object",
+                "required": [
+                  "api_key"
+                ],
+                "properties": {
+                  "api_key": {
+                    "type": "string",
+                    "description": "Your BizWorx API key for authentication"
+                  }
                 }
               }
             }
@@ -335,44 +205,7 @@
       }
     },
     "/invoices/{id}": {
-      "get": {
-        "operationId": "getInvoice",
-        "summary": "Get invoice by ID",
-        "description": "Retrieve a specific invoice by ID",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InvoiceResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Invoice not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
+      "post": {
         "operationId": "updateInvoice",
         "summary": "Update invoice",
         "description": "Update an existing invoice",
@@ -418,47 +251,10 @@
             }
           }
         }
-      },
-      "delete": {
-        "operationId": "deleteInvoice",
-        "summary": "Delete invoice",
-        "description": "Delete an invoice",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SuccessResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Invoice not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
       }
     },
     "/jobs": {
-      "get": {
+      "post": {
         "operationId": "getJobs",
         "summary": "Get all jobs",
         "description": "Retrieve all jobs for the authenticated business",
@@ -483,39 +279,21 @@
               }
             }
           }
-        }
-      },
-      "post": {
-        "operationId": "createJob",
-        "summary": "Create new job",
-        "description": "Create a new job for the authenticated business",
+        },
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateJobRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Server Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                "type": "object",
+                "required": [
+                  "api_key"
+                ],
+                "properties": {
+                  "api_key": {
+                    "type": "string",
+                    "description": "Your BizWorx API key for authentication"
+                  }
                 }
               }
             }
@@ -524,44 +302,7 @@
       }
     },
     "/jobs/{id}": {
-      "get": {
-        "operationId": "getJob",
-        "summary": "Get job by ID",
-        "description": "Retrieve a specific job by ID",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Job not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
+      "post": {
         "operationId": "updateJob",
         "summary": "Update job",
         "description": "Update an existing job",
@@ -592,43 +333,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/JobResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Job not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "operationId": "deleteJob",
-        "summary": "Delete job",
-        "description": "Delete a job",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SuccessResponse"
                 }
               }
             }
@@ -964,6 +668,10 @@
           "api_key"
         ],
         "properties": {
+          "api_key": {
+            "type": "string",
+            "description": "Your BizWorx API key for authentication"
+          },
           "clientId": {
             "type": "integer"
           },
@@ -1003,6 +711,10 @@
       "UpdateEstimateRequest": {
         "type": "object",
         "properties": {
+          "api_key": {
+            "type": "string",
+            "description": "Your BizWorx API key for authentication"
+          },
           "clientId": {
             "type": "integer"
           },
@@ -1037,16 +749,24 @@
           "notes": {
             "type": "string"
           }
-        }
+        },
+        "required": [
+          "api_key"
+        ]
       },
       "CreateInvoiceRequest": {
         "type": "object",
         "required": [
+          "api_key",
           "clientId",
           "title",
           "total"
         ],
         "properties": {
+          "api_key": {
+            "type": "string",
+            "description": "Your BizWorx API key for authentication"
+          },
           "clientId": {
             "type": "integer"
           },
@@ -1086,6 +806,10 @@
       "UpdateInvoiceRequest": {
         "type": "object",
         "properties": {
+          "api_key": {
+            "type": "string",
+            "description": "Your BizWorx API key for authentication"
+          },
           "clientId": {
             "type": "integer"
           },
@@ -1120,15 +844,23 @@
           "notes": {
             "type": "string"
           }
-        }
+        },
+        "required": [
+          "api_key"
+        ]
       },
       "CreateJobRequest": {
         "type": "object",
         "required": [
+          "api_key",
           "clientId",
           "title"
         ],
         "properties": {
+          "api_key": {
+            "type": "string",
+            "description": "Your BizWorx API key for authentication"
+          },
           "clientId": {
             "type": "integer"
           },
@@ -1172,6 +904,10 @@
       "UpdateJobRequest": {
         "type": "object",
         "properties": {
+          "api_key": {
+            "type": "string",
+            "description": "Your BizWorx API key for authentication"
+          },
           "clientId": {
             "type": "integer"
           },
@@ -1210,7 +946,10 @@
           "notes": {
             "type": "string"
           }
-        }
+        },
+        "required": [
+          "api_key"
+        ]
       },
       "ClientsResponse": {
         "type": "object",
