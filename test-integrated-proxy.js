@@ -62,7 +62,7 @@ async function testIntegratedProxy() {
     console.log('No key response:', JSON.stringify(noKeyData, null, 2));
     
     console.log('\n✅ Integrated proxy testing complete!');
-    console.log('Your deployment proxy URL: https://bluecollarbizworx.replit.app/proxy/api/gpt/[endpoint]');
+    console.log('Your deployment proxy URL: https://bizworx-7faf4.web.app/proxy/api/gpt/[endpoint]');
     
   } catch (error) {
     console.error('Test error:', error.message);

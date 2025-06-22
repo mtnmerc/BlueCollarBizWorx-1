@@ -1,6 +1,6 @@
 // Test with exact ChatGPT header format
 async function testExactChatGPT() {
-  const response = await fetch('https://bluecollarbizworx.replit.app/api/gpt/clients', {
+  const response = await fetch('https://bizworx-7faf4.web.app/api/gpt/clients', {
     method: 'GET',
     headers: {
       'X-API-Key': 'bw_lcf7itxs8qocat5sd5',

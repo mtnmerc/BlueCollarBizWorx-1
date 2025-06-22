@@ -3,7 +3,7 @@ async function validateSchemaCompliance() {
   console.log('=== VALIDATING SCHEMA COMPLIANCE ===\n');
   
   const testApiKey = 'bw_ex0i7udnrrumbzikdnd';
-  const baseUrl = 'https://bluecollarbizworx.replit.app/api/gpt';
+  const baseUrl = 'https://bizworx-7faf4.web.app/api/gpt';
   
   const endpoints = [
     { path: '/clients', method: 'GET', name: 'Get Clients' },

@@ -144,8 +144,8 @@ async function testMCPServerStructure() {
 (async () => {
   await testBizWorxAPI();
   await testMCPServerStructure();
-  await testExternalEndpoints('https://bluecollar-bizworx.replit.app');
-  await testExternalEndpoints('https://5000-bluecollar-bizworx.replit.app');
+  await testExternalEndpoints('https://bizworx-7faf4.web.app');
+  await testExternalEndpoints('https://bizworx-7faf4.web.app:3001');
   
   console.log('\n=== Summary ===');
   console.log('✓ MCP server is fully functional locally');

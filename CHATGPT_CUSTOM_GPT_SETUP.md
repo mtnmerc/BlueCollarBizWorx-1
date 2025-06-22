@@ -54,7 +54,7 @@ X-API-Key: your_business_api_key
 
 ## Server Information
 
-- **Base URL**: `https://bluecollarbizworx.replit.app/api/gpt`
+- **Base URL**: `https://bizworx-7faf4.web.app/api/gpt`
 - **Protocol**: HTTPS
 - **Response Format**: JSON with consistent structure:
   ```json
@@ -141,6 +141,6 @@ The Jobs & Scheduling schema includes a special endpoint for natural language jo
 - Proper error handling and validation
 
 ## Support
-- Server Status: https://bluecollarbizworx.replit.app/api/gpt/test
+- Server Status: https://bizworx-7faf4.web.app/api/gpt/test
 - All endpoints are production-ready and actively maintained
 - Data is automatically backed up and secured

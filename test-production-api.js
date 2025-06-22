@@ -1,14 +1,14 @@
 // Test the actual production API call that ChatGPT would make
+const API_KEY = 'bw_wkad606ephtmbqx7a0f';
+
 async function testProductionAPI() {
   console.log('=== TESTING PRODUCTION API CALL ===\n');
   
-  const testApiKey = 'bw_ex0i7udnrrumbzikdnd';
-  
   try {
-    const response = await fetch('https://bluecollarbizworx.replit.app/api/gpt/clients', {
+    const response = await fetch('https://bizworx-7faf4.web.app/api/gpt/clients', {
       method: 'GET',
       headers: {
-        'X-API-Key': testApiKey,
+        'X-API-Key': API_KEY,
         'Content-Type': 'application/json'
       }
     });

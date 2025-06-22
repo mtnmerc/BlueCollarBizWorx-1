@@ -3,7 +3,7 @@ async function simulateChatGPTCalls() {
   console.log('=== SIMULATING CHATGPT API CALLS ===\n');
   
   const apiKey = 'bw_ex0i7udnrrumbzikdnd';
-  const baseUrl = 'https://bluecollarbizworx.replit.app/api/gpt';
+  const baseUrl = 'https://bizworx-7faf4.web.app/api/gpt';
   
   // Test exactly what ChatGPT would call for "list my clients"
   console.log('1. Testing GET /clients (what ChatGPT calls for "list my clients"):');

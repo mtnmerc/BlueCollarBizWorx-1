@@ -18,6 +18,7 @@ export interface IStorage {
   createBusiness(business: InsertBusiness): Promise<Business>;
   getBusinessByEmail(email: string): Promise<Business | undefined>;
   getBusinessById(id: number): Promise<Business | undefined>;
+  getBusinessByFirebaseUid(firebaseUid: string): Promise<Business | undefined>;
   getBusinessByApiKey(apiKey: string): Promise<Business | null>;
   getAllBusinesses(): Promise<Business[]>;
   updateBusiness(id: number, business: Partial<InsertBusiness>): Promise<Business>;
@@ -113,6 +114,11 @@ export class DatabaseStorage implements IStorage {
 
   async getBusinessById(id: number): Promise<Business | undefined> {
     const [business] = await this.db.select().from(businesses).where(eq(businesses.id, id));
+    return business || undefined;
+  }
+
+  async getBusinessByFirebaseUid(firebaseUid: string): Promise<Business | undefined> {
+    const [business] = await this.db.select().from(businesses).where(eq(businesses.firebaseUid, firebaseUid));
     return business || undefined;
   }
 
@@ -730,8 +736,6 @@ export class DatabaseStorage implements IStorage {
     const [result] = await this.db.select().from(businesses).where(eq(businesses.apiKey, apiKey));
     return result || null;
   }
-
-
 }
 
 export const storage = new DatabaseStorage();

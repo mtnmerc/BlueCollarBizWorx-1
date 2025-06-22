@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 async function testDeploymentRouting() {
-  const baseUrl = 'https://bluecollar-bizworx.replit.app';
+  const baseUrl = 'https://bizworx-7faf4.web.app';
   
   console.log('Testing deployment routing...\n');
   

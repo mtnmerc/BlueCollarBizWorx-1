@@ -4,7 +4,7 @@ async function debugAccountApiKeyMismatch() {
   
   const userEmail = 'alter3d24@gmail.com';
   const testApiKey = 'bw_ex0i7udnrrumbzikdnd';
-  const baseUrl = 'https://bluecollarbizworx.replit.app';
+  const baseUrl = 'https://bizworx-7faf4.web.app';
   
   console.log(`User Email: ${userEmail}`);
   console.log(`Test API Key: ${testApiKey}\n`);

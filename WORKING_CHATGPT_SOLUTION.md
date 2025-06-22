@@ -1,7 +1,7 @@
 # Working ChatGPT Voice Commands Solution
 
 ## Current Situation
-Your deployment at `https://bluecollarbizworx.replit.app` has routing issues that block external API access.
+Your deployment at `https://bizworx-7faf4.web.app` has routing issues that block external API access.
 
 ## Immediate Solution: Replit Port Forwarding
 

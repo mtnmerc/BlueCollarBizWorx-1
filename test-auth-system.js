@@ -2,7 +2,7 @@
 async function testAuthSystem() {
   console.log('=== TESTING AUTHENTICATION SYSTEM ===\n');
   
-  const baseUrl = 'https://bluecollarbizworx.replit.app';
+  const baseUrl = 'https://bizworx-7faf4.web.app';
   
   // Test 1: Check if auth routes exist
   console.log('--- Testing Auth Route Responses ---');

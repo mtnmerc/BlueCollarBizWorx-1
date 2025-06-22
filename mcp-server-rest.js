@@ -1,4 +1,3 @@
-
 import express from 'express';
 import fetch from 'node-fetch';
 
@@ -19,7 +18,7 @@ app.use((req, res, next) => {
 });
 
 // Base URL for BizWorx API
-const BIZWORX_BASE_URL = 'https://BluecollarBizWorx.replit.app';
+const BIZWORX_BASE_URL = 'https://bizworx-7faf4.web.app';
 
 // Available tools mapping
 const TOOL_ENDPOINTS = {
@@ -450,10 +449,10 @@ const HOST = '0.0.0.0';
 
 app.listen(PORT, HOST, () => {
   console.log(`🚀 BizWorx REST MCP Server running on ${HOST}:${PORT}`);
-  console.log(`📋 Health check: https://BluecollarBizWorx.replit.app:${PORT}/health`);
-  console.log(`🔧 Tools list: https://BluecollarBizWorx.replit.app:${PORT}/tools`);
-  console.log(`⚡ Execute endpoint: https://BluecollarBizWorx.replit.app:${PORT}/execute/{toolName}`);
-  console.log(`🔗 Webhook endpoint: https://BluecollarBizWorx.replit.app:${PORT}/webhook`);
+  console.log(`📋 Health check: https://bizworx-7faf4.web.app:${PORT}/health`);
+  console.log(`🔧 Tools list: https://bizworx-7faf4.web.app:${PORT}/tools`);
+  console.log(`⚡ Execute endpoint: https://bizworx-7faf4.web.app:${PORT}/execute/{toolName}`);
+  console.log(`🔗 Webhook endpoint: https://bizworx-7faf4.web.app:${PORT}/webhook`);
 });
 
 // Graceful shutdown

@@ -9,7 +9,7 @@ async function testApiAuth() {
     console.log(`\n=== Testing API Key: ${apiKey} ===`);
     
     try {
-      const response = await fetch('https://bluecollarbizworx.replit.app/api/gpt/clients', {
+      const response = await fetch('https://bizworx-7faf4.web.app/api/gpt/clients', {
         headers: {
           'X-API-Key': apiKey,
           'Content-Type': 'application/json'

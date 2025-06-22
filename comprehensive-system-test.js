@@ -2,7 +2,7 @@
 async function comprehensiveSystemTest() {
   console.log('=== COMPREHENSIVE BIZWORX SYSTEM TEST ===\n');
   
-  const baseUrl = 'https://bluecollarbizworx.replit.app';
+  const baseUrl = 'https://bizworx-7faf4.web.app';
   const testResults = [];
   
   function logResult(test, status, details) {

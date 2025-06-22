@@ -1,7 +1,7 @@
 // Test with ChatGPT-like headers to see if there's a difference
 
 async function testChatGPTHeaders() {
-  const testUrl = 'https://bluecollarbizworx.replit.app/api/gpt/clients';
+  const testUrl = 'https://bizworx-7faf4.web.app/api/gpt/clients';
   const testKey = 'bw_lcf7itxs8qocat5sd5';
 
   // Test with various header combinations that ChatGPT might send

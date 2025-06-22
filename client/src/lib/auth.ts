@@ -1,4 +1,12 @@
 import { apiRequest } from "./queryClient";
+import { auth } from "./firebase";
+import { 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword, 
+  signOut, 
+  onAuthStateChanged,
+  User as FirebaseUser 
+} from "firebase/auth";
 
 export interface AuthUser {
   id: number;
@@ -22,6 +30,7 @@ export interface AuthState {
   user?: AuthUser;
   business?: AuthBusiness;
   isAuthenticated: boolean;
+  firebaseUser?: FirebaseUser;
 }
 
 export const authApi = {
@@ -32,12 +41,26 @@ export const authApi = {
     phone?: string;
     address?: string;
   }) {
-    const response = await apiRequest("POST", "/api/auth/business/register", data);
+    // First create Firebase user
+    const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+    
+    // Then register business with Firebase UID
+    const response = await apiRequest("POST", "/api/auth/business/register", {
+      ...data,
+      firebaseUid: userCredential.user.uid
+    });
     return response.json();
   },
 
   async loginBusiness(data: { email: string; password: string }) {
-    const response = await apiRequest("POST", "/api/auth/business/login", data);
+    // First authenticate with Firebase
+    const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
+    
+    // Then login business with Firebase UID
+    const response = await apiRequest("POST", "/api/auth/business/login", {
+      ...data,
+      firebaseUid: userCredential.user.uid
+    });
     return response.json();
   },
 
@@ -52,6 +75,10 @@ export const authApi = {
   },
 
   async logout() {
+    // Sign out from Firebase
+    await signOut(auth);
+    
+    // Then logout from backend
     const response = await apiRequest("POST", "/api/auth/logout");
     return response.json();
   },
@@ -60,10 +87,20 @@ export const authApi = {
     const response = await apiRequest("GET", "/api/auth/me");
     return response.json();
   },
+
+  // Firebase Auth state listener
+  onAuthStateChanged(callback: (user: FirebaseUser | null) => void) {
+    return onAuthStateChanged(auth, callback);
+  },
+
+  // Get current Firebase user
+  getCurrentFirebaseUser() {
+    return auth.currentUser;
+  },
 };
 
 export const isAuthenticated = (authState?: AuthState): boolean => {
-  return !!(authState?.user && authState?.business);
+  return !!(authState?.user && authState?.business && authState?.firebaseUser);
 };
 
 export const hasAdminRole = (authState?: AuthState): boolean => {

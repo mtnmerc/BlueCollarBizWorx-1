@@ -3,7 +3,7 @@ async function testCompleteSchemaCompliance() {
   console.log('=== COMPLETE SCHEMA COMPLIANCE TEST ===\n');
   
   const testApiKey = 'bw_ex0i7udnrrumbzikdnd';
-  const baseUrl = 'https://bluecollarbizworx.replit.app/api/gpt';
+  const baseUrl = 'https://bizworx-7faf4.web.app/api/gpt';
   
   // Test GET endpoints
   const getTests = [

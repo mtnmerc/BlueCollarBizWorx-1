@@ -1,7 +1,7 @@
 # ChatGPT Custom GPT Setup - Working Solution
 
 ## Problem: Deployment Routing Issues
-Your Replit deployment at `https://bluecollarbizworx.replit.app` returns 404 for external requests due to routing configuration issues.
+Your Firebase deployment at `https://bizworx-7faf4.web.app` returns 404 for external requests due to routing configuration issues.
 
 ## Solution: Local Development + Ngrok Tunnel
 

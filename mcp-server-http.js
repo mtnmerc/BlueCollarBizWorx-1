@@ -28,7 +28,7 @@ const activeConnections = new Set();
 
 // Direct API call to BizWorx instead of relying on MCP subprocess
 async function callBizWorxAPI(endpoint, options = {}) {
-  const baseUrl = 'https://BluecollarBizWorx.replit.app'; // Use correct URL
+  const baseUrl = 'https://bizworx-7faf4.web.app:8000'; // Use correct URL
 
   try {
     const response = await fetch(`${baseUrl}${endpoint}`, {
@@ -156,7 +156,7 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     server: 'BizWorx MCP HTTP Server',
     version: '1.0.0',
-    url: 'https://BluecollarBizWorx.replit.app:8000',
+    url: 'https://bizworx-7faf4.web.app:8000',
     mcp: {
       protocol: "2024-11-05",
       tools_count: Object.keys(toolMap).length,
@@ -173,7 +173,7 @@ app.get('/test', (req, res) => {
     endpoint: '/mcp/events',
     protocol: 'MCP 2024-11-05',
     tools_available: Object.keys(toolMap).length,
-    correct_url: 'https://BluecollarBizWorx.replit.app:8000'
+    correct_url: 'https://bizworx-7faf4.web.app:8000'
   });
 });
 
@@ -447,7 +447,7 @@ const getExternalUrl = () => {
   if (process.env.REPL_SLUG && process.env.REPL_OWNER) {
     return `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`;
   }
-  return 'https://BluecollarBizWorx.replit.app';
+  return 'https://bizworx-7faf4.web.app:8000';
 };
 
 app.listen(PORT, HOST, () => {
@@ -458,11 +458,11 @@ app.listen(PORT, HOST, () => {
   console.log(`🔧 MCP Protocol: 2024-11-05`);
   console.log(`📋 Available Tools: ${Object.keys(toolMap).length}`);
   console.log('\n📌 MCP Endpoints:');
-  console.log(`   SSE Stream: https://BluecollarBizWorx.replit.app:8000/sse`);
-  console.log(`   Events: https://BluecollarBizWorx.replit.app:8000/mcp/events`);
-  console.log(`   Call: https://BluecollarBizWorx.replit.app:8000/mcp/call`);
-  console.log(`   Config: https://BluecollarBizWorx.replit.app:8000/mcp/config`);
-  console.log(`   Health: https://BluecollarBizWorx.replit.app:8000/health`);
+  console.log(`   SSE Stream: https://bizworx-7faf4.web.app:8000/sse`);
+  console.log(`   Events: https://bizworx-7faf4.web.app:8000/mcp/events`);
+  console.log(`   Call: https://bizworx-7faf4.web.app:8000/mcp/call`);
+  console.log(`   Config: https://bizworx-7faf4.web.app:8000/mcp/config`);
+  console.log(`   Health: https://bizworx-7faf4.web.app:8000/health`);
   console.log('\n🔑 Authentication: X-API-Key header required');
   console.log('✅ MCP Server ready for AI client connections');
 });

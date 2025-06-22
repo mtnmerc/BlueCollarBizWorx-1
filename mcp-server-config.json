@@ -1,12 +1,10 @@
-
 {
   "mcpServers": {
-    "bizworx-mcp-server": {
+    "bizworx": {
       "command": "node",
       "args": ["mcp-server-http.js"],
       "env": {
-        "MCP_HTTP_PORT": "8000",
-        "BIZWORX_BASE_URL": "https://BluecollarBizWorx.replit.app"
+        "BIZWORX_BASE_URL": "https://bizworx-7faf4.web.app"
       }
     }
   },
@@ -24,11 +22,11 @@
     }
   },
   "endpoints": {
-    "http": "https://BluecollarBizWorx.replit.app:8000",
-    "sse": "https://BluecollarBizWorx.replit.app:8000/sse",
-    "events": "https://BluecollarBizWorx.replit.app:8000/mcp/events",
-    "call": "https://BluecollarBizWorx.replit.app:8000/mcp/call",
-    "config": "https://BluecollarBizWorx.replit.app:8000/mcp/config"
+    "http": "https://bizworx-7faf4.web.app:8000",
+    "sse": "https://bizworx-7faf4.web.app:8000/sse",
+    "events": "https://bizworx-7faf4.web.app:8000/mcp/events",
+    "call": "https://bizworx-7faf4.web.app:8000/mcp/call",
+    "config": "https://bizworx-7faf4.web.app:8000/mcp/config"
   },
   "authentication": {
     "required": true,
@@ -36,71 +34,30 @@
     "header": "X-API-Key",
     "description": "Business API key from BizWorx Business Settings"
   },
-  "tools": [
-    {
-      "name": "get_clients",
-      "description": "Get list of all clients for the business",
-      "parameters": {
+  "tools": {
+    "get_clients": {
+      "description": "Get all clients for the authenticated business",
+      "inputSchema": {
         "type": "object",
-        "properties": {
-          "apiKey": {
-            "type": "string",
-            "description": "Business API key for authentication"
-          }
-        },
-        "required": ["apiKey"]
+        "properties": {},
+        "required": []
       }
     },
-    {
-      "name": "create_client", 
-      "description": "Create a new client",
-      "parameters": {
+    "get_estimates": {
+      "description": "Get all estimates for the authenticated business",
+      "inputSchema": {
         "type": "object",
-        "properties": {
-          "apiKey": {"type": "string"},
-          "name": {"type": "string"},
-          "email": {"type": "string"},
-          "phone": {"type": "string"},
-          "address": {"type": "string"}
-        },
-        "required": ["apiKey", "name", "email"]
+        "properties": {},
+        "required": []
       }
     },
-    {
-      "name": "get_jobs",
-      "description": "Get jobs for a specific date or all jobs"
-    },
-    {
-      "name": "create_job",
-      "description": "Create a new job"
-    },
-    {
-      "name": "get_invoices", 
-      "description": "Get list of all invoices"
-    },
-    {
-      "name": "create_invoice",
-      "description": "Create a new invoice"
-    },
-    {
-      "name": "get_estimates",
-      "description": "Get list of all estimates"
-    },
-    {
-      "name": "create_estimate",
-      "description": "Create a new estimate"
-    },
-    {
-      "name": "update_job_status",
-      "description": "Update job status"
-    },
-    {
-      "name": "get_revenue_stats",
-      "description": "Get revenue statistics"
-    },
-    {
-      "name": "get_services",
-      "description": "Get list of all services"
+    "get_invoices": {
+      "description": "Get all invoices for the authenticated business",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
     }
-  ]
+  }
 }

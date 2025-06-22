@@ -95,9 +95,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/business/register", async (req, res) => {
     try {
       console.log('Registration request body:', JSON.stringify(req.body, null, 2));
-      const { name, businessName, email, password, phone, address } = req.body;
+      const { name, businessName, email, password, phone, address, firebaseUid } = req.body;
       const businessNameToUse = name || businessName;
-      console.log('Extracted fields:', { name, businessName, businessNameToUse, email, password: password ? '[SET]' : '[MISSING]', phone, address });
+      console.log('Extracted fields:', { name, businessName, businessNameToUse, email, password: password ? '[SET]' : '[MISSING]', phone, address, firebaseUid });
       
       if (!businessNameToUse) {
         return res.status(400).json({ success: false, error: "Business name is required" });
@@ -105,8 +105,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!email) {
         return res.status(400).json({ success: false, error: "Email is required" });
       }
-      if (!password) {
-        return res.status(400).json({ success: false, error: "Password is required" });
+      if (!firebaseUid) {
+        return res.status(400).json({ success: false, error: "Firebase UID is required" });
       }
       
       // Check if business already exists
@@ -118,7 +118,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const businessData = {
         name: businessNameToUse,
         email,
-        password,
+        password: password || null, // Keep for backward compatibility
+        firebaseUid, // Store Firebase UID
         phone: phone || null,
         address: address || null,
         apiKey: `bw_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 10)}`
@@ -131,6 +132,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Set session for setup mode - business exists but no admin user yet
       (req.session as any).businessId = business.id;
       (req.session as any).setupMode = true;
+      (req.session as any).firebaseUid = firebaseUid;
 
       res.json({ 
         success: true, 
@@ -147,10 +149,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Business login endpoint - for existing businesses
   app.post("/api/auth/business/login", async (req, res) => {
     try {
-      const { email, password } = req.body;
+      const { email, password, firebaseUid } = req.body;
+      
+      if (!firebaseUid) {
+        return res.status(400).json({ success: false, error: "Firebase UID is required" });
+      }
       
       const business = await storage.getBusinessByEmail(email);
-      if (!business || business.password !== password) {
+      if (!business) {
+        return res.status(401).json({ success: false, error: "Invalid email or password" });
+      }
+      
+      // Verify Firebase UID matches the business
+      if (business.firebaseUid !== firebaseUid) {
         return res.status(401).json({ success: false, error: "Invalid email or password" });
       }
 
@@ -159,6 +170,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const hasAdmin = users.some(user => user.role === 'owner' || user.role === 'admin');
 
       (req.session as any).businessId = business.id;
+      (req.session as any).firebaseUid = firebaseUid;
 
       if (hasAdmin) {
         // Business setup is complete, user can proceed to PIN login

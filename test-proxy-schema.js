@@ -3,7 +3,7 @@ import fetch from 'node-fetch';
 async function testProxySchema() {
   console.log('Testing proxy schema endpoints...\n');
   
-  const baseUrl = 'https://bluecollarbizworx.replit.app/proxy/api/gpt';
+  const baseUrl = 'https://bizworx-7faf4.web.app/proxy/api/gpt';
   const apiKey = 'bw_wkad606ephtmbqx7a0f';
   
   const tests = [

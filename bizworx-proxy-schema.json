@@ -1,13 +1,13 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "BizWorx Proxy API for ChatGPT Custom GPT",
-    "description": "Proxy API for ChatGPT Custom GPT integration with BizWorx business management system. Provides API key authentication via request body to bypass Custom GPT header limitations.",
+    "title": "BizWorx ChatGPT Proxy API",
+    "description": "Proxy API for ChatGPT Custom GPT integration with BizWorx business management system",
     "version": "1.0.0"
   },
   "servers": [
     {
-      "url": "https://bluecollarbizworx.replit.app/proxy/api/gpt"
+      "url": "https://bizworx-7faf4.web.app/proxy/api/gpt"
     }
   ],
   "paths": {

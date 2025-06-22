@@ -2,12 +2,12 @@
   "openapi": "3.1.0",
   "info": {
     "title": "BizWorx Business Management API",
-    "description": "Complete business management API for blue-collar services",
+    "description": "Complete business management system for contractors and service businesses",
     "version": "1.0.0"
   },
   "servers": [
     {
-      "url": "https://bluecollarbizworx.replit.app"
+      "url": "https://bizworx-7faf4.web.app"
     }
   ],
   "paths": {

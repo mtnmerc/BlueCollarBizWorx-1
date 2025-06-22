@@ -4,8 +4,8 @@ async function testSimpleAPI() {
   console.log('Testing basic API connectivity...\n');
   
   const testUrls = [
-    'https://bluecollar-bizworx.replit.app',
-    'https://5000-bluecollar-bizworx.replit.app'
+    'https://bizworx-7faf4.web.app',
+    'https://bizworx-7faf4.web.app:3001'
   ];
   
   for (const baseUrl of testUrls) {

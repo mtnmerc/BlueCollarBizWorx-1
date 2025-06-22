@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const API_KEY = 'bw_wkad606ephtmbqx7a0f';
-const BASE_URL = 'https://bluecollarbizworx.replit.app';
+const BASE_URL = 'https://bizworx-7faf4.web.app';
 
 async function testEstimatesEndpoint() {
   console.log('Testing updated estimates endpoint...');

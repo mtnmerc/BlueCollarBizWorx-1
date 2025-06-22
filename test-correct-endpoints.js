@@ -3,7 +3,7 @@
 async function testCorrectEndpoints() {
   console.log('Testing MCP endpoints with correct external routing...\n');
   
-  const baseUrl = 'https://bluecollar-bizworx.replit.app';
+  const baseUrl = 'https://bizworx-7faf4.web.app';
   
   const endpoints = [
     '/api/mcp/health',

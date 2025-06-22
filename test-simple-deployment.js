@@ -1,7 +1,7 @@
 // Test basic connectivity and MCP endpoints
 console.log('Testing Replit deployment connectivity...');
 
-const baseUrl = 'https://bluecollar-bizworx.replit.app';
+const baseUrl = 'https://bizworx-7faf4.web.app';
 const tests = [
   { url: `${baseUrl}/health`, name: 'Basic Health Check' },
   { url: `${baseUrl}/api/mcp/health`, name: 'MCP Health Check' },

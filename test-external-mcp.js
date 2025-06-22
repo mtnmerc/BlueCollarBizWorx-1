@@ -3,8 +3,8 @@ import fetch from 'node-fetch';
 
 // Test both the main domain and potential subdomain configurations
 const testUrls = [
-  'https://bluecollar-bizworx.replit.app',
-  'https://5000-bluecollar-bizworx.replit.app'
+  'https://bizworx-7faf4.web.app',
+  'https://bizworx-7faf4.web.app:3001'
 ];
 
 const baseUrl = testUrls[0];

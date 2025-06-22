@@ -1,7 +1,7 @@
 import https from 'https';
 
 const API_KEY = 'bw_wkad606ephtmbqx7a0f';
-const BASE_URL = 'https://bluecollarbizworx.replit.app';
+const BASE_URL = 'https://bizworx-7faf4.web.app';
 
 function makeRequest(path, method = 'GET', data = null) {
   return new Promise((resolve, reject) => {

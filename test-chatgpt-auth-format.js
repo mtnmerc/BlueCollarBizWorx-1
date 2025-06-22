@@ -1,7 +1,7 @@
 import fetch from 'node-fetch';
 
 const API_KEY = 'bw_wkad606ephtmbqx7a0f';
-const BASE_URL = 'https://bluecollarbizworx.replit.app';
+const BASE_URL = 'https://bizworx-7faf4.web.app';
 
 async function testChatGPTAuthFormat() {
   console.log('Testing authentication formats for ChatGPT compatibility...\n');

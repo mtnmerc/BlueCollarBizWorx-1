@@ -5,7 +5,7 @@
 ### Step 1: Start Your BizWorx App
 Click the green "Run" button at the top of your Replit project. This starts your BizWorx business management app.
 
-Your app will be accessible at: `https://bluecollarbizworx.replit.app`
+Your app will be accessible at: `https://bizworx-7faf4.web.app`
 
 ### Step 2: Create Your ChatGPT Custom GPT
 1. Go to ChatGPT → "Explore GPTs" → "Create a GPT"
@@ -70,7 +70,7 @@ Once configured, test with these voice/text commands:
 Your API key will be generated when you create your first business account in BizWorx. 
 
 For production:
-- Use: `https://bluecollarbizworx.replit.app` as base URL
+- Use: `https://bizworx-7faf4.web.app` as base URL
 - Get your API key from business settings after creating your account
 
 For local testing:

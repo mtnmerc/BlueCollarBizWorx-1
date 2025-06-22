@@ -2,7 +2,7 @@
 async function testFrontendAndSystem() {
   console.log('=== COMPREHENSIVE FRONTEND AND SYSTEM TEST ===\n');
   
-  const baseUrl = 'https://bluecollarbizworx.replit.app';
+  const baseUrl = 'https://bizworx-7faf4.web.app';
   const results = [];
   
   function logResult(test, status, details) {

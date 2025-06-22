@@ -1,14 +1,13 @@
-
 {
   "openapi": "3.1.0",
   "info": {
     "title": "BizWorx Complete Business Management API",
-    "description": "Comprehensive API for managing all aspects of BizWorx business operations including clients, estimates, invoices, and job scheduling",
+    "description": "Complete business management system for contractors and service businesses. Manage clients, estimates, invoices, jobs, and more.",
     "version": "1.0.0"
   },
   "servers": [
     {
-      "url": "https://bluecollarbizworx.replit.app/api/gpt"
+      "url": "https://bizworx-7faf4.web.app/api/gpt"
     }
   ],
   "security": [

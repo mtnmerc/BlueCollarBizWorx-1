@@ -6,7 +6,7 @@ Successfully created and configured `bizworx-proxy-schema.json` for ChatGPT Cust
 ## Key Changes Made
 
 ### 1. Server Configuration
-- **Base URL**: `https://bluecollarbizworx.replit.app/proxy/api/gpt`
+- **Base URL**: `https://bizworx-7faf4.web.app/proxy/api/gpt`
 - **Title**: "BizWorx Proxy API for ChatGPT Custom GPT"
 - **Description**: Updated to explain proxy functionality and API key authentication
 
@@ -60,7 +60,7 @@ All endpoints now require:
 ## Integration Instructions for ChatGPT
 
 1. **Import Schema**: Use `bizworx-proxy-schema.json` in ChatGPT Custom GPT
-2. **Base URL**: `https://bluecollarbizworx.replit.app/proxy/api/gpt`
+2. **Base URL**: `https://bizworx-7faf4.web.app/proxy/api/gpt`
 3. **Authentication**: Include user's API key in all request bodies
 4. **Method**: All requests use POST method
 5. **Format**: JSON request body with `api_key` parameter

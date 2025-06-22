@@ -1,11 +1,10 @@
-
 import express from 'express';
 
 const app = express();
 app.use(express.json());
 
 // Base URL for BizWorx API
-const BIZWORX_BASE_URL = 'https://BluecollarBizWorx.replit.app';
+const BIZWORX_BASE_URL = 'https://bizworx-7faf4.web.app';
 
 // Tool mapping
 const toolMap = {

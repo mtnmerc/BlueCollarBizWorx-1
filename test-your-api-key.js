@@ -3,7 +3,7 @@ async function testYourApiKey() {
   console.log('=== TESTING YOUR API KEY ===\n');
   
   const yourApiKey = 'bw_ex0i7udnrrumbzikdnd';
-  const baseUrl = 'https://bluecollarbizworx.replit.app/api/gpt';
+  const baseUrl = 'https://bizworx-7faf4.web.app/api/gpt';
   
   console.log('Account: alter3d24@gmail.com');
   console.log('Business: Flatline earthworks');

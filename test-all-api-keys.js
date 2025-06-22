@@ -15,7 +15,7 @@ async function testAllApiKeys() {
     console.log(`Expected: "${test.expected}" (ID: ${test.id})`);
     
     try {
-      const response = await fetch('https://bluecollarbizworx.replit.app/api/gpt/clients', {
+      const response = await fetch('https://bizworx-7faf4.web.app/api/gpt/clients', {
         headers: { 'X-API-Key': test.key }
       });
       

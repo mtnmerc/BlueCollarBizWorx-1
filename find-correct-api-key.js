@@ -26,7 +26,7 @@ async function findCorrectApiKey() {
       
       if (business.api_key) {
         console.log('\n--- Testing correct API key ---');
-        const testResponse = await fetch('https://bluecollarbizworx.replit.app/api/gpt/clients', {
+        const testResponse = await fetch('https://bizworx-7faf4.web.app/api/gpt/clients', {
           headers: { 'X-API-Key': business.api_key }
         });
         
@@ -39,7 +39,7 @@ async function findCorrectApiKey() {
         }
       } else {
         console.log('\n--- Generating API key for this business ---');
-        const generateResponse = await fetch('https://bluecollarbizworx.replit.app/api/generate-api-key', {
+        const generateResponse = await fetch('https://bizworx-7faf4.web.app/api/generate-api-key', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ businessId: business.id })

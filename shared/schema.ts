@@ -12,6 +12,7 @@ export const businesses = pgTable("businesses", {
   address: text("address"),
   logo: text("logo"), // URL or base64
   password: text("password").notNull(),
+  firebaseUid: text("firebase_uid").unique(), // Firebase Authentication UID
   apiKey: text("api_key").unique(), // For external API access
   createdAt: timestamp("created_at").defaultNow(),
 });

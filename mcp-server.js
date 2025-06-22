@@ -1,4 +1,3 @@
-
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
@@ -23,7 +22,7 @@ class BizWorxMCPServer {
       }
     );
 
-    this.baseUrl = process.env.BIZWORX_BASE_URL || 'https://BluecollarBizWorx.replit.app';
+    this.baseUrl = process.env.BIZWORX_BASE_URL || 'https://bizworx-7faf4.web.app';
     this.setupToolHandlers();
   }
 
